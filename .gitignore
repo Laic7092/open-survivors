@@ -1,0 +1,14 @@
+# Godot 4+
+.godot/
+/android/
+export/
+*.translation
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*:Zone.Identifier
+
+# Assistant artifacts
+.reasonix/
