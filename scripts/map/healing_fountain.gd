@@ -17,7 +17,7 @@ var pool_radius: float = 24.0
 var _cooldown_progress: float = 0.0  # 0.0 = ready, 1.0 = full cooldown
 
 # ── Interaction ──
-var interaction_prompt: String = "Press [E] to heal"
+var interaction_prompt: String = ""
 var interaction_range: float = 70.0
 var can_interact: bool = true
 
@@ -30,6 +30,8 @@ var _player_ref: Node2D = null
 
 
 func _ready():
+	interaction_prompt = I18N.t("interact.heal")
+
 	# Physical collision basin
 	var shape = CollisionShape2D.new()
 	var circle = CircleShape2D.new()

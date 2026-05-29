@@ -19,7 +19,7 @@ var chest_size: Vector2 = Vector2(28, 20)
 var _open: bool = false
 
 # ── Interaction ──
-var interaction_prompt: String = "Press [E] to open"
+var interaction_prompt: String = ""
 var interaction_range: float = 70.0
 var can_interact: bool = true
 
@@ -33,6 +33,8 @@ var _player_ref: Node2D = null
 
 
 func _ready():
+	interaction_prompt = I18N.t("interact.open")
+
 	# Physical collision
 	var shape = CollisionShape2D.new()
 	var rect = RectangleShape2D.new()

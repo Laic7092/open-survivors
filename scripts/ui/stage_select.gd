@@ -157,7 +157,7 @@ func _add_card(stage: Dictionary, w: float, h: float, parent: Container):
 		var items = stage.get("stage_items", [])
 		if not items.is_empty():
 			var item_lbl = Label.new()
-			item_lbl.text = "📦 " + str(items.size()) + (" items" if I18N.current_lang == "en" else " 个物品")
+			item_lbl.text = I18N.t("stage_select.items") % items.size()
 			item_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			item_lbl.add_theme_font_size_override("font_size", 10)
 			item_lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
@@ -184,7 +184,7 @@ func _add_card(stage: Dictionary, w: float, h: float, parent: Container):
 
 	if unlocked and has_hyper:
 		var hyper_btn = Button.new()
-		hyper_btn.text = "⚡HYPER"
+		hyper_btn.text = I18N.t("stage_select.hyper")
 		hyper_btn.toggle_mode = true
 		hyper_btn.custom_minimum_size = Vector2(btn_w * 0.6, btn_h)
 		hyper_btn.add_theme_font_size_override("font_size", 12)

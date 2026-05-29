@@ -46,8 +46,8 @@ func _ready():
 	_menu_btn.text = I18N.t("hud.main_menu")
 
 	# 初始文字
-	_level_label.text = "LV 1"
-	_timer_label.text = "00:00"
+	_level_label.text = I18N.t("hud.lv") + "1"
+	_timer_label.text = I18N.t("hud.timer_format") % [0, 0]
 	_kills_label.text = I18N.t("hud.kills") + "0"
 	_gold_label.text = I18N.t("hud.gold") + "0"
 
@@ -86,7 +86,7 @@ func set_level(lv: int):
 func set_timer(t: float):
 	var m = int(t) / 60
 	var s = int(t) % 60
-	var display = "%02d:%02d" % [m, s]
+	var display = I18N.t("hud.timer_format") % [m, s]
 	if time_limit_str != "":
 		display += " / " + time_limit_str
 	_timer_label.text = display
@@ -95,7 +95,7 @@ func set_timer(t: float):
 func set_time_limit(limit: float):
 	var m = int(limit) / 60
 	var s = int(limit) % 60
-	time_limit_str = "%02d:%02d" % [m, s]
+	time_limit_str = I18N.t("hud.timer_format") % [m, s]
 
 
 func set_kills(c: int):
@@ -212,7 +212,7 @@ func _draw_relic_arrow_signal():
 	_relic_arrow.draw_polygon(arrow_tri, [Color(0.3, 0.8, 0.3, 0.85)])
 	_relic_arrow.draw_polyline(PackedVector2Array([base_left, tip, base_right]), Color(0.5, 1.0, 0.5, 0.6), 2.0)
 
-	var dist_str = str(int(_relic_arrow_dist)) + "m"
+	var dist_str = str(int(_relic_arrow_dist)) + I18N.t("hud.distance_unit")
 	var dist_pos = center + Vector2(cos(_relic_arrow_angle), sin(_relic_arrow_angle)) * (arrow_len + 18)
 	_relic_arrow.draw_string(font, dist_pos - Vector2(10, 5), dist_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.3, 0.8, 0.3))
 

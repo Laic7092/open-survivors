@@ -9,6 +9,3 @@ export/
 Thumbs.db
 desktop.ini
 *:Zone.Identifier
-
-# Assistant artifacts
-.reasonix/

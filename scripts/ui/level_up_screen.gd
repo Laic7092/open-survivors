@@ -4,6 +4,7 @@ signal upgrade_selected(upgrade_type: int)
 signal evolution_selected(weapon_type: int)
 signal gold_selected(amount: int)
 
+const WeaponManager = preload("res://scripts/entities/weapon_manager.gd")
 const IconGenerator = preload("res://scripts/ui/icon_generator.gd")
 const UiUtils = preload("res://scripts/ui/ui_utils.gd")
 
@@ -78,7 +79,7 @@ func _generate_and_show():
 
 	# Gather evolution candidates from owned weapons
 	var evolutions: Array[int] = []
-	for w in player_ref.weapons:
+	for w in player_ref.weapon_manager.weapons:
 		if player_ref.can_evolve(w.type):
 			evolutions.append(w.type)
 
@@ -100,21 +101,22 @@ func _generate_and_show():
 		var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else 8
 		# Skip new items beyond the slot limit
 		if lv == 0:
-			if _is_weapon(p) and player_ref.weapons.size() >= MAX_WEAPONS:
+			if _is_weapon(p) and player_ref.weapon_manager.weapons.size() >= MAX_WEAPONS:
 				continue
-			if _is_passive(p) and player_ref.passives.size() >= MAX_PASSIVES:
+			if _is_passive(p) and player_ref.passive_inventory.size() >= MAX_PASSIVES:
 				continue
 		if lv < max_lv:
 			chosen.append(p)
 
 	if chosen.is_empty():
 		# If all slots maxed, offer an owned weapon upgrade anyway
-		for w in player_ref.weapons:
+		for w in player_ref.weapon_manager.weapons:
 			if w.level < w.max_level:
 				chosen.append(w.type)
 				break
 		if chosen.is_empty():
-			for t in player_ref.passives:
+			var p = player_ref.passive_inventory.get_all()
+			for t in p:
 				if player_ref.get_passive_level(t) < 8:
 					chosen.append(t)
 					break
@@ -224,7 +226,7 @@ func _add_evolution_choice(weapon_type: int):
 	vb2.custom_minimum_size = Vector2(210, 220)
 	vb2.alignment = BoxContainer.ALIGNMENT_CENTER
 
-	var recipe = Player.EVOLUTION_RECIPES[weapon_type]
+	var recipe = WeaponManager.EVOLUTION_RECIPES[weapon_type]
 	var evo_name = recipe["name"]
 	var evo_desc = recipe["desc"]
 

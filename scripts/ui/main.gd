@@ -47,6 +47,7 @@ var _obstacle_positions: Array[Vector2] = []
 
 # Camera
 var _camera: Camera2D
+var _camera_offset: Vector2 = Vector2.ZERO
 
 # Boss state
 var _boss_spawned: bool = false
@@ -171,6 +172,9 @@ func _ready():
 	_camera.limit_top = -map_height / 2.0
 	_camera.limit_bottom = map_height / 2.0
 	add_child(_camera)
+
+	# Camera offset to show more above the player
+	_camera_offset = Vector2(0, -80)
 
 	# ── Spawn uncollected relics for this stage (player must exist) ──
 	_spawn_stage_relics()
@@ -1116,7 +1120,7 @@ func _process(delta):
 	
 	# Weapon display data for HUD
 	var wep_data: Array = []
-	for w in player.weapons:
+	for w in player.weapon_manager.weapons:
 		wep_data.append({
 			"name": _get_wep_name(w.type),
 			"name_key": _get_wep_name_key(w.type),
@@ -1129,8 +1133,9 @@ func _process(delta):
 	
 	# Passive display data for HUD
 	var pas_data: Array = []
-	for t in player.passives:
-		var lv = player.passives[t]
+	var pas_dict = player.passive_inventory.get_all()
+	for t in pas_dict:
+		var lv = pas_dict[t]
 		pas_data.append({
 			"type": t,
 			"level": lv,
@@ -1144,7 +1149,7 @@ func _process(delta):
 		if _shake_duration > 0.0:
 			_shake_duration -= delta
 			shake_off = Vector2(randf_range(-_shake_intensity, _shake_intensity), randf_range(-_shake_intensity, _shake_intensity))
-		_camera.global_position = player.global_position + shake_off
+		_camera.global_position = player.global_position + _camera_offset + shake_off
 	
 
 	
@@ -1377,12 +1382,12 @@ func _spawn_stage_items():
 		shape.shape = circle
 		pickup.add_child(shape)
 
-		# Name label (basic mapping, i18n keys from pause_overlay)
+		# Name label (i18n)
 		var nm = ""
 		if is_wpn:
-			nm = _basic_weapon_name(t)
+			nm = I18N.t(_get_wep_name_key(t), _basic_weapon_name(t))
 		else:
-			nm = _basic_passive_name(t)
+			nm = I18N.t(_pas_name_key(t), _basic_passive_name(t))
 		pickup.setup(t, is_wpn, nm)
 
 		add_child(pickup)
@@ -1711,6 +1716,32 @@ func _get_wep_name_key(type: int) -> String:
 		19: return "wpn.runetracer"
 		20: return "wpn.lightning"
 	return "wpn.whip"
+
+
+func _pas_name_key(type: int) -> String:
+	match type:
+		3: return "pas.wings"
+		4: return "pas.spinach"
+		5: return "pas.tome"
+		6: return "pas.hollow"
+		7: return "pas.candel"
+		8: return "pas.crown"
+		9: return "pas.pummarola"
+		13: return "pas.duplicator"
+		14: return "pas.stonemask"
+		15: return "pas.magnet"
+		21: return "pas.clover"
+		22: return "pas.spellbinder"
+		23: return "pas.armor"
+		24: return "pas.bracer"
+		25: return "pas.skull"
+		26: return "pas.tiragisu"
+		27: return "pas.torrona"
+		28: return "pas.silver_ring"
+		29: return "pas.gold_ring"
+		30: return "pas.metaglio_left"
+		31: return "pas.metaglio_right"
+	return "pas.wings"
 
 
 func _get_wep_color(type: int) -> Color:

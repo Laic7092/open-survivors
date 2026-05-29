@@ -105,7 +105,7 @@ func _add_relic_card(r: Dictionary, pos: Vector2, w: int, h: int):
 
 	if collected:
 		var eff = Label.new()
-		eff.text = r.get("effect", "")
+		eff.text = I18N.t("relic." + rid + "_effect", r.get("effect", ""))
 		eff.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		eff.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		eff.add_theme_font_size_override("font_size", 10)

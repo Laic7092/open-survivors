@@ -19,7 +19,7 @@ func _ready():
 	add_child(_loading_bg)
 	
 	_loading_label = Label.new()
-	_loading_label.text = "Loading…"
+	_loading_label.text = I18N.t("loading")
 	_loading_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_loading_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_loading_label.add_theme_font_size_override("font_size", 48)

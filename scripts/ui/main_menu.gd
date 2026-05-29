@@ -184,9 +184,7 @@ func _input(event):
 # ═══════════════════════════════════════════════════════════
 
 func _fullscreen_text() -> String:
-	if I18N.current_lang == "zh":
-		return "[ ] 全屏" if not I18N.fullscreen else "[✓] 全屏"
-	return "[ ] FS" if not I18N.fullscreen else "[✓] FS"
+	return I18N.t("menu.fullscreen_off") if not I18N.fullscreen else I18N.t("menu.fullscreen_on")
 
 
 func _resolution_text() -> String:

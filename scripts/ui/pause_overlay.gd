@@ -3,6 +3,7 @@ extends Control
 signal toggle_pause
 signal quit_to_menu
 
+const WeaponManager = preload("res://scripts/entities/weapon_manager.gd")
 const CharacterDefs = preload("res://scripts/data/character_defs.gd")
 const Player = preload("res://scripts/entities/player.gd")
 const MinimapScript = preload("res://scripts/ui/minimap.gd")
@@ -60,7 +61,7 @@ func _build_ui():
 	# Title
 	_title = Label.new()
 	_title.theme_type_variation = &"TitleLabel"
-	_title.text = "PAUSED"
+	_title.text = ""
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title.add_theme_font_size_override("font_size", 32)
 	_outer.add_child(_title)
@@ -107,7 +108,7 @@ func _build_ui():
 	_hbox.add_child(_col3)
 
 	_grimoire_header = Label.new()
-	_grimoire_header.text = "Grim Grimoire"
+	_grimoire_header.text = I18N.t("relic.grim_grimoire")
 	_grimoire_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_grimoire_header.add_theme_color_override("font_color", Color(0.9, 0.7, 0.1))
 	_grimoire_header.add_theme_font_size_override("font_size", 15)
@@ -126,7 +127,7 @@ func _build_ui():
 
 	# Buttons
 	_resume_btn = Button.new()
-	_resume_btn.text = "Resume"
+	_resume_btn.text = ""
 	_resume_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_resume_btn.theme_type_variation = &"PrimaryButton"
 	_resume_btn.custom_minimum_size = Vector2(160, 40)
@@ -134,7 +135,7 @@ func _build_ui():
 	_outer.add_child(_resume_btn)
 
 	_quit_btn = Button.new()
-	_quit_btn.text = "Quit to Menu"
+	_quit_btn.text = ""
 	_quit_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_quit_btn.theme_type_variation = &"DangerButton"
 	_quit_btn.custom_minimum_size = Vector2(160, 40)
@@ -324,7 +325,7 @@ func _update_minimap_state(player, main):
 		if has_map_relic:
 			_map_text.text = I18N.t("pause.map_available")
 		else:
-			_map_text.text = I18N.t("pause.map_available") + "\n🔒 " + (I18N.t("menu.relics") if I18N.current_lang == "zh" else "Find Milky Way Map")
+			_map_text.text = I18N.t("pause.map_available") + "\n🔒 " + I18N.t("pause.find_milky_way")
 
 	# Grim Grimoire
 	if RelicManager and RelicManager.has_relic("grim_grimoire"):
@@ -332,12 +333,12 @@ func _update_minimap_state(player, main):
 		_grimoire_container.visible = true
 		for c in _grimoire_container.get_children():
 			c.queue_free()
-		var evo = Player.EVOLUTION_RECIPES
+		var evo = WeaponManager.EVOLUTION_RECIPES
 		for wpn_type in evo:
 			var recipe = evo[wpn_type]
 			var wpn_nm = I18N.t(_wpn_i18n_key(wpn_type), _weapon_name(wpn_type))
 			var pass_nm = I18N.t(_pass_i18n_key(recipe["passive"]), _passive_name(recipe["passive"]))
-			var evo_name = recipe.get("name", "?")
+			var evo_name = I18N.t(_evo_i18n_key(wpn_type) + "_name", recipe.get("name", "?"))
 			var row = HBoxContainer.new()
 			row.add_theme_constant_override("separation", 4)
 			row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -438,6 +439,22 @@ static func _pass_i18n_key(t: int) -> String:
 		30: return "pas.metaglio_left"
 		31: return "pas.metaglio_right"
 	return "pas.wings"
+
+
+static func _evo_i18n_key(weapon_type: int) -> String:
+	match weapon_type:
+		0: return "evo.whip"
+		1: return "evo.wand"
+		2: return "evo.garlic"
+		10: return "evo.knife"
+		11: return "evo.axe"
+		12: return "evo.firewand"
+		16: return "evo.cross"
+		17: return "evo.king_bible"
+		18: return "evo.santa_water"
+		19: return "evo.runetracer"
+		20: return "evo.lightning_ring"
+	return "evo.whip"
 
 
 func show_pause():

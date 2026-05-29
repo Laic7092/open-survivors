@@ -124,6 +124,15 @@ static func _zh() -> Dictionary:
 		"menu.gold": "金币: ",
 		"menu.footer": "v1.0 — 使用 Godot 4 制作",
 		"menu.language": "English",
+		"menu.fullscreen_off": "[ ] 全屏",
+		"menu.fullscreen_on": "[✓] 全屏",
+
+		# ── Loading ──
+		"loading": "加载中…",
+
+		# ── Interaction ──
+		"interact.open": "按 [E] 打开",
+		"interact.heal": "按 [E] 回复",
 
 		# ── Character Select ──
 		"char_select.title": "选择角色",
@@ -145,18 +154,37 @@ static func _zh() -> Dictionary:
 		# ── Relic Names & Descs ──
 		"relic.grim_grimoire": "格里姆卷轴",
 		"relic.grim_grimoire_desc": "查看武器进化配方",
+		"relic.grim_grimoire_effect": "暂停菜单中解锁进化配方标签页。",
 		"relic.milky_way_map": "银河地图",
 		"relic.milky_way_map_desc": "暂停时显示地图",
+		"relic.milky_way_map_effect": "暂停界面解锁小地图覆盖层。",
 		"relic.sorceress_tears": "魔女之泪",
 		"relic.sorceress_tears_desc": "解锁急速模式",
+		"relic.sorceress_tears_effect": "关卡选择界面解锁急速模式（1.5x速度）。",
 		"relic.magic_banger": "魔法爆竹",
 		"relic.magic_banger_desc": "切换音乐",
+		"relic.magic_banger_effect": "关卡选择界面解锁备用音乐。",
 		"relic.great_gospel": "伟大福音",
 		"relic.great_gospel_desc": "武器升级突破上限",
+		"relic.great_gospel_effect": "解锁限制突破——武器可升至20级。",
 		"relic.seventh_trumpet": "第七号角",
 		"relic.seventh_trumpet_desc": "解锁无尽模式",
+		"relic.seventh_trumpet_effect": "关卡选择界面解锁无尽模式（无时间限制）。",
 		"relic.randomazzo": "秘术卡牌",
 		"relic.randomazzo_desc": "解锁秘术系统",
+		"relic.randomazzo_effect": "解锁秘术卡牌——可在关卡前选择的特殊加成。",
+		"relic.ars_gouda": "阿尔斯高达",
+		"relic.ars_gouda_desc": "永久提高金币获取量20%。",
+		"relic.ars_gouda_effect": "+20% 全部金币获取来源。",
+		"relic.antidote": "解毒剂",
+		"relic.antidote_desc": "永久减少受到的伤害10%。",
+		"relic.antidote_effect": "全场合-10% 承受伤害。",
+		"relic.glass_vizard": "玻璃面罩",
+		"relic.glass_vizard_desc": "永久在地图上显示隐藏的关卡物品。",
+		"relic.glass_vizard_effect": "隐藏物品在小地图上可见并可收集。",
+		"relic.yellow_sign": "黄色印记",
+		"relic.yellow_sign_desc": "永久揭示关卡中所有隐藏的秘密。",
+		"relic.yellow_sign_effect": "解锁隐藏角色和关卡物品。",
 
 		# ── Character Names & Descs ──
 		"char.0_name": "安东尼奥",
@@ -219,7 +247,9 @@ static func _zh() -> Dictionary:
 		"stage_select.endless": "♾️ 无尽模式 (无时间限制)",
 		"stage_select.music": "🎵 切换音乐",
 		"stage_select.arcana": "🃏 秘术 (开/关)",
+		"stage_select.hyper": "⚡超级模式",
 		"stage_select.locked_relic": "🔒 需要遗物: %s",
+		"stage_select.items": "📦 %d 个物品",
 
 		# ── Stage Names & Descs ──
 		"stage.0_name": "疯狂森林",
@@ -265,6 +295,8 @@ static func _zh() -> Dictionary:
 		"hud.main_menu": "主菜单",
 		"hud.game_over_stats": "时间: %02d:%02d\n击杀: %d\n等级: %d\n金币: %d",
 		"hud.victory_stats": "关卡: %s\n时间: %02d:%02d\n击杀: %d\n等级: %d\n金币: %d\n\n奖励: +500 金币！",
+		"hud.distance_unit": "米",
+		"hud.timer_format": "%02d:%02d",
 
 		# ── Pause Overlay ──
 		"pause.title": "暂停",
@@ -288,6 +320,7 @@ static func _zh() -> Dictionary:
 		"pause.none": "（无）",
 		"pause.grimoire": "📖 进化配方",
 		"pause.map_available": "🗺️ 地图已解锁（查看小地图）",
+		"pause.find_milky_way": "找到银河地图",
 
 		# ── PowerUp Screen ──
 		"powerup.title": "能力强化",
@@ -323,6 +356,7 @@ static func _zh() -> Dictionary:
 		"levelup.level": "Lv.%d → Lv.%d",
 		"levelup.evolve": "⚡ 进化！⚡",
 		"levelup.evo_arrow": " → ",
+		"levelup.gold_desc": "所有格子已满！",
 
 		# ── Item Names ──
 		"item.whip_name": "鞭子",
@@ -419,6 +453,7 @@ static func _zh() -> Dictionary:
 		# ── Pickup Floating Texts ──
 		"pickup.chicken": "+30 生命",
 		"pickup.gold": "金币",
+		"pickup.gold_name": "+%d 金币",
 		"pickup.rosary": "念珠！",
 		"pickup.vacuum": "吸铁石！",
 
@@ -565,6 +600,7 @@ static func _zh() -> Dictionary:
 		"unlock.type_stage": "关卡",
 		"unlock.type_arcana": "密术",
 		"unlock.type_character": "角色",
+		"unlock.separator": "：",
 	}
 
 
@@ -582,6 +618,15 @@ static func _en() -> Dictionary:
 		"menu.gold": "Gold: ",
 		"menu.footer": "v1.0 — Made with Godot 4",
 		"menu.language": "中文",
+		"menu.fullscreen_off": "[ ] FS",
+		"menu.fullscreen_on": "[✓] FS",
+
+		# ── Loading ──
+		"loading": "Loading…",
+
+		# ── Interaction ──
+		"interact.open": "Press [E] to open",
+		"interact.heal": "Press [E] to heal",
 
 		"char_select.title": "SELECT CHARACTER",
 		"char_select.gold": "Gold: ",
@@ -602,18 +647,37 @@ static func _en() -> Dictionary:
 		# ── Relic Names & Descs ──
 		"relic.grim_grimoire": "Grim Grimoire",
 		"relic.grim_grimoire_desc": "View weapon evolution recipes",
+		"relic.grim_grimoire_effect": "Unlocks the Evolution Recipes tab in the pause menu.",
 		"relic.milky_way_map": "Milky Way Map",
 		"relic.milky_way_map_desc": "Show map on pause",
+		"relic.milky_way_map_effect": "Unlocks the minimap overlay in the pause screen.",
 		"relic.sorceress_tears": "Sorceress' Tears",
 		"relic.sorceress_tears_desc": "Unlock Hurry Mode",
+		"relic.sorceress_tears_effect": "Unlocks Hurry Mode (1.5x game speed) in stage select.",
 		"relic.magic_banger": "Magic Banger",
 		"relic.magic_banger_desc": "Switch music tracks",
+		"relic.magic_banger_effect": "Unlocks alternate music tracks in stage select.",
 		"relic.great_gospel": "Great Gospel",
 		"relic.great_gospel_desc": "Weapons can exceed level 8",
+		"relic.great_gospel_effect": "Unlocks Limit Break — weapons can reach level 20.",
 		"relic.seventh_trumpet": "Seventh Trumpet",
 		"relic.seventh_trumpet_desc": "Unlock Endless Mode",
+		"relic.seventh_trumpet_effect": "Unlocks Endless Mode (no time limit) in stage select.",
 		"relic.randomazzo": "Randomazzo",
 		"relic.randomazzo_desc": "Unlock Arcana system",
+		"relic.randomazzo_effect": "Unlocks Arcana Cards — special modifiers selectable before a run.",
+		"relic.ars_gouda": "Ars Gouda",
+		"relic.ars_gouda_desc": "Permanently increases gold gain by 20%.",
+		"relic.ars_gouda_effect": "+20% Gold from all sources.",
+		"relic.antidote": "Antidote",
+		"relic.antidote_desc": "Permanently reduces damage taken by 10%.",
+		"relic.antidote_effect": "-10% Damage Taken across all runs.",
+		"relic.glass_vizard": "Glass Vizard",
+		"relic.glass_vizard_desc": "Permanently reveals hidden stage items on the map.",
+		"relic.glass_vizard_effect": "Hidden items appear on the minimap and can be collected.",
+		"relic.yellow_sign": "Yellow Sign",
+		"relic.yellow_sign_desc": "Permanently reveals all secrets hidden in stages.",
+		"relic.yellow_sign_effect": "Unlocks hidden characters and items across stages.",
 
 		"char.0_name": "Antonio",
 		"char.0_desc": "+10% Might",
@@ -674,7 +738,9 @@ static func _en() -> Dictionary:
 		"stage_select.endless": "♾️ Endless Mode (No Time Limit)",
 		"stage_select.music": "🎵 Alternate Music",
 		"stage_select.arcana": "🃏 Arcanas (ON/OFF)",
+		"stage_select.hyper": "⚡HYPER",
 		"stage_select.locked_relic": "🔒 Need Relic: %s",
+		"stage_select.items": "📦 %d items",
 
 		"stage.0_name": "Mad Forest",
 		"stage.0_desc": "A dark forest overrun by evil.\nSurvive until dawn.",
@@ -718,6 +784,8 @@ static func _en() -> Dictionary:
 		"hud.main_menu": "MAIN MENU",
 		"hud.game_over_stats": "Time: %02d:%02d\nKills: %d\nLevel: %d\nGold: %d",
 		"hud.victory_stats": "Stage: %s\nTime: %02d:%02d\nKills: %d\nLevel: %d\nGold: %d\n\nBonus: +500 Gold!",
+		"hud.distance_unit": "m",
+		"hud.timer_format": "%02d:%02d",
 
 		"pause.title": "PAUSED",
 		"pause.resume": "RESUME",
@@ -740,6 +808,7 @@ static func _en() -> Dictionary:
 		"pause.none": "(none)",
 		"pause.grimoire": "📖 Evolution Recipes",
 		"pause.map_available": "🗺️ Map Available (check minimap)",
+		"pause.find_milky_way": "Find Milky Way Map",
 
 		"powerup.title": "POWER UPS",
 		"powerup.back": "BACK",
@@ -772,6 +841,7 @@ static func _en() -> Dictionary:
 		"levelup.level": "Lv.%d → Lv.%d",
 		"levelup.evolve": "⚡ EVOLVE! ⚡",
 		"levelup.evo_arrow": " → ",
+		"levelup.gold_desc": "All slots full!",
 
 		"item.whip_name": "Whip",
 		"item.wand_name": "Magic Wand",
@@ -864,6 +934,7 @@ static func _en() -> Dictionary:
 
 		"pickup.chicken": "+30 HP",
 		"pickup.gold": "Gold",
+		"pickup.gold_name": "+%d Gold",
 		"pickup.rosary": "Rosary!",
 		"pickup.vacuum": "Vacuum!",
 
@@ -1006,4 +1077,5 @@ static func _en() -> Dictionary:
 		"unlock.type_stage": "Stage",
 		"unlock.type_arcana": "Arcana",
 		"unlock.type_character": "Character",
+		"unlock.separator": ": ",
 	}

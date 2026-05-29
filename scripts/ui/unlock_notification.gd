@@ -111,7 +111,7 @@ func _show_notification():
 		var name_label = Label.new()
 		var name = I18N.t(defn.name_key, str(defn.target_id))
 		var type_name = _type_name(defn.unlock_type)
-		name_label.text = type_name + ": " + name
+		name_label.text = type_name + I18N.t("unlock.separator") + name
 		name_label.add_theme_font_size_override("font_size", 18)
 		name_label.add_theme_color_override("font_color", _type_color(defn.unlock_type))
 		hb.add_child(name_label)
