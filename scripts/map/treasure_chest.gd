@@ -10,7 +10,7 @@ class_name TreasureChest
 #
 # Add to scene via setup() before adding to tree.
 
-const _gem_scene = preload("res://scenes/xp_gem.tscn")
+# _gem_scene removed — using GemPool.borrow()
 
 # ── Visual ──
 var chest_color: Color = Color(0.45, 0.3, 0.1)
@@ -80,7 +80,7 @@ func _spawn_loot(player: Node2D):
 	# XP gems
 	var gem_count = 2 + randi() % 3
 	for i in range(gem_count):
-		var gem = _gem_scene.instantiate()
+		var gem = GemPool.borrow()
 		gem.value = randi_range(min_xp, max_xp)
 		gem.player = player
 		gem.global_position = global_position + Vector2(randf_range(-15, 15), randf_range(-15, 15))

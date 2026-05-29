@@ -2,9 +2,14 @@ extends Control
 
 signal upgrade_selected(upgrade_type: int)
 signal evolution_selected(weapon_type: int)
+signal gold_selected(amount: int)
 
 const IconGenerator = preload("res://scripts/ui/icon_generator.gd")
 const UiUtils = preload("res://scripts/ui/ui_utils.gd")
+
+const MAX_WEAPONS = 6
+const MAX_PASSIVES = 6
+const GOLD_REWARD = 9999
 
 var player_ref
 var panel: Panel
@@ -93,11 +98,28 @@ func _generate_and_show():
 			continue
 		var lv = player_ref.get_weapon_level(p) if _is_weapon(p) else player_ref.get_passive_level(p)
 		var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else 8
+		# Skip new items beyond the slot limit
+		if lv == 0:
+			if _is_weapon(p) and player_ref.weapons.size() >= MAX_WEAPONS:
+				continue
+			if _is_passive(p) and player_ref.passives.size() >= MAX_PASSIVES:
+				continue
 		if lv < max_lv:
 			chosen.append(p)
 
 	if chosen.is_empty():
-		chosen.append(0)
+		# If all slots maxed, offer an owned weapon upgrade anyway
+		for w in player_ref.weapons:
+			if w.level < w.max_level:
+				chosen.append(w.type)
+				break
+		if chosen.is_empty():
+			for t in player_ref.passives:
+				if player_ref.get_passive_level(t) < 8:
+					chosen.append(t)
+					break
+	if chosen.is_empty():
+		chosen.append(GOLD_REWARD)
 
 	for c in chosen:
 		if c < 0:
@@ -110,6 +132,46 @@ func _add_choice_button(t: int):
 	var vb2 = VBoxContainer.new()
 	vb2.custom_minimum_size = Vector2(190, 200)
 	vb2.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	if t == GOLD_REWARD:
+		var gold_amt = 50 + player_ref.level * 30
+		# Gold icon (coin circle)
+		var icon = TextureRect.new()
+		icon.texture = IconGenerator.generate(14, 40)  # STONE_MASK icon = coin
+		icon.custom_minimum_size = Vector2(40, 40)
+		icon.stretch_mode = TextureRect.STRETCH_KEEP
+		icon.modulate = Color(0.9, 0.8, 0.1)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		vb2.add_child(icon)
+
+		var btn = Button.new()
+		btn.custom_minimum_size = Vector2(0, 120)
+		UiUtils.style_button(btn, Color(0.6, 0.5, 0.1) * 0.25, Color(0.9, 0.8, 0.1))
+
+		var l1 = Label.new()
+		l1.text = I18N.t("pickup.gold_name", "+%d Gold" % gold_amt)
+		l1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l1.add_theme_font_size_override("font_size", 22)
+		l1.add_theme_color_override("font_color", Color(0.9, 0.8, 0.1))
+		vb2.add_child(l1)
+
+		var l2 = Label.new()
+		l2.text = I18N.t("levelup.gold_desc", "All slots full!")
+		l2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l2.add_theme_font_size_override("font_size", 14)
+		l2.add_theme_color_override("font_color", Color(0.8, 0.8, 0.6))
+		vb2.add_child(l2)
+
+		var l3 = Label.new()
+		l3.text = ""
+		l3.custom_minimum_size = Vector2(0, 30)
+		vb2.add_child(l3)
+
+		vb2.add_child(btn)
+		btn.pressed.connect(_on_gold.bind(gold_amt))
+		container.add_child(vb2)
+		return
+
 	var nm = I18N.t(_item_name_key(t), _name(t))
 	var lv = player_ref.get_weapon_level(t) if _is_weapon(t) else player_ref.get_passive_level(t)
 	var lv_txt = I18N.t("levelup.new") if lv == 0 else I18N.t("levelup.level") % [lv, lv + 1]
@@ -224,6 +286,10 @@ func _add_evolution_choice(weapon_type: int):
 
 func _on_choice(t: int):
 	upgrade_selected.emit(t)
+
+
+func _on_gold(amount: int):
+	gold_selected.emit(amount)
 
 
 func _on_evolution_choice(weapon_type: int):

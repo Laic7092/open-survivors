@@ -11,7 +11,7 @@ class_name BreakableWall
 signal wall_destroyed(pos: Vector2)
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
-const _gem_scene = preload("res://scenes/xp_gem.tscn")
+# _gem_scene removed — using GemPool.borrow()
 
 # ── Visual properties ──
 var wall_color: Color = Color(0.25, 0.2, 0.15)
@@ -97,10 +97,18 @@ func _destroy():
 	_destroyed = true
 	wall_destroyed.emit(global_position)
 	
+	# Defer all scene tree modifications to avoid "changing state while flushing queries"
+	call_deferred("_destroy_deferred")
+
+
+func _destroy_deferred():
+	if not is_inside_tree():
+		return
+	
 	# Spawn XP gems
 	var gem_count = 1 + randi() % 2
 	for i in range(gem_count):
-		var gem = _gem_scene.instantiate()
+		var gem = GemPool.borrow()
 		gem.value = xp_drop
 		if _player_ref and is_instance_valid(_player_ref):
 			gem.player = _player_ref

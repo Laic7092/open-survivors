@@ -164,89 +164,140 @@ static func get_types_for_stage(stage_id: int, game_time: float) -> Array[int]:
 	_ensure_loaded()
 	var pool: Array[int] = []
 
+	var early := game_time < 180.0
+	var mid := game_time >= 180.0 and game_time < 480.0
+	var late := game_time >= 480.0
+
 	match stage_id:
-		0:  # Mad Forest — early-game types
-			pool = [0, 1, 2]
-			if game_time > 300.0:   # 5 min
-				pool.append(3)
-			if game_time > 600.0:   # 10 min
-				pool.append(4)
-		1:  # Inlaid Library — more ranged + magic
-			pool = [0, 3]
-			if game_time > 120.0:   # 2 min
-				pool.append(1)
-			if game_time > 360.0:   # 6 min
-				pool.append(4)
-			if game_time > 480.0:   # 8 min
-				pool.append(2)
-		2:  # Il Molise — no ranged (stationary enemies can't aim); swarm + tanks
-			pool = [0, 1, 2]
-			if game_time > 180.0:   # 3 min
-				pool.append(4)
-		3:  # Dairy Plant — factory dwellers, mixed types
-			pool = [0, 1, 2, 4]
-			if game_time > 180.0:   # 3 min
-				pool.append(3)
-			if game_time > 480.0:   # 8 min
-				pool = [0, 1, 2, 3, 4]
-		4:  # Gallo Tower — magic-heavy, more ranged
-			pool = [1, 3, 4]
-			if game_time > 120.0:
-				pool.append(0)
-			if game_time > 300.0:
-				pool.append(2)
-			if game_time > 600.0:
-				pool = [0, 1, 2, 3, 4]
-		5:  # Cappella Magna — full bestiary, high difficulty
-			pool = [0, 1, 2, 3, 4]
-			if game_time > 120.0:
-				pool = [1, 2, 3, 4]
-		6:  # Moongolow — aggressive, mixed types
-			pool = [1, 2, 3, 4]
-			if game_time > 180.0:
-				pool = [0, 1, 2, 3, 4]
-		7:  # Green Acres — random mix (full pool early)
-			pool = [0, 1, 2, 3, 4]
-		8:  # The Bone Zone — fast, aggressive
-			pool = [1, 2, 4]
-			if game_time > 120.0:
-				pool = [0, 1, 2, 3, 4]
-			if game_time > 360.0:
-				pool = [1, 2, 4]  # fast types dominate
-		9:  # Boss Rash — uses boss types as regular enemies
-			pool = [5, 6, 7]
-		10: # Whiteout — mixed with extra speed
-			pool = [0, 1, 4]
-			if game_time > 180.0:
-				pool.append(2)
-			if game_time > 360.0:
-				pool.append(3)
-		11: # The Lycaeum — underwater dwellers
-			pool = [0, 3, 4]
-			if game_time > 180.0:
-				pool.append(1)
-			if game_time > 360.0:
-				pool.append(2)
-		12: # The Coop — mostly melee swarms
-			pool = [0, 1, 4]
-			if game_time > 240.0:
-				pool.append(2)
-		13: # Space 54 — chaotic, all types
-			pool = [0, 1, 2, 3, 4]
-		14: # Bat Country — extreme speed + scaling
-			pool = [1, 4]
-			if game_time > 60.0:
+		0:  # Mad Forest — starter stage
+			if early:
+				pool = [0, 1]           # Wraith + Viper
+			elif mid:
+				pool = [0, 1, 2, 3]     # +Golem + Cursed Eye
+			elif late:
+				pool = [0, 1, 2, 3, 4]  # +Mantis
+		1:  # Inlaid Library — ranged focus
+			if early:
+				pool = [0, 3]           # Wraith + Cursed Eye
+			elif mid:
+				pool = [0, 1, 3]        # +Viper
+			elif late:
+				pool = [0, 1, 2, 3, 4]  # full
+		2:  # Il Molise — swarm + tanks
+			if early:
+				pool = [0, 1]
+			elif mid:
 				pool = [0, 1, 2, 4]
-			if game_time > 180.0:
+			elif late:
+				pool = [0, 1, 2, 4]
+		3:  # Dairy Plant — mixed
+			if early:
+				pool = [0, 1, 4]
+			elif mid:
+				pool = [0, 1, 2, 4]
+			elif late:
 				pool = [0, 1, 2, 3, 4]
-		15: # Eudaimonia Machine — endgame gauntlet
+		4:  # Gallo Tower — magic-heavy
+			if early:
+				pool = [1, 3]           # Viper + Cursed Eye
+			elif mid:
+				pool = [0, 1, 3, 4]
+			elif late:
+				pool = [0, 1, 2, 3, 4]
+		5:  # Cappella Magna — full bestiary
+			if early:
+				pool = [1, 2, 3, 4]
+			elif mid:
+				pool = [0, 1, 2, 3, 4]
+			elif late:
+				pool = [1, 2, 3, 4]     # drop easy Wraiths
+		6:  # Moongolow — aggressive
+			if early:
+				pool = [1, 2, 4]
+			elif mid:
+				pool = [0, 1, 2, 3, 4]
+			elif late:
+				pool = [1, 2, 3, 4]
+		7:  # Green Acres — all mix
+			if early:
+				pool = [0, 1, 2, 3]
+			elif mid:
+				pool = [0, 1, 2, 3, 4]
+			elif late:
+				pool = [0, 2, 3, 4]
+		8:  # The Bone Zone — fast/aggressive
+			if early:
+				pool = [1, 4]
+			elif mid:
+				pool = [0, 1, 2, 4]
+			elif late:
+				pool = [1, 2, 4]
+		9:  # Boss Rash
+			pool = [5, 6, 7]
+		10: # Whiteout
+			if early:
+				pool = [0, 1, 4]
+			elif mid:
+				pool = [0, 1, 2, 4]
+			elif late:
+				pool = [0, 1, 2, 3, 4]
+		11: # The Lycaeum
+			if early:
+				pool = [0, 3, 4]
+			elif mid:
+				pool = [0, 1, 3, 4]
+			elif late:
+				pool = [0, 1, 2, 3, 4]
+		12: # The Coop — melee swarms
+			if early:
+				pool = [0, 1]
+			elif mid:
+				pool = [0, 1, 4]
+			elif late:
+				pool = [0, 1, 2, 4]
+		13: # Space 54 — chaotic
 			pool = [0, 1, 2, 3, 4]
-			if game_time > 180.0:
+		14: # Bat Country — extreme
+			if early:
+				pool = [1, 4]
+			elif mid:
+				pool = [0, 1, 2, 4]
+			elif late:
+				pool = [0, 1, 2, 3, 4]
+		15: # Eudaimonia Machine — endgame
+			if early:
+				pool = [1, 2, 3, 4]
+			elif mid:
+				pool = [1, 2, 3, 4, 5]
+			elif late:
 				pool = [1, 2, 3, 4, 5]
 		_:
 			pool = [0, 1, 2, 3, 4]
 
 	return pool
+
+
+# Picks a weighted random type from the pool. Rarer types appear less often.
+static func pick_weighted(pool: Array[int]) -> int:
+	_ensure_loaded()
+	if pool.is_empty():
+		return 0
+	if pool.size() == 1:
+		return pool[0]
+	
+	var total_weight := 0.0
+	for id in pool:
+		var t = get_type(id)
+		total_weight += t.spawn_weight
+	
+	var roll = randf() * total_weight
+	var accum := 0.0
+	for id in pool:
+		var t = get_type(id)
+		accum += t.spawn_weight
+		if roll < accum:
+			return id
+	return pool[-1]
 
 
 # Returns the boss type ID for a given stage, or -1 if no boss.

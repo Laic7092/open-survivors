@@ -23,7 +23,17 @@ var game_over: bool = false
 var stage_complete: bool = false
 var total_kills: int = 0
 var difficulty: float = 1.0
-var spawn_timer: Timer
+var _spawn_timer: float = 0.0
+
+# Wave system
+var wave_number: int = 0
+var _wave_active: bool = false
+var _wave_spawning: bool = false
+var _wave_total: int = 0
+var _wave_spawned: int = 0
+var _wave_alive: int = 0
+var _wave_spawn_timer: float = 0.0
+var _wave_break_timer: float = 0.0
 
 # Stage data
 var stage_data: Dictionary = {}
@@ -52,7 +62,7 @@ var _shake_duration: float = 0.0
 
 var _player_scene = preload("res://scenes/player.tscn")
 var _enemy_scene = preload("res://scenes/enemy.tscn")
-var _gem_scene = preload("res://scenes/xp_gem.tscn")
+# _gem_scene removed — using GemPool.borrow()
 var _pickup_scene = preload("res://scenes/pickup.tscn")
 var _relic_scene = preload("res://scenes/relic_pickup.tscn")
 var _arcana_choice_screen_scene = preload("res://scripts/ui/arcana_choice_screen.gd")
@@ -68,7 +78,6 @@ var _interact_prompt: Label = null
 
 
 func _ready():
-	var _pt0 = Time.get_ticks_msec()
 	# Read stage data from Engine metadata (set by stage_select)
 	if Engine.has_meta("selected_stage"):
 		stage_data = Engine.get_meta("selected_stage")
@@ -117,8 +126,6 @@ func _ready():
 	Engine.set_meta("stage_enemy_speed_mod", stage_enemy_speed_mod)
 	Engine.set_meta("stage_speed_mult", 1.5 if hurry else 1.0)
 
-	print("[perf] main._ready stage_cfg: %d ms" % (Time.get_ticks_msec() - _pt0))
-	var _pt1 = Time.get_ticks_msec()
 	# ── UI layer (stays on-screen regardless of camera) ──
 	var ui_layer = CanvasLayer.new()
 	ui_layer.layer = 1
@@ -149,8 +156,6 @@ func _ready():
 	pause_overlay.quit_to_menu.connect(_on_quit_to_menu)
 
 	# ── Player ──
-	print("[perf] main._ready ui_layer: %d ms" % (Time.get_ticks_msec() - _pt1))
-	var _pt2 = Time.get_ticks_msec()
 	player = _player_scene.instantiate()
 	player.leveled_up.connect(_on_player_leveled_up)
 	player.died.connect(_on_player_died)
@@ -176,19 +181,12 @@ func _ready():
 	# ── Connections ──
 	level_up_screen.upgrade_selected.connect(_on_upgrade_selected)
 	level_up_screen.evolution_selected.connect(_on_evolution_selected)
+	level_up_screen.gold_selected.connect(_on_gold_selected)
 
-	# ── Timers ──
-	spawn_timer = Timer.new()
-	spawn_timer.wait_time = stage_data.get("spawn_base_interval", 2.0)
-	spawn_timer.autostart = true
-	spawn_timer.timeout.connect(_spawn_wave)
-	add_child(spawn_timer)
+	# ── Continuous spawning starts after map is ready ──
+	_spawn_timer = 1.0
 
-	var pickup_timer = Timer.new()
-	pickup_timer.wait_time = 18.0
-	pickup_timer.autostart = true
-	pickup_timer.timeout.connect(_spawn_pickup)
-	add_child(pickup_timer)
+	# pickup_timer removed — floor chicken spawn was too generous
 
 	# Reset run gold & start music
 	PowerUpManager.reset_run_gold()
@@ -219,15 +217,11 @@ func _ready():
 	if arcanas_enabled and ArcanaManager.is_system_enabled() and ArcanaManager.get_unlocked_count() > 0:
 		call_deferred("_show_arcana_first_pick")
 
-	print("[perf] main._ready player+spawns: %d ms" % (Time.get_ticks_msec() - _pt2))
-	print("[perf] main._ready TOTAL: %d ms" % (Time.get_ticks_msec() - _pt0))
-
 # ═══════════════════════════════════════════════════════════
 #  MAP SETUP
 # ═══════════════════════════════════════════════════════════
 
 func _setup_map():
-	var _pm0 = Time.get_ticks_msec()
 	var bg_color = stage_data.get("bg_color", Color(0.04, 0.04, 0.10))
 	var hw = map_width / 2.0
 	var hh = map_height / 2.0
@@ -308,7 +302,6 @@ func _setup_map():
 	_spawn_initial_pickups(hw, hh)
 
 	_map_ready = true
-	print("[perf] _setup_map decor+props+bounds: %d ms" % (Time.get_ticks_msec() - _pm0))
 
 
 func _setup_library_decor(hw: float, hh: float):
@@ -623,8 +616,6 @@ func _setup_eudaimonia_decor(hw: float, hh: float):
 
 
 func _generate_props(density: float, stage_id: int, hw: float, hh: float):
-	var _pg0 = Time.get_ticks_msec()
-	var _pg_placed = 0
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 	var margin = 80.0
@@ -660,8 +651,6 @@ func _generate_props(density: float, stage_id: int, hw: float, hh: float):
 
 		_obstacle_positions.append(pos)
 		placed += 1
-		_pg_placed += 1
-
 		# Pick a prop type based on stage
 		match stage_id:
 			0:  # Mad Forest
@@ -696,9 +685,6 @@ func _generate_props(density: float, stage_id: int, hw: float, hh: float):
 				_make_bone_prop(pos, rng)
 			15: # Eudaimonia Machine (no props)
 				pass
-	print("[perf] _generate_props placed=%d attempts=%d density=%.4f: %d ms" % [_pg_placed, attempts, density, Time.get_ticks_msec() - _pg0])
-
-
 func _make_forest_prop(pos: Vector2, rng: RandomNumberGenerator):
 	var roll = rng.randf()
 	if roll < 0.45:
@@ -1105,16 +1091,11 @@ func _process(delta):
 		_on_stage_complete()
 		return
 	
-	# Difficulty ramping
-	var ramp_time = stage_data.get("difficulty_ramp_time", 60.0)
-	difficulty = 1.0 + game_time / ramp_time
-	
-	# Spawn interval — hurry mode reduces it proportionally
-	var base_interval = stage_data.get("spawn_base_interval", 2.0)
-	var min_interval = stage_data.get("spawn_min_interval", 0.3)
-	var ramp_interval = stage_data.get("spawn_ramp_time", 30.0)
-	var interval = max(min_interval, base_interval - game_time / ramp_interval)
-	spawn_timer.wait_time = max(min_interval, interval / speed_mult)
+	# ── Continuous spawn system ──
+	difficulty = 1.0 + game_time / stage_data.get("difficulty_ramp_time", 60.0)
+	_spawn_timer -= delta * speed_mult
+	if _spawn_timer <= 0.0:
+		_spawn_continuous()
 	
 	# Apply speed_mult to enemy speed via metadata
 	Engine.set_meta("stage_speed_mult", speed_mult)
@@ -1210,51 +1191,25 @@ func _process(delta):
 			_interact_prompt.visible = false
 
 
-func _spawn_wave():
+func _spawn_continuous():
 	if game_over or stage_complete or not _map_ready:
 		return
-	var wave_interval = stage_data.get("wave_size_interval", 30.0)
-	var count = 2 + int(game_time / wave_interval * 1.5)
-	if stage_data.get("id", 0) == 2:
-		count = count * 2 + 1
+	if not is_instance_valid(player):
+		return
 	
-	# Get available enemy types for this stage + game time
-	var type_pool = EnemyDefs.get_types_for_stage(stage_data.get("id", 0), game_time)
-	if type_pool.is_empty():
-		type_pool = [0]
+	var pool = EnemyDefs.get_types_for_stage(stage_data.get("id", 0), game_time)
+	if pool.is_empty():
+		pool = [0]
+	var type_idx = EnemyDefs.pick_weighted(pool)
+	_spawn_enemy(type_idx)
 	
-	# Spawn a mix of types — bias toward more dangerous types as time goes on
-	var time_bias = min(game_time / 600.0, 1.0)  # 0→1 over 10 min
-	for i in count:
-		var type_idx: int
-		if type_pool.size() == 1:
-			type_idx = type_pool[0]
-		else:
-			# Weighted by spawn_weight (lower = rarer)
-			var weights: Array[float] = []
-			var total_w: float = 0.0
-			for tid in type_pool:
-				var tdata = EnemyDefs.get_type(tid)
-				var w = tdata.spawn_weight
-				# Bias toward harder types as time goes on
-				var pool_mid = type_pool.size() / 2.0
-				var idx = type_pool.find(tid)
-				if idx >= pool_mid and randf() < time_bias * 0.4:
-					w *= 3.0
-				weights.append(w)
-				total_w += w
-			var roll = randf() * total_w
-			var accum: float = 0.0
-			type_idx = type_pool[0]
-			for j in range(type_pool.size()):
-				accum += weights[j]
-				if roll <= accum:
-					type_idx = type_pool[j]
-					break
-		_spawn_enemy(type_idx)
+	# Ramp up spawn rate over time
+	var ramp = stage_data.get("difficulty_ramp_time", 60.0)
+	var interval = max(0.6 - game_time / ramp * 0.45, 0.15)
+	_spawn_timer = interval
 
 
-func _spawn_enemy(type_id: int = 0):
+func _spawn_enemy(type_id: int = 0) -> Node2D:
 	var enemy = _enemy_scene.instantiate()
 	enemy.player = player
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
@@ -1272,6 +1227,7 @@ func _spawn_enemy(type_id: int = 0):
 	enemy.global_position = _clamp_to_map(pos, 10.0)
 	enemy.died.connect(_on_enemy_died.bind(enemy))
 	add_child(enemy)
+	return enemy
 
 
 func _spawn_boss():
@@ -1367,7 +1323,7 @@ func _spawn_initial_pickups(hw: float, hh: float):
 		if pos.length() < clear_radius:
 			continue
 		var pt = rng.randi_range(0, 1)  # CHICKEN or GOLD mostly
-		if rng.randf() < 0.15:
+		if rng.randf() < 0.02:
 			pt = 2  # ROSARY (rare)
 		_spawn_pickup_at(pos, pt)
 
@@ -1459,7 +1415,7 @@ func _on_enemy_died(enemy: Node2D):
 		# Arcana boss drops an Arcana chest = opens the choice screen
 		# But first, drop some XP and gold so it's not empty
 		for i in range(5):
-			var gem = _gem_scene.instantiate()
+			var gem = GemPool.borrow()
 			gem.value = max(enemy.xp_value / 3, 5)
 			gem.player = player
 			gem.global_position = enemy.global_position + Vector2(randf_range(-30, 30), randf_range(-30, 30))
@@ -1482,7 +1438,7 @@ func _on_enemy_died(enemy: Node2D):
 	if is_boss:
 		# Boss drops several large XP gems
 		for i in range(8):
-			var gem = _gem_scene.instantiate()
+			var gem = GemPool.borrow()
 			gem.value = max(enemy.xp_value / 4, 5)
 			gem.player = player
 			gem.global_position = enemy.global_position + Vector2(randf_range(-30, 30), randf_range(-30, 30))
@@ -1494,14 +1450,22 @@ func _on_enemy_died(enemy: Node2D):
 		# Boss always drops a chicken (type 0 = CHICKEN)
 		_spawn_pickup_at(enemy.global_position, 0)
 	else:
-		if randf() < 0.55:
-			var gem = _gem_scene.instantiate()
-			gem.value = enemy.xp_value * 2
+		if randf() < 0.40:
+			var gem = GemPool.borrow()
 			gem.player = player
 			gem.global_position = enemy.global_position
+			if game_time < 180.0:
+				gem.tier = gem.Tier.BLUE
+				gem.value = maxi(enemy.xp_value, 1)
+			elif game_time < 600.0:
+				gem.tier = gem.Tier.GREEN
+				gem.value = maxi(enemy.xp_value * 2, 4)
+			else:
+				gem.tier = gem.Tier.RED
+				gem.value = maxi(enemy.xp_value * 3, 10)
 			call_deferred("add_child", gem)
 		# Very small chance for special pickups from normal enemies
-		if randf() < 0.005:
+		if randf() < 0.001:
 			var pt = 2 if randf() < 0.5 else 3  # ROSARY or VACUUM
 			_spawn_pickup_at(enemy.global_position, pt)
 
@@ -1572,6 +1536,13 @@ func _on_upgrade_selected(upgrade_type: int):
 func _on_evolution_selected(weapon_type: int):
 	get_tree().paused = false
 	player.evolve_weapon(weapon_type)
+	level_up_screen.hide_screen()
+
+
+func _on_gold_selected(amount: int):
+	get_tree().paused = false
+	PowerUpManager.add_run_gold(amount)
+	hud.set_gold(PowerUpManager.run_gold)
 	level_up_screen.hide_screen()
 
 

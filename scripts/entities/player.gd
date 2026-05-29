@@ -33,8 +33,8 @@ class WeaponState:
 
 	static var _BASE = {
 		UpgradeType.WHIP: {"cd": 1.0, "dmg": 75.0, "area": 60.0, "speed": 0.0},
-		UpgradeType.MAGIC_WAND: {"cd": 0.05, "dmg": 12.0, "area": 12.0, "speed": 400.0},
-		UpgradeType.GARLIC: {"cd": 0.3, "dmg": 6.0, "area": 80.0, "speed": 0.0},
+		UpgradeType.MAGIC_WAND: {"cd": 0.5, "dmg": 12.0, "area": 12.0, "speed": 400.0},
+		UpgradeType.GARLIC: {"cd": 0.3, "dmg": 6.0, "area": 50.0, "speed": 0.0},
 		UpgradeType.KNIFE: {"cd": 0.3, "dmg": 30.0, "area": 10.0, "speed": 600.0},
 		UpgradeType.AXE: {"cd": 1.2, "dmg": 100.0, "area": 40.0, "speed": 0.0},
 		UpgradeType.FIRE_WAND: {"cd": 0.8, "dmg": 50.0, "area": 20.0, "speed": 300.0},
@@ -61,13 +61,19 @@ class WeaponState:
 		if level <= 8:
 			cooldown = max(cooldown * 0.90, 0.1)
 			damage *= 1.12
-			area *= 1.08
+			if type == UpgradeType.GARLIC:
+				area = min(area * 1.05, 100.0)
+			else:
+				area *= 1.08
 			speed *= 1.08
 		else:
 			# Limit break: smaller gains past level 8
 			cooldown = max(cooldown * 0.97, 0.05)
 			damage *= 1.05
-			area *= 1.03
+			if type == UpgradeType.GARLIC:
+				area = min(area * 1.02, 120.0)
+			else:
+				area *= 1.03
 			speed *= 1.03
 
 	func evolve():
@@ -216,7 +222,6 @@ const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
 
 
 func _ready():
-	var _pt = Time.get_ticks_msec()
 	collision_layer = CollisionLayers.PLAYER
 	collision_mask = 0
 	add_to_group("player")
@@ -266,7 +271,6 @@ func _ready():
 			"area": area_mult += bonus_val
 	# Apply permanent PowerUp bonuses
 	_apply_powerup_bonuses()
-	print("[perf] Player._ready() TOTAL: %d ms" % (Time.get_ticks_msec() - _pt))
 
 
 func _process(delta):
@@ -479,10 +483,16 @@ func _fire_axe(w: WeaponState):
 func _fire_axe_normal(w: WeaponState, dmg: float, area: float):
 	var count = get_projectile_count(UpgradeType.AXE)
 	var spawn_dir = direction if direction.length() > 0 else Vector2.DOWN
-	var perp = Vector2(-spawn_dir.y, spawn_dir.x)
+	# Horizontal direction only (parabola always arcs upward regardless of vertical facing)
+	var h_dir = Vector2(spawn_dir.x, 0.0)
+	if h_dir.length_squared() < 0.01:
+		h_dir = Vector2.RIGHT if spawn_dir.y >= 0 else Vector2.LEFT
+	else:
+		h_dir = h_dir.normalized()
+	var perp = Vector2(-h_dir.y, h_dir.x)  # = Vector2(0, h_dir.x) since h_dir.y is 0
 	
 	for i in range(count):
-		var side = perp * (i - (count - 1) / 2.0) * 12.0
+		var side = perp * (i - (count - 1) / 2.0) * 25.0
 		
 		var p = Area2D.new()
 		p.collision_mask = 4
@@ -493,41 +503,41 @@ func _fire_axe_normal(w: WeaponState, dmg: float, area: float):
 		p.add_child(s)
 		# Visual — proper axe shape
 		var axe_gfx = Node2D.new()
-		var axe_sz = max(area * 0.4, 8.0)
+		var axe_sz = max(area * 0.7, 14.0)
 		var draw_axe = func():
-			# Handle (brown wood)
-			axe_gfx.draw_rect(Rect2(-3, -axe_sz * 1.5, 6, axe_sz * 3.0), Color(0.4, 0.25, 0.1))
+			# Handle (brown wood) — longer
+			axe_gfx.draw_rect(Rect2(-4, -axe_sz * 0.6, 8, axe_sz * 4.2), Color(0.4, 0.25, 0.1))
 			# Blade (silver trapezoid)
 			var blade = PackedVector2Array([
-				Vector2(-2, -axe_sz * 1.2),
-				Vector2(axe_sz * 1.4, -axe_sz * 0.7),
-				Vector2(axe_sz * 1.4, axe_sz * 0.7),
-				Vector2(-2, axe_sz * 1.2),
+				Vector2(-3, -axe_sz * 1.4),
+				Vector2(axe_sz * 1.4, -axe_sz * 0.8),
+				Vector2(axe_sz * 1.4, axe_sz * 0.6),
+				Vector2(-3, axe_sz * 1.0),
 			])
 			axe_gfx.draw_polygon(blade, [Color(0.6, 0.6, 0.65)])
 			# Cutting edge (brighter)
 			var edge_poly = PackedVector2Array([
-				Vector2(axe_sz * 1.4, -axe_sz * 0.7),
-				Vector2(axe_sz * 1.7, 0),
-				Vector2(axe_sz * 1.4, axe_sz * 0.7),
+				Vector2(axe_sz * 1.4, -axe_sz * 0.8),
+				Vector2(axe_sz * 1.8, 0),
+				Vector2(axe_sz * 1.4, axe_sz * 0.6),
 			])
 			axe_gfx.draw_polygon(edge_poly, [Color(0.8, 0.8, 0.85)])
 			# Outline
-			axe_gfx.draw_polyline(blade, Color(0.3, 0.3, 0.35), 1.5, true)
+			axe_gfx.draw_polyline(blade, Color(0.3, 0.3, 0.35), 2.0, true)
 		axe_gfx.draw.connect(draw_axe)
 		p.add_child(axe_gfx)
-		# Spawn in front of player
+		# Spawn in front of player (use full direction for spawn position)
 		p.global_position = global_position + spawn_dir * 20 + side
-		p.rotation = spawn_dir.angle()
+		p.rotation = h_dir.angle()
 		get_parent().add_child(p)
 		p.body_entered.connect(_on_proj_hit.bind(p, dmg))
-		# Parabolic arc: throw upward, then fall forward
-		var mid = global_position + spawn_dir * 100 + Vector2(0, -130) + side
-		var end = global_position + spawn_dir * 280 + side
+		# Parabolic arc: always arcs upward, horizontal follows player facing
+		var mid = global_position + h_dir * 120 + Vector2(0, -160) + side
+		var end = global_position + h_dir * 320 + side
 		var tw = create_tween()
 		tw.set_parallel(true)
-		tw.tween_property(p, "global_position", mid, 0.45)
-		tw.tween_property(p, "rotation", p.rotation - TAU * 1.5, 0.45)
+		tw.tween_property(p, "global_position", mid, 0.6)
+		tw.tween_property(p, "rotation", p.rotation - TAU * 1.5, 0.6)
 		tw.finished.connect(_on_axe_arc_done.bind(p, end))
 
 
@@ -1028,8 +1038,8 @@ func _on_axe_arc_done(proj, end_pos: Vector2):
 		return
 	var tw2 = create_tween()
 	tw2.set_parallel(true)
-	tw2.tween_property(proj, "global_position", end_pos, 0.55)
-	tw2.tween_property(proj, "rotation", proj.rotation - TAU * 2, 0.55)
+	tw2.tween_property(proj, "global_position", end_pos, 1.2)
+	tw2.tween_property(proj, "rotation", proj.rotation - TAU * 3, 1.2)
 	tw2.finished.connect(_on_tween_done.bind(proj))
 
 
@@ -1411,7 +1421,7 @@ func add_xp(value: int):
 
 
 func update_xp_requirements():
-	xp_to_next = 10 + level * 15 + int(level * level * 0.2)
+	xp_to_next = 10 + level * 15 + int(level * level * 0.35)
 
 
 # Pull nearby XP gems toward the player (magnet passive).
@@ -1606,7 +1616,7 @@ func _recalculate_passives():
 			UpgradeType.CANDELABRADOR:
 				area_mult += 0.1 * lv
 			UpgradeType.CROWN:
-				growth_mult = 1.0 + 0.08 * lv
+				growth_mult = 1.0 + 0.05 * lv
 			UpgradeType.PUMMAROLA:
 				recovery += 0.2 * lv
 			UpgradeType.DUPLICATOR:

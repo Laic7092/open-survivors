@@ -130,13 +130,6 @@ theme_override_font_sizes/font_size = 18
 [node name="BotFill" type="Control" parent="Center"]
 size_flags_vertical = 3
 
-[node name="DebugHint" type="Label" parent="Center"]
-unique_name_in_owner = true
-theme_type_variation = &"DimLabel"
-text = "[F8] Quick Start"
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 10
-
 [node name="BottomBar" type="HBoxContainer" parent="."]
 anchor_left = 0.0
 anchor_top = 1.0

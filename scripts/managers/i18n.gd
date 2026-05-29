@@ -6,7 +6,7 @@ extends Node
 const SETTINGS_PATH := "user://desire_survivors_settings.json"
 
 var current_lang: String = "zh"  # default: Chinese
-var fullscreen: bool = false
+var fullscreen: bool = true
 var resolution: Vector2i = Vector2i(1280, 720)
 var _tables: Dictionary = {}
 var _loaded: bool = false
@@ -65,6 +65,9 @@ func _load_settings():
 
 
 func _apply_display_settings():
+	if DisplayServer.get_name() == "web":
+		# On Web, window sizing is handled by canvas_resize_policy
+		return
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
 	if resolution.x > 0 and resolution.y > 0:
 		DisplayServer.window_set_size(resolution)
@@ -433,6 +436,7 @@ static func _zh() -> Dictionary:
 		"enemy.5_name": "梦魇",
 
 		# ── Boss ──
+		"wave.label": "波次",
 		"boss.announce": "梦魇降临……",
 
 		# ── Weapon Names (for HUD / pause) ──
@@ -875,6 +879,7 @@ static func _en() -> Dictionary:
 		"enemy.4_name": "Mantis",
 		"enemy.5_name": "Nightmare",
 
+		"wave.label": "Wave",
 		"boss.announce": "Nightmare approaches...",
 
 		"wpn.whip": "Whip",

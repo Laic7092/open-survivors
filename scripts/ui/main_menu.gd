@@ -16,7 +16,6 @@ const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
 @onready var _relic_btn: Button = %RelicBtn
 @onready var _version_lbl: Label = %VersionLabel
 @onready var _quit_btn: Button = %QuitBtn
-@onready var _debug_hint: Label = %DebugHint
 @onready var _center: VBoxContainer = %Center
 
 var _unlock_notif: Control
@@ -57,7 +56,6 @@ func _refresh_text():
 	_fs_btn.text = _fullscreen_text()
 	_res_btn.text = _resolution_text()
 	_version_lbl.text = I18N.t("menu.footer")
-	_debug_hint.text = "[F8] Quick Start"
 	_quit_btn.text = I18N.t("menu.quit")
 
 
