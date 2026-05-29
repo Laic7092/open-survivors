@@ -93,17 +93,31 @@ func _copy_type_data():
 func _scale_difficulty(diff: float):
 	var t = EnemyDefs.get_type(enemy_type_id)
 	# Base stats from type
-	# Quadratic scaling: late game gets noticeably harder
+	# Quadratic scaling: steeper curve to challenge maxed-out players
+	# At 7min (diff=8):  HP = base * (1 + 7*0.2 + 49*0.015) = base * (1 + 1.4 + 0.74) ≈ 3.1x
+	# At 15min (diff=16): HP = base * (1 + 15*0.2 + 225*0.015) = base * (1 + 3.0 + 3.38) ≈ 7.4x
+	# At 30min (diff=31): HP = base * (1 + 30*0.2 + 900*0.015) = base * (1 + 6.0 + 13.5) ≈ 20.5x
 	var diff_factor = (diff - 1.0)
 	var diff_sq = diff_factor * diff_factor
-	health = t.base_health * (1.0 + diff_factor * 0.3 + diff_sq * 0.015)
+	health = t.base_health * (1.0 + diff_factor * 0.2 + diff_sq * 0.015)
 	max_health = health
-	contact_damage = t.base_damage * (1.0 + diff_factor * 0.2 + diff_sq * 0.01)
-	move_speed = t.base_speed * (1.0 + diff_factor * 0.05)
-	# Size scaling
-	var s = t.base_size * (1.0 + (diff - 1.0) * 0.08)
+	contact_damage = t.base_damage * (1.0 + diff_factor * 0.08)
+	move_speed = t.base_speed * (1.0 + diff_factor * 0.08)
+	# Size scaling — fixed to base size, no difficulty growth
+	var s = t.base_size
 	scale = Vector2(s, s)
-	xp_value = t.base_xp + int((diff - 1.0) * 4 * t.drop_xp_mult)
+	# Reduced XP per kill to slow leveling
+	xp_value = t.base_xp + int((diff - 1.0) * 3 * t.drop_xp_mult)
+	
+	# ── Cursed Time: additional stacking penalty ──
+	var curse_level = 0
+	if Engine.has_meta("stage_curse_level"):
+		curse_level = Engine.get_meta("stage_curse_level")
+	if curse_level > 0:
+		var curse_factor = curse_level * 0.15  # 15% per curse level
+		health *= (1.0 + curse_factor)
+		contact_damage *= (1.0 + curse_factor * 0.75)
+		move_speed *= (1.0 + curse_factor * 0.5)
 	
 	# Bosses get extra HP multiplier
 	if _is_boss:
@@ -210,12 +224,30 @@ func _update_ranged(delta: float):
 func _fire_projectile():
 	if not is_instance_valid(player) or not is_inside_tree():
 		return
-	var proj = _proj_scene.instantiate()
-	proj.global_position = global_position
-	proj.target = player
-	proj.speed = _ranged_speed
-	proj.damage = contact_damage * _ranged_dmg_mult
-	get_parent().add_child(proj)
+	# Cursed Time: extra projectiles per volley
+	var curse_level = 0
+	if Engine.has_meta("stage_curse_level"):
+		curse_level = Engine.get_meta("stage_curse_level")
+	var extra_shots = curse_level / 5  # +1 projectile every 5 curse levels
+	
+	var shot_count = 1 + extra_shots
+	for s in range(shot_count):
+		if EnemyProjectilePool:
+			var proj = EnemyProjectilePool.borrow(player, _ranged_speed, contact_damage * _ranged_dmg_mult, 4.0)
+			proj.global_position = global_position
+			if s > 0:
+				# Spread extra projectiles slightly
+				proj.global_position += Vector2(randf_range(-20, 20), randf_range(-20, 20))
+			get_parent().add_child(proj)
+		else:
+			var proj = _proj_scene.instantiate()
+			proj.global_position = global_position
+			if s > 0:
+				proj.global_position += Vector2(randf_range(-20, 20), randf_range(-20, 20))
+			proj.target = player
+			proj.speed = _ranged_speed
+			proj.damage = contact_damage * _ranged_dmg_mult
+			get_parent().add_child(proj)
 	AudioManager.play_sfx("enemy_shoot")
 
 
@@ -301,15 +333,7 @@ func _draw():
 	
 	# Hit flash removed — handled via modulate in _physics_process
 	
-	# Health arc (only show when damaged)
-	if health < max_health and not _is_boss:
-		var pct = max(health / max_health, 0.0)
-		var arc_color = Color(0.1, 0.8, 0.1)
-		if pct < 0.3:
-			arc_color = Color(0.9, 0.2, 0.1)
-		elif pct < 0.6:
-			arc_color = Color(0.9, 0.7, 0.1)
-		draw_arc(Vector2.ZERO, r + 3, -PI / 2, -PI / 2 + PI * 2 * pct, 12, arc_color, 2.0)
+	# Health bar removed for performance
 	
 	# Boss: extra health bar + aura
 	if _is_boss:
@@ -377,23 +401,10 @@ func _draw_boss_flair(r: float):
 		var outer = Vector2(cos(a), sin(a)) * (r + 2 + spike_len)
 		draw_line(inner, outer, Color(0.8, 0.15, 0.15, 0.7), 2.0)
 	
-	# Boss health bar (always visible)
-	var bar_w = r * 2.0 + 20.0
-	var bar_h = 4.0
-	var bar_y = -r - 18.0
-	var pct = max(health / max_health, 0.0)
-	# Background
-	draw_rect(Rect2(-bar_w / 2.0, bar_y, bar_w, bar_h), Color(0.2, 0.05, 0.05, 0.8))
-	# Fill
-	var fill_col = Color(0.1, 0.8, 0.1)
-	if pct < 0.3:
-		fill_col = Color(0.9, 0.15, 0.05)
-	elif pct < 0.6:
-		fill_col = Color(0.9, 0.7, 0.1)
-	draw_rect(Rect2(-bar_w / 2.0, bar_y, bar_w * pct, bar_h), fill_col)
+	# Boss health bar removed for performance
 	# Name (i18n)
 	var name_col = Color(1, 0.9, 0.9, 0.6)
-	_draw_string_centered(Vector2(0, bar_y - 2), I18N.t("enemy." + str(enemy_type_id) + "_name", _type_name), name_col, 10)
+	_draw_string_centered(Vector2(0, -r - 16), I18N.t("enemy." + str(enemy_type_id) + "_name", _type_name), name_col, 10)
 
 
 func _draw_string_centered(pos: Vector2, text: String, col: Color, sz: int):

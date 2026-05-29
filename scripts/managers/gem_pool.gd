@@ -43,7 +43,8 @@ func return_gem(gem: Node):
 
 
 func _reset_gem(gem: Node):
-	gem.get_parent().remove_child(gem)
+	if gem.get_parent():
+		gem.get_parent().remove_child(gem)
 	gem.visible = false
 	gem.process_mode = PROCESS_MODE_DISABLED
 	gem.collision_layer = 0

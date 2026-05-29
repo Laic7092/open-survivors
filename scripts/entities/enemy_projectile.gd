@@ -1,6 +1,6 @@
 extends Area2D
 # Projectile fired by ranged enemies. Moves toward the player.
-# Collides with player hurtbox via area_entered (player hurtbox masks layer 8).
+# Uses EnemyProjectilePool for reuse — no Timer child, process-based lifetime.
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
 
@@ -11,26 +11,25 @@ var lifetime: float = 4.0
 
 var _age: float = 0.0
 var _direction: Vector2 = Vector2.ZERO
+var _in_use: bool = false
 
 
 func _ready():
 	collision_layer = CollisionLayers.ENEMY_PROJECTILE
 	collision_mask = 0
-	# Detect the player's hurtbox (an Area2D masking layer 8) to self-destruct on hit.
-	# Damage is delivered by the player's hurtbox _on_hurt_area handler.
 	area_entered.connect(_on_area_entered)
-
-	var t = Timer.new()
-	t.wait_time = lifetime
-	t.one_shot = true
-	t.timeout.connect(queue_free)
-	add_child(t)
-	t.start()
 
 
 func _physics_process(delta):
+	if not _in_use:
+		return
 	if not is_instance_valid(target):
-		queue_free()
+		_recycle()
+		return
+	
+	_age += delta
+	if _age >= lifetime:
+		_recycle()
 		return
 
 	if _direction == Vector2.ZERO:
@@ -41,6 +40,8 @@ func _physics_process(delta):
 
 
 func _draw():
+	if not _in_use:
+		return
 	var r = 5.0
 	draw_circle(Vector2.ZERO, r, Color(0.7, 0.2, 0.8, 0.9))
 	draw_circle(Vector2.ZERO, r, Color(0.9, 0.3, 1.0, 0.6), false, 1.5)
@@ -55,5 +56,35 @@ func get_projectile_damage() -> float:
 
 
 func _on_area_entered(area: Area2D):
-	# Hit the player's hurtbox — self-destruct. Damage is handled by player.
-	queue_free()
+	if _in_use:
+		_recycle()
+
+
+# Called by EnemyProjectilePool to reset for reuse
+func reset(new_target: Node2D, new_speed: float, new_damage: float, new_lifetime: float):
+	target = new_target
+	speed = new_speed
+	damage = new_damage
+	lifetime = new_lifetime
+	_age = 0.0
+	_direction = Vector2.ZERO
+	_in_use = true
+	visible = true
+	set_process(true)
+	set_physics_process(true)
+	collision_layer = CollisionLayers.ENEMY_PROJECTILE
+	collision_mask = 0
+
+
+func _recycle():
+	_in_use = false
+	visible = false
+	set_process(false)
+	set_physics_process(false)
+	collision_layer = 0
+	collision_mask = 0
+	target = null
+	if EnemyProjectilePool:
+		EnemyProjectilePool.return_proj(self)
+	else:
+		queue_free()

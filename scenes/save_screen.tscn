@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/save_screen.gd" id="1_save"]
+[ext_resource type="Theme" path="res://scripts/ui/theme/theme.tres" id="2_theme"]
+
+[node name="SaveScreen" type="Control"]
+visible = false
+script = ExtResource("1_save")
+theme = ExtResource("2_theme")

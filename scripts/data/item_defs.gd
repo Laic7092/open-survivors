@@ -116,7 +116,7 @@ const DATA := {
 	13: {
 		"name": "Duplicator", "name_key": "item.duplicator_name",
 		"desc": "+1 Projectile per level", "desc_key": "item.duplicator_desc",
-		"color": Color(0.2, 0.7, 0.9), "is_weapon": false, "max_level": 5,
+		"color": Color(0.2, 0.7, 0.9), "is_weapon": false, "max_level": 3,
 	},
 	14: {
 		"name": "Stone Mask", "name_key": "item.stonemask_name",
@@ -156,7 +156,7 @@ const DATA := {
 	26: {
 		"name": "Tiragisú", "name_key": "item.tiragisu_name",
 		"desc": "Revive on death", "desc_key": "item.tiragisu_desc",
-		"color": Color(0.9, 0.7, 0.9), "is_weapon": false, "max_level": 5,
+		"color": Color(0.9, 0.7, 0.9), "is_weapon": false, "max_level": 1,
 	},
 	27: {
 		"name": "Torrona's Box", "name_key": "item.torrona_name",

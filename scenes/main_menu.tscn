@@ -127,6 +127,14 @@ text = "Relics"
 custom_minimum_size = Vector2(160, 40)
 theme_override_font_sizes/font_size = 18
 
+[node name="LoadBtn" type="Button" parent="Center"]
+unique_name_in_owner = true
+theme_type_variation = &"NeutralButton"
+text = "📂 Load Game"
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(260, 40)
+theme_override_font_sizes/font_size = 20
+
 [node name="BotFill" type="Control" parent="Center"]
 size_flags_vertical = 3
 

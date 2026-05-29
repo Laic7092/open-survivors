@@ -90,7 +90,7 @@ func _ready():
 	hurtbox.collision_mask = CollisionLayers.MASK_ENEMIES
 	var hs = CollisionShape2D.new()
 	var hc = CircleShape2D.new()
-	hc.radius = 18
+	hc.radius = 12
 	hs.shape = hc
 	hurtbox.add_child(hs)
 	add_child(hurtbox)
@@ -155,15 +155,15 @@ func _physics_process(delta):
 
 func _draw():
 	if not (invincible > 0 and int(invincible * 20) % 2 == 0):
-		draw_circle(Vector2.ZERO, 18, Color(0.2, 0.4, 0.9))
-		draw_circle(Vector2.ZERO, 18, Color(0.3, 0.5, 1.0), false, 2.0)
+		draw_circle(Vector2.ZERO, 12, Color(0.2, 0.4, 0.9))
+		draw_circle(Vector2.ZERO, 12, Color(0.3, 0.5, 1.0), false, 2.0)
 		var hp_pct = health / max_health if max_health > 0 else 0
-		var bar_w = 32.0
-		var bar_h = 4.0
-		var bar_y = 22.0
+		var bar_w = 22.0
+		var bar_h = 3.0
+		var bar_y = 15.0
 		draw_rect(Rect2(-bar_w / 2, bar_y, bar_w, bar_h), Color(0.3, 0.05, 0.05))
 		var hp_color = Color(0.9, 0.7, 0.1) if hp_pct > 0.5 else Color(0.9, 0.15, 0.15)
-		draw_rect(Rect2(-bar_w / 2, bar_y, bar_w * hp_pct, bar_h), hp_color)
+		draw_rect(Rect2(-bar_w / 2, bar_y, min(bar_w, bar_w * hp_pct), bar_h), hp_color)
 
 	if weapon_manager.whip_vis_time > 0:
 		var progress = 1.0 - (weapon_manager.whip_vis_time / 0.1)
@@ -176,8 +176,8 @@ func _draw():
 				break
 		var base_color = Color(1.0, 0.2, 0.2) if whip_evolved else Color(1, 1, 1)
 		var outer_r = w_area * 2.0
-		var half_w = outer_r * 0.65
-		var half_h = outer_r * 0.35
+		var half_w = outer_r * 0.50
+		var half_h = outer_r * 0.30
 		var rect = Rect2(-half_w, -half_h, half_w * 2, half_h * 2)
 		draw_rect(rect, Color(base_color.r, base_color.g, base_color.b, alpha * 0.12), true)
 		draw_rect(rect, base_color, false, 2.5)
@@ -195,9 +195,9 @@ func _draw():
 			draw_circle(Vector2.ZERO, w.area * area_mult, garlic_color)
 			break
 
-	var tip = direction * 22.0
-	var perp = direction.rotated(PI / 2.0) * 7.0
-	var base = direction * 12.0
+	var tip = direction * 16.0
+	var perp = direction.rotated(PI / 2.0) * 5.0
+	var base = direction * 9.0
 	var tri = PackedVector2Array([tip, base + perp, base - perp])
 	draw_polygon(tri, [Color(0.5, 0.8, 1.0, 0.8)])
 
@@ -264,7 +264,23 @@ func get_weapon_count() -> int:
 
 
 func recalculate_stats():
+	# ── Step 1: Prepare base_max_health (PowerUp + character) BEFORE passives ──
+	var hp_mult := 1.0
+	if Engine.has_meta("selected_character"):
+		var char_data = Engine.get_meta("selected_character")
+		var stats = char_data.get("stats", {})
+		if not stats.is_empty():
+			hp_mult = 1.0 + stats.get("max_hp_pct", 0.0)
+	if PowerUpManager:
+		var b = PowerUpManager.get_stat_bonuses()
+		base_max_health = 100.0 * (1.0 + b["max_hp_pct"]) * hp_mult
+	else:
+		base_max_health = 100.0 * hp_mult
+	
+	# ── Step 2: Recalculate passives (uses base_max_health for max_health) ──
 	passive_inventory.recalculate(self)
+	
+	# ── Step 3: Apply character non-HP stats on top ──
 	if Engine.has_meta("selected_character"):
 		var char_data = Engine.get_meta("selected_character")
 		var stats = char_data.get("stats", {})
@@ -277,7 +293,7 @@ func recalculate_stats():
 			recovery += stats.get("recovery", 0.0)
 			armor += stats.get("armor", 0)
 			greed_mult += stats.get("greed_pct", 0.0)
-			max_health = base_max_health * (1.0 + stats.get("max_hp_pct", 0.0))
+			# max_health already handled via base_max_health above — no overwrite!
 		else:
 			var bonus_type = char_data.get("bonus_type", "")
 			var bonus_val = char_data.get("bonus_value", 0.0)
@@ -286,7 +302,18 @@ func recalculate_stats():
 				"growth": growth_mult += bonus_val
 				"movespeed": move_speed += 200.0 * bonus_val
 				"area": area_mult += bonus_val
-	_apply_powerup_stats()
+	
+	# ── Step 4: Apply PowerUp non-HP stats on top ──
+	if PowerUpManager:
+		var b = PowerUpManager.get_stat_bonuses()
+		damage_mult += b["damage_mult"]
+		recovery += b["recovery"]
+		cooldown_reduction += b["cooldown_reduction"]
+		area_mult += b["area_mult"]
+		move_speed += 200.0 * b["move_speed_pct"]
+		growth_mult += b["growth_pct"]
+		armor += b["armor"]
+		# base_max_health already handled in Step 1
 	if _collect_shape_ref and _collect_shape_ref.shape:
 		var circle = _collect_shape_ref.shape as CircleShape2D
 		if circle:
@@ -428,7 +455,12 @@ func _on_collect_area(area: Area2D):
 func add_xp(value: int):
 	if ArcanaManager and ArcanaManager.has_effect("no_xp"):
 		return
-	xp += int(value * growth_mult)
+	# ── Growth diminishing returns: prevent exponential XP snowball ──
+	# growth_mult > 1.3 is halved in effectiveness to keep late-game XP sane
+	var effective_growth = growth_mult
+	if effective_growth > 1.3:
+		effective_growth = 1.3 + (effective_growth - 1.3) * 0.5
+	xp += int(value * effective_growth)
 	while xp >= xp_to_next:
 		xp -= xp_to_next
 		level += 1
@@ -439,7 +471,9 @@ func add_xp(value: int):
 
 
 func update_xp_requirements():
-	xp_to_next = 10 + level * 15 + int(level * level * 0.35)
+	# Steep quadratic: early levels are easy, high levels require serious grinding
+	# Level 1→2: 35, 10→11: 265, 30→31: 1080, 50→51: 2785, 70→71: 5105, 100→101: 10230
+	xp_to_next = 15 + level * 20 + int(level * level * 0.5)
 
 
 # ── Magnet ───────────────────────────────────────────────────────────
@@ -465,7 +499,7 @@ func _on_hurt(body: Node):
 	if health <= 0 or invincible > 0:
 		return
 	if body.has_method("get_contact_damage"):
-		health -= max(body.get_contact_damage() - armor, 1.0)
+		health -= max(body.get_contact_damage() * (1.0 - armor), 1.0)
 		invincible = 0.3
 		hurt.emit()
 		if health <= 0:
@@ -483,7 +517,7 @@ func _on_hurt_area(area: Area2D):
 		return
 	if area.has_method("get_projectile_damage"):
 		var dmg = area.get_projectile_damage()
-		health -= max(dmg - armor * 0.5, 1.0)
+		health -= max(dmg * (1.0 - armor * 0.5), 1.0)
 		invincible = 0.3
 		hurt.emit()
 		if health <= 0:

@@ -36,8 +36,9 @@ func spawn(parent: Node, world_pos: Vector2, text: String, color: Color = Color.
 	ft.set_process(true)
 	ft.modulate = Color(1, 1, 1, 1)
 	
-	# Remove from pool container and add to target parent
-	remove_child(ft)
+	# Remove from pool container (if it's our child) and add to target parent
+	if ft.get_parent() == self:
+		remove_child(ft)
 	parent.add_child(ft)
 	return ft
 

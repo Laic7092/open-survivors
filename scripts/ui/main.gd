@@ -23,9 +23,8 @@ var game_over: bool = false
 var stage_complete: bool = false
 var total_kills: int = 0
 var difficulty: float = 1.0
-var _spawn_timer: float = 0.0
 
-# Wave system
+# Unified spawning system
 var wave_number: int = 0
 var _wave_active: bool = false
 var _wave_spawning: bool = false
@@ -34,6 +33,7 @@ var _wave_spawned: int = 0
 var _wave_alive: int = 0
 var _wave_spawn_timer: float = 0.0
 var _wave_break_timer: float = 0.0
+var _rest_spawn_timer: float = 0.5  # rest phase spawn interval
 
 # Stage data
 var stage_data: Dictionary = {}
@@ -45,8 +45,6 @@ var map_height: float = 2400.0
 # Cached stage data lookups (avoid .get() every frame)
 var _stage_id: int = 0
 var _diff_ramp_time: float = 60.0
-var _spawn_base_interval: float = 1.0
-var _spawn_min_interval: float = 0.15
 
 # Obstacle positions for minimap
 var _obstacle_positions: Array[Vector2] = []
@@ -57,6 +55,13 @@ var _camera_offset: Vector2 = Vector2.ZERO
 
 # Boss state
 var _boss_spawned: bool = false
+
+# ── Cursed Time system ──
+# After boss defeat (15:00), every 60s adds a stacking curse
+# that makes the game progressively harder even for maxed builds
+var _cursed_time_active: bool = false
+var _curse_level: int = 0
+var _curse_timer: float = 60.0  # first curse at 16:00 (60s after boss)
 
 # Relic state
 var _stage_relics: Array = []  # relic pickups on this stage
@@ -69,6 +74,10 @@ var _shake_duration: float = 0.0
 
 # HUD data cache — avoid rebuilding every frame when nothing changed
 var _hud_weapon_cache: Array = []
+
+# Speed multiplier control
+var _speed_level: int = 0
+const _SPEED_VALUES: Array[float] = [1.0, 2.0, 3.0, 4.0]
 var _hud_passive_cache: Array = []
 var _hud_last_level: int = -1
 var _hud_last_kills: int = -1
@@ -81,6 +90,13 @@ var _frame_count: int = 0
 # Cached values for per-frame hot paths
 var _last_speed_mult: float = -1.0
 var _cached_vp_size: Vector2 = Vector2.ZERO
+
+# Camera bounds cache (replaces Dictionary allocation per spawn)
+var _cam_left: float = 0.0
+var _cam_right: float = 0.0
+var _cam_top: float = 0.0
+var _cam_bottom: float = 0.0
+var _cam_bounds_dirty: bool = true
 
 var _player_scene = preload("res://scenes/player.tscn")
 var _enemy_scene = preload("res://scenes/enemy.tscn")
@@ -100,6 +116,10 @@ var _interact_prompt: Label = null
 
 
 func _ready():
+	# Reset time scale to 1.0 (may have been set by previous run)
+	Engine.time_scale = 1.0
+	_speed_level = 0
+	
 	# Read stage data from Engine metadata (set by stage_select)
 	if Engine.has_meta("selected_stage"):
 		stage_data = Engine.get_meta("selected_stage")
@@ -108,8 +128,6 @@ func _ready():
 	
 	_stage_id = stage_data.get("id", 0)
 	_diff_ramp_time = stage_data.get("difficulty_ramp_time", 60.0)
-	_spawn_base_interval = stage_data.get("spawn_base_interval", 1.0)
-	_spawn_min_interval = stage_data.get("spawn_min_interval", 0.15)
 	
 	stage_time_limit = stage_data.get("time_limit", 1800.0)
 	# Endless mode removes time limit
@@ -214,17 +232,17 @@ func _ready():
 	level_up_screen.gold_selected.connect(_on_gold_selected)
 
 	# ── Continuous spawning starts after map is ready ──
-	_spawn_timer = 1.0
-	
 	# ── Wave system init ──
-	_wave_break_timer = 15.0  # first wave at 15s
+	_wave_break_timer = 0.5  # first wave at 0.5s
+	_rest_spawn_timer = -1.0  # disabled until first rest phase
 
 	# pickup_timer removed — floor chicken spawn was too generous
 
-	# Reset run gold & start music
+	# Reset run state
 	PowerUpManager.reset_run_gold()
 	UnlockManager.reset_run_state()
 	ArcanaManager.deactivate_all()
+	
 	call_deferred("start_game_music")
 
 	# Auto-check relic-based unlocks at game start
@@ -1088,18 +1106,25 @@ func _on_breakable_destroyed(pos: Vector2):
 # ═══════════════════════════════════════════════════════════
 
 func _get_camera_bounds() -> Dictionary:
+	_update_cam_bounds()
+	return {"left": _cam_left, "right": _cam_right, "top": _cam_top, "bottom": _cam_bottom}
+
+
+func _update_cam_bounds():
 	var camera = get_viewport().get_camera_2d()
 	if not camera:
 		var vs = get_viewport_rect().size
-		return {"left": -vs.x/2, "right": vs.x/2, "top": -vs.y/2, "bottom": vs.y/2}
+		_cam_left = -vs.x / 2.0
+		_cam_right = vs.x / 2.0
+		_cam_top = -vs.y / 2.0
+		_cam_bottom = vs.y / 2.0
+		return
 	var cam_pos = camera.global_position
 	var vs = get_viewport_rect().size
-	return {
-		"left": cam_pos.x - vs.x / 2.0,
-		"right": cam_pos.x + vs.x / 2.0,
-		"top": cam_pos.y - vs.y / 2.0,
-		"bottom": cam_pos.y + vs.y / 2.0,
-	}
+	_cam_left = cam_pos.x - vs.x / 2.0
+	_cam_right = cam_pos.x + vs.x / 2.0
+	_cam_top = cam_pos.y - vs.y / 2.0
+	_cam_bottom = cam_pos.y + vs.y / 2.0
 
 
 func _clamp_to_map(pos: Vector2, margin: float = 40.0) -> Vector2:
@@ -1115,12 +1140,17 @@ func _process(delta):
 	_frame_count += 1
 	var every_n = func(n: int): return _frame_count % n == 0
 	
-	# Hurry mode: 1.5x game speed (cache to avoid Engine.get_meta every frame)
-	var speed_mult = 1.0
-	if Engine.has_meta("hurry_mode") and Engine.get_meta("hurry_mode"):
+	# ── Native time scale: affects ALL _process/_physics Timers/Tweens/Animations ──
+	var speed_mult = _SPEED_VALUES[_speed_level]
+	if Engine.has_meta("hurry_mode") and Engine.get_meta("hurry_mode") and _speed_level == 0:
 		speed_mult = 1.5
+	if speed_mult != Engine.time_scale:
+		Engine.time_scale = speed_mult
+		_last_speed_mult = speed_mult
+		Engine.set_meta("stage_speed_mult", speed_mult)
 	
-	game_time += delta * speed_mult
+	# delta is already multiplied by Engine.time_scale — no manual * speed_mult needed
+	game_time += delta
 	
 	# Win condition (skipped in endless mode)
 	var endless = Engine.has_meta("endless_mode") and Engine.get_meta("endless_mode")
@@ -1128,37 +1158,57 @@ func _process(delta):
 		_on_stage_complete()
 		return
 	
-	# ── Continuous spawn system ──
+	# ── Unified spawning system ──
 	difficulty = 1.0 + game_time / _diff_ramp_time
-	_spawn_timer -= delta * speed_mult
-	if _spawn_timer <= 0.0:
-		_spawn_continuous()
-	
-	# ── Wave system ──
-	if not game_over and not stage_complete:
-		if _wave_active:
-			if _wave_spawning:
-				_wave_spawn_timer -= delta * speed_mult
-				if _wave_spawn_timer <= 0.0:
-					_spawn_wave_enemy()
-			# Wave ends when all enemies spawned & all dead
-			if not _wave_spawning and _wave_alive <= 0:
-				_end_wave()
-		else:
-			_wave_break_timer -= delta * speed_mult
-			if _wave_break_timer <= 0.0:
-				_start_wave()
-	
-	# Apply speed_mult to enemy speed via metadata (only when changed)
-	if speed_mult != _last_speed_mult:
-		_last_speed_mult = speed_mult
-		Engine.set_meta("stage_speed_mult", speed_mult)
+	if _wave_active:
+		if _wave_spawning:
+			_wave_spawn_timer -= delta
+			if _wave_spawn_timer <= 0.0:
+				_spawn_wave_enemy()
+		# Continuous trickle even during wave — never a dull moment
+		if _rest_spawn_timer > 0:
+			_rest_spawn_timer -= delta
+			if _rest_spawn_timer <= 0.0:
+				_spawn_rest_enemy()
+		# Wave ends when all burst enemies are dead
+		if not _wave_spawning and _wave_alive <= 0:
+			_end_wave()
+	else:
+		# Rest phase: fast trickle + wait for next wave
+		_wave_break_timer -= delta
+		if _wave_break_timer <= 0.0:
+			_start_wave()
+		elif _rest_spawn_timer > 0:
+			_rest_spawn_timer -= delta
+			if _rest_spawn_timer <= 0.0:
+				_spawn_rest_enemy()
 	
 	# Boss spawn check (at 15:00 for eligible stages)
 	if not _boss_spawned and game_time >= 900.0:
 		var boss_t = EnemyDefs.get_boss_type(_stage_id, game_time)
 		if boss_t >= 0:
 			_spawn_boss()
+	
+	# ── Cursed Time: after boss, every 60s adds a stacking penalty ──
+	# This ensures the game keeps getting harder even when the player is maxed.
+	if _boss_spawned and not _cursed_time_active:
+		_cursed_time_active = true
+		_curse_timer = 60.0
+		_show_cursed_time_announcement()
+		Engine.set_meta("stage_curse_level", _curse_level)
+	
+	if _cursed_time_active:
+		_curse_timer -= delta
+		while _curse_timer <= 0.0:
+			_curse_level += 1
+			_curse_timer += 60.0 * (0.9 / max(1.0, _curse_level * 0.05))  # slightly faster curse buildup
+			Engine.set_meta("stage_curse_level", _curse_level)
+			# Show curse level to player
+			if is_instance_valid(player):
+				player.show_floating_text("💀 " + I18N.t("cursed_time.level") % _curse_level, Color(0.9, 0.1, 0.1), 20)
+				AudioManager.play_sfx("cursed_time")
+			# Update HUD curse display
+			hud.set_curse_level(_curse_level)
 	
 	# HUD — cache simple values to avoid redundant calls
 	if player.level != _hud_last_level:
@@ -1243,6 +1293,7 @@ func _process(delta):
 			_shake_duration -= delta
 			shake_off = Vector2(randf_range(-_shake_intensity, _shake_intensity), randf_range(-_shake_intensity, _shake_intensity))
 		_camera.global_position = player.global_position + _camera_offset + shake_off
+		_cam_bounds_dirty = true
 	
 
 	
@@ -1290,7 +1341,7 @@ func _process(delta):
 			_interact_prompt.visible = false
 
 
-func _spawn_continuous():
+func _spawn_rest_enemy():
 	if game_over or stage_complete or not _map_ready:
 		return
 	if not is_instance_valid(player):
@@ -1302,24 +1353,28 @@ func _spawn_continuous():
 	var type_idx = EnemyDefs.pick_weighted(pool)
 	_spawn_enemy(type_idx)
 	
-	# Ramp up spawn rate over time using per-stage config (cached values)
-	var ramp = stage_data.get("spawn_ramp_time", 30.0)
-	var interval = max(_spawn_base_interval - game_time / ramp * (_spawn_base_interval - _spawn_min_interval), _spawn_min_interval)
-	_spawn_timer = interval
+	# Rest spawn rate: gets faster as game progresses
+	var rest_elapsed = 1.0 - _wave_break_timer / max(_wave_break_timer + _rest_spawn_timer, 0.001)
+	var base_interval = 0.1 - min(game_time * 0.00002, 0.05)  # slowly decreases from 0.1 to 0.05
+	_rest_spawn_timer = base_interval - rest_elapsed * 0.07  # speeds up toward next wave
 
 
 # ── Wave system ──
+
+
+
 
 func _start_wave():
 	wave_number += 1
 	_wave_active = true
 	_wave_spawning = true
-	_wave_total = 1 + int(game_time / 60.0)  # grows with time: ~1 at 0s, 16 at 15min
+	# Wave size grows much faster over time:
+	# 0s→15, 5min→81, 10min→195, 15min→357, 30min→843
+	_wave_total = 15 + int(game_time / 10.0 + game_time * game_time / 5000.0)
 	_wave_spawned = 0
 	_wave_alive = _wave_total
-	_wave_spawn_timer = 0.15  # first spawn almost immediately
-	# Slow continuous spawn while wave is active (let wave be the star)
-	_spawn_timer = max(_spawn_timer, 0.3)
+	_wave_spawn_timer = 0.1  # first spawn very fast
+	_hud_last_wave = -1  # force HUD update
 
 
 func _spawn_wave_enemy():
@@ -1331,37 +1386,71 @@ func _spawn_wave_enemy():
 	if is_instance_valid(enemy):
 		enemy.is_wave_enemy = true
 	_wave_spawned += 1
-	_wave_spawn_timer = 0.05  # fast burst interval
+	# Spawn interval gets faster as waves progress
+	_wave_spawn_timer = 0.04  # very fast burst interval
 	if _wave_spawned >= _wave_total:
 		_wave_spawning = false
 
 
 func _end_wave():
 	_wave_active = false
-	_wave_break_timer = 3.0 + randf_range(0.0, 2.0)  # 3–5s rest
-	# Restore continuous spawn to normal pace
-	_spawn_timer = 0.3
+	# Shorter break time: 0.1–0.4s (was 0.3–1.0s) — keeps pressure constant
+	_wave_break_timer = 0.1 + randf_range(0.0, 0.3)
+	# Start rest phase spawning immediately
+	_rest_spawn_timer = 0.05
+	# Elite spawns:
+	# Early (waves 1-12): every 3 waves
+	# After wave 12: every wave has elites mixed in
+	if wave_number > 0:
+		if wave_number <= 12:
+			if wave_number % 3 == 0:
+				_spawn_elite_enemy()
+		else:
+			# Every wave from 13+ has elite mixed in
+			_spawn_elite_enemy()
 
 
 func _spawn_enemy(type_id: int = 0) -> Node2D:
 	var enemy = _enemy_scene.instantiate()
 	enemy.player = player
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
-	enemy.set_enemy_type(type_id, difficulty * curse_mod)
-	
-	var cam = _get_camera_bounds()
+	_update_cam_bounds()
 	var margin = 60.0
 	var pos: Vector2
 	match randi() % 4:
-		0:  pos = Vector2(randf_range(cam.left + margin, cam.right - margin), cam.top - margin)
-		1:  pos = Vector2(randf_range(cam.left + margin, cam.right - margin), cam.bottom + margin)
-		2:  pos = Vector2(cam.left - margin, randf_range(cam.top + margin, cam.bottom - margin))
-		3:  pos = Vector2(cam.right + margin, randf_range(cam.top + margin, cam.bottom - margin))
+		0:  pos = Vector2(randf_range(_cam_left + margin, _cam_right - margin), _cam_top - margin)
+		1:  pos = Vector2(randf_range(_cam_left + margin, _cam_right - margin), _cam_bottom + margin)
+		2:  pos = Vector2(_cam_left - margin, randf_range(_cam_top + margin, _cam_bottom - margin))
+		3:  pos = Vector2(_cam_right + margin, randf_range(_cam_top + margin, _cam_bottom - margin))
 	
 	enemy.global_position = _clamp_to_map(pos, 10.0)
+	# Wave-based difficulty bonus: later waves hit harder
+	var wave_bonus = 1.0 + wave_number * 0.08
+	enemy.set_enemy_type(type_id, difficulty * curse_mod * wave_bonus)
+	
 	enemy.died.connect(_on_enemy_died.bind(enemy))
 	add_child(enemy)
 	return enemy
+
+
+# Spawn a single elite enemy — same as normal but with extra difficulty bonus.
+func _spawn_elite_enemy():
+	var pool = EnemyDefs.get_types_for_stage(_stage_id, game_time)
+	if pool.is_empty():
+		pool = [0]
+	var type_idx = EnemyDefs.pick_weighted(pool)
+	# Cursed time bonus: elites get even stronger as curse level increases
+	var curse_bonus = 1.0 + _curse_level * 0.15
+	var enemy = _spawn_enemy(type_idx)
+	if is_instance_valid(enemy):
+		# Re-apply with extra difficulty multiplier for elite status
+		var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
+		var elite_bonus = 1.0 + wave_number * 0.15 * curse_bonus  # much higher than normal wave_bonus
+		enemy.set_enemy_type(type_idx, difficulty * curse_mod * elite_bonus)
+		# Flash the enemy to alert the player
+		enemy.modulate = Color(2.0, 1.8, 0.6, 1.0)
+		var tw = enemy.create_tween()
+		tw.tween_property(enemy, "modulate", Color(1, 1, 1, 1), 0.4)
 
 
 func _spawn_boss():
@@ -1398,6 +1487,10 @@ func _spawn_boss():
 func _shake_camera(intensity: float, duration: float):
 	_shake_intensity = intensity
 	_shake_duration = duration
+
+
+func _show_cursed_time_announcement():
+	_show_boss_announcement(I18N.t("cursed_time.start"))
 
 
 func _show_boss_announcement(text: String):
@@ -1588,14 +1681,17 @@ func _on_enemy_died(enemy: Node2D):
 		# Boss always drops a chicken (type 0 = CHICKEN)
 		_spawn_pickup_at(enemy.global_position, 0)
 	else:
-		if randf() < 0.40:
+		# Reduced base drop chance from 40% → 28% to slow XP gain
+		if randf() < 0.28:
 			var gem = GemPool.borrow()
 			gem.player = player
 			gem.global_position = enemy.global_position
-			if game_time < 180.0:
+			# Pushed-back XP tier thresholds:
+			# BLUE: 0-8min, GREEN: 8-18min, RED: 18min+
+			if game_time < 480.0:
 				gem.tier = gem.Tier.BLUE
 				gem.value = maxi(enemy.xp_value, 1)
-			elif game_time < 600.0:
+			elif game_time < 1080.0:
 				gem.tier = gem.Tier.GREEN
 				gem.value = maxi(enemy.xp_value * 2, 4)
 			else:
@@ -1729,6 +1825,7 @@ func arcana_data_name(id: int) -> String:
 	return a["name"]
 
 
+# ═══════════════════════════════════════════════════════════
 # Unlock character-based Arcanas based on level reached
 # The character-based Arcanas (1-5, 7, 9-11, 13-14, 16-19, 21) 
 # unlock progressively as the player reaches higher levels
@@ -1929,6 +2026,30 @@ func _unhandled_input(event):
 		if prop_manager and is_instance_valid(player):
 			prop_manager.try_interact(player)
 		get_viewport().set_input_as_handled()
+	# Speed control: 1/2/3/4 keys
+	if event is InputEventKey and event.pressed and not event.echo and not get_tree().paused:
+		match event.keycode:
+			KEY_1, KEY_KP_1:
+				_set_speed(0)
+				get_viewport().set_input_as_handled()
+			KEY_2, KEY_KP_2:
+				_set_speed(1)
+				get_viewport().set_input_as_handled()
+			KEY_3, KEY_KP_3:
+				_set_speed(2)
+				get_viewport().set_input_as_handled()
+			KEY_4, KEY_KP_4:
+				_set_speed(3)
+				get_viewport().set_input_as_handled()
+
+
+func _set_speed(level: int):
+	_speed_level = level
+	hud.set_speed(_SPEED_VALUES[level])
+	var txt = "Speed x" + str(_SPEED_VALUES[level])
+	if _SPEED_VALUES[level] > 1.0:
+		txt += " ⚡"
+	player.show_floating_text(txt, Color(0.3, 1.0, 0.8), 18)
 
 
 func _toggle_pause():
@@ -1940,6 +2061,7 @@ func _toggle_pause():
 
 
 func _on_quit_to_menu():
+	Engine.time_scale = 1.0
 	get_tree().paused = false
 	PowerUpManager.end_run(true)
 	SceneManager.change_scene("res://scenes/main_menu.tscn")

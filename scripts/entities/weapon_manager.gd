@@ -26,90 +26,99 @@ func _get_enemies() -> Array:
 		return _enemy_registry_cache.get_all_ref()
 	return []
 
+
+# Calculate damage with crit support (Clover passive)
+func _calc_damage(w: WeaponState) -> float:
+	var dmg = w.damage * _player.damage_mult
+	if _player._crit_chance > 0 and randf() < _player._crit_chance:
+		dmg *= _player._crit_mult
+	return dmg
+
+
 var _proj_vis_script = preload("res://scripts/entities/proj_vis.gd")
 var _proj_mover_script = preload("res://scripts/entities/projectile_mover.gd")
 var _explosion_fx_script = preload("res://scripts/entities/explosion_fx.gd")
+var _emoji_node_script = preload("res://scripts/entities/emoji_node.gd")
+var _fireball_node_script = preload("res://scripts/entities/fireball_node.gd")
 
 
 const EVOLUTION_RECIPES = {
+	# ── Evolution now requires the passive at MAX level ──
+	# This forces players to invest heavily in passives before evolving,
+	# stretching out the upgrade pipeline and creating meaningful tradeoffs.
 	Player.UpgradeType.WHIP: {
 		"passive": Player.UpgradeType.SPINACH,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "Bloody Tear",
 		"desc": "Whip evolves into Bloody Tear\nHeals 20% of damage dealt"
 	},
 	Player.UpgradeType.MAGIC_WAND: {
 		"passive": Player.UpgradeType.WINGS,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "Holy Wand",
 		"desc": "Magic Wand evolves into Holy Wand\nFires at super speed"
 	},
 	Player.UpgradeType.GARLIC: {
 		"passive": Player.UpgradeType.TOME,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "Soul Eater",
 		"desc": "Garlic evolves into Soul Eater\nHeals 1 HP per kill"
 	},
 	Player.UpgradeType.KNIFE: {
 		"passive": Player.UpgradeType.CANDELABRADOR,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "Thousand Edge",
 		"desc": "Knife evolves into Thousand Edge\nFires a spread of 3 blades"
 	},
 	Player.UpgradeType.AXE: {
 		"passive": Player.UpgradeType.HOLLOW_HEART,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "Death Spiral",
 		"desc": "Axe evolves into Death Spiral\nAxes orbit and return to you"
 	},
 	Player.UpgradeType.FIRE_WAND: {
 		"passive": Player.UpgradeType.SPINACH,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "Hellfire",
 		"desc": "Fire Wand evolves into Hellfire\nDouble explosions"
 	},
 	Player.UpgradeType.CROSS: {
 		"passive": Player.UpgradeType.CLOVER,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "Heaven Sword",
 		"desc": "Cross evolves into Heaven Sword\nSword rains from above"
 	},
 	Player.UpgradeType.KING_BIBLE: {
 		"passive": Player.UpgradeType.SPELLBINDER,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "Unholy Vespers",
 		"desc": "King Bible evolves into Unholy Vespers\nDual orbiting shields"
 	},
 	Player.UpgradeType.SANTA_WATER: {
 		"passive": Player.UpgradeType.MAGNET,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "La Borra",
 		"desc": "Santa Water evolves into La Borra\nTracking damaging puddles"
 	},
 	Player.UpgradeType.RUNETRACER: {
 		"passive": Player.UpgradeType.ARMOR,
-		"passive_level": 1,
+		"passive_level": 5,
 		"name": "NO FUTURE",
 		"desc": "Runetracer evolves into NO FUTURE\nWalls of piercing lasers"
 	},
 	Player.UpgradeType.LIGHTNING_RING: {
 		"passive": Player.UpgradeType.SPINACH,
-		"passive_level": 3,
+		"passive_level": 5,
 		"name": "Thunder Loop",
 		"desc": "Lightning Ring evolves into Thunder Loop\nChain lightning"
 	}
 }
 
 
-# Helper: creates a Node2D that draws an emoji character at its origin
-static func _make_emoji_node(emoji: String, sz: float) -> Node2D:
-	var n = Node2D.new()
-	var font_size = maxi(12, int(sz * 1.5))
-	var draw_func = func():
-		var f = ThemeDB.get_project_theme().default_font if ThemeDB.get_project_theme() else ThemeDB.get_default_theme().default_font
-		if f:
-			n.draw_string(f, Vector2(-sz * 0.4, sz * 0.35), emoji, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color(1, 1, 1, 0.95))
-	n.draw.connect(draw_func)
+# Helper: creates an EmojiNode for projectile visuals (pooled approach)
+func _make_emoji_node(emoji: String, sz: float) -> Node2D:
+	var n = _emoji_node_script.new()
+	n.setup(emoji, sz)
 	return n
 
 
@@ -129,6 +138,36 @@ func add_or_upgrade(t: int):
 		weapons.append(WeaponState.new(t))
 
 
+# Returns true if at least one enemy is within this weapon's effective range.
+func _can_fire(w: WeaponState) -> bool:
+	var enemies = _get_enemies()
+	if enemies.is_empty():
+		return false
+
+	var ppos = _player.global_position
+
+	# Aura weapons (Garlic, Soul Eater) are always active — no range check needed
+	if w.type == Player.UpgradeType.GARLIC:
+		return true
+
+	var range_limit: float
+	match w.type:
+		Player.UpgradeType.KING_BIBLE:
+			range_limit = 80.0 + w.area * _player.area_mult
+		Player.UpgradeType.WHIP:
+			range_limit = w.area * _player.area_mult * 3.0
+		Player.UpgradeType.SANTA_WATER:
+			range_limit = w.area * _player.area_mult * 2.5
+		_:
+			range_limit = 350.0 + w.area * _player.area_mult * 3.0
+
+	var range_sq = range_limit * range_limit
+	for e in enemies:
+		if is_instance_valid(e) and ppos.distance_squared_to(e.global_position) <= range_sq:
+			return true
+	return false
+
+
 func process(delta: float):
 	if _wand_sfx_cooldown > 0:
 		_wand_sfx_cooldown -= delta
@@ -143,10 +182,9 @@ func process(delta: float):
 				_check_whip_hits(w)
 	for w in weapons:
 		w.cooldown_timer -= delta
-		if w.cooldown_timer <= 0:
+		if w.cooldown_timer <= 0 and _can_fire(w):
 			w.cooldown_timer = w.cooldown * (1.0 - _player.cooldown_reduction)
-			if not _get_enemies().is_empty():
-				fire_weapon(w)
+			fire_weapon(w)
 	# King Bible orbit update — avoid filter() allocation every frame
 	if not _bible_projectiles.is_empty():
 		_bible_angle += delta * 3.0
@@ -270,8 +308,8 @@ func _check_whip_hits(w: WeaponState):
 	var enemies = _get_enemies()
 	var effective_area = w.area * _player.area_mult
 	var arc_r = effective_area * 2.0
-	var half_w = arc_r * 0.65
-	var half_h = arc_r * 0.35
+	var half_w = arc_r * 0.50
+	var half_h = arc_r * 0.30
 	var src_pos = _player.global_position
 	for e in enemies:
 		if not is_instance_valid(e):
@@ -285,7 +323,7 @@ func _check_whip_hits(w: WeaponState):
 			enemy_r = e.collision_shape.shape.radius * max(e.scale.x, e.scale.y)
 		if abs(offset.x) > half_w + enemy_r or abs(offset.y) > half_h + enemy_r:
 			continue
-		var dmg = w.damage * _player.damage_mult
+		var dmg = _calc_damage(w)
 		e.take_damage(dmg, Vector2.ZERO)
 		if w.evolved:
 			_player.health = min(_player.health + dmg * 0.2, _player.max_health)
@@ -295,20 +333,30 @@ func _check_whip_hits(w: WeaponState):
 # ── MAGIC WAND ───────────────────────────────────────────────────────
 
 func _fire_wand(w: WeaponState):
-	if _wand_sfx_cooldown <= 0:
-		AudioManager.play_sfx("wpn_wand" if not w.evolved else "wpn_evo")
-		_wand_sfx_cooldown = 0.3
 	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
-	var dmg = w.damage * _player.damage_mult
+	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult
 	var count = get_projectile_count(Player.UpgradeType.MAGIC_WAND)
 
 	# Sort a copy to avoid modifying the registry's internal array
 	var sorted = enemies.duplicate()
-	sorted.sort_custom(func(a, b): return _player.global_position.distance_squared_to(a.global_position) < _player.global_position.distance_squared_to(b.global_position))
+	sorted.sort_custom(func(a, b): 
+		if not is_instance_valid(a) or not is_instance_valid(b):
+			return false
+		return _player.global_position.distance_squared_to(a.global_position) < _player.global_position.distance_squared_to(b.global_position))
+	# Limit to max targeting range (scales with area so Candelabrador extends reach)
+	var max_range_wsq: float = (350.0 + w.area * _player.area_mult * 3.0)
+	max_range_wsq *= max_range_wsq
+	sorted = sorted.filter(func(e): return is_instance_valid(e) and _player.global_position.distance_squared_to(e.global_position) <= max_range_wsq)
 	var targets = sorted.slice(0, min(count, sorted.size()))
+	if targets.is_empty():
+		return
+
+	if _wand_sfx_cooldown <= 0:
+		AudioManager.play_sfx("wpn_wand" if not w.evolved else "wpn_evo")
+		_wand_sfx_cooldown = 0.3
 
 	for target in targets:
 		if not is_instance_valid(target):
@@ -339,11 +387,17 @@ func _fire_wand(w: WeaponState):
 func _fire_garlic(w: WeaponState):
 	var enemies = _get_enemies()
 	var effective_area = w.area * _player.area_mult
+	var ppos = _player.global_position
 	for e in enemies:
-		if not is_instance_valid(e): continue
-		if _player.global_position.distance_to(e.global_position) < effective_area:
+		if not is_instance_valid(e):
+			continue
+		# Account for enemy collision radius — partial overlap counts
+		var enemy_r = 14.0
+		if is_instance_valid(e.collision_shape) and e.collision_shape.shape is CircleShape2D:
+			enemy_r = e.collision_shape.shape.radius * max(e.scale.x, e.scale.y)
+		if ppos.distance_to(e.global_position) - enemy_r < effective_area:
 			if e.has_method("take_damage"):
-				e.take_damage(w.damage * _player.damage_mult, Vector2.ZERO)
+				e.take_damage(_calc_damage(w), Vector2.ZERO)
 				if w.evolved:
 					_player.health = min(_player.health + 1.0, _player.max_health)
 
@@ -354,7 +408,7 @@ func _fire_knife(w: WeaponState):
 	if _knife_sfx_cooldown <= 0:
 		AudioManager.play_sfx("wpn_knife" if not w.evolved else "wpn_evo")
 		_knife_sfx_cooldown = 0.3
-	var dmg = w.damage * _player.damage_mult
+	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult
 	var count = get_projectile_count(Player.UpgradeType.KNIFE)
 	var base_dir = _player.direction if _player.direction.length() > 0 else Vector2.DOWN
@@ -388,7 +442,7 @@ func _fire_knife(w: WeaponState):
 
 func _fire_axe(w: WeaponState):
 	AudioManager.play_sfx("wpn_axe" if not w.evolved else "wpn_evo")
-	var dmg = w.damage * _player.damage_mult
+	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult * 0.5
 
 	if w.evolved:
@@ -468,15 +522,21 @@ func _fire_death_spiral(w: WeaponState, dmg: float, area: float):
 # ── FIRE WAND ────────────────────────────────────────────────────────
 
 func _fire_fire_wand(w: WeaponState):
-	AudioManager.play_sfx("wpn_fire")
 	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
-	var dmg = w.damage * _player.damage_mult
+	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult
-	var explosion_radius = area * 3.0
+	var explosion_radius = area * 1.5
 	var count = get_projectile_count(Player.UpgradeType.FIRE_WAND)
+	# Limit to max targeting range
+	var max_range_fsq: float = (350.0 + w.area * _player.area_mult * 3.0)
+	max_range_fsq *= max_range_fsq
 	var targets: Array = enemies.duplicate()
+	targets = targets.filter(func(e): return is_instance_valid(e) and _player.global_position.distance_squared_to(e.global_position) <= max_range_fsq)
+	if targets.is_empty():
+		return
+	AudioManager.play_sfx("wpn_fire")
 	targets.shuffle()
 	var n = mini(count, targets.size())
 	for i in range(n):
@@ -494,17 +554,10 @@ func _fire_one_fireball(target: Node2D, dmg: float, area: float, explosion_radiu
 	c.radius = area * 0.8
 	s.shape = c
 	p.add_child(s)
-	var fire_gfx = Node2D.new()
-	var fb_sz = max(area * 0.4, 6.0)
-	var seed_offset = randi() % 1000
-	var draw_fire = func():
-		var flicker = 0.85 + sin(Time.get_ticks_msec() * 0.015 + seed_offset) * 0.15
-		var r = fb_sz * flicker
-		fire_gfx.draw_circle(Vector2.ZERO, r * 2.2, Color(0.9, 0.3, 0.05, 0.12))
-		fire_gfx.draw_circle(Vector2.ZERO, r * 1.5, Color(0.95, 0.5, 0.1, 0.25))
-		fire_gfx.draw_circle(Vector2.ZERO, r * 0.9, Color(0.95, 0.7, 0.15, 0.8))
-		fire_gfx.draw_circle(Vector2.ZERO, r * 0.4, Color(1.0, 0.9, 0.5, 1.0))
-	fire_gfx.draw.connect(draw_fire)
+	# Use pre-defined FireballNode instead of dynamic draw closure
+	var fire_gfx = _fireball_node_script.new()
+	fire_gfx.fb_size = max(area * 0.4, 6.0)
+	fire_gfx.seed_offset = randi() % 1000
 	p.add_child(fire_gfx)
 	p.global_position = _player.global_position
 	_player.get_parent().add_child(p)
@@ -526,13 +579,19 @@ func _fire_cross(w: WeaponState):
 	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
-	var dmg = w.damage * _player.damage_mult
+	var dmg = _calc_damage(w)
 
 	if w.evolved:
-		AudioManager.play_sfx("wpn_heaven")
 		var count = 3 + _player.projectile_bonus
-		for i in range(min(count, enemies.size())):
-			var e = enemies[randi() % enemies.size()]
+		# Heaven Sword also respects targeting range
+		var max_range_hsq: float = (400.0 + w.area * _player.area_mult * 3.0)
+		max_range_hsq *= max_range_hsq
+		var in_range = enemies.filter(func(e): return is_instance_valid(e) and _player.global_position.distance_squared_to(e.global_position) <= max_range_hsq)
+		if in_range.is_empty():
+			return
+		AudioManager.play_sfx("wpn_heaven")
+		for i in range(min(count, in_range.size())):
+			var e = in_range[randi() % in_range.size()]
 			if not is_instance_valid(e):
 				continue
 			var sword = Area2D.new()
@@ -561,9 +620,11 @@ func _fire_cross(w: WeaponState):
 			tw.finished.connect(_on_tween_done.bind(sword))
 		return
 
-	AudioManager.play_sfx("wpn_cross")
+	# Limit to max targeting range
+	var max_range_csq: float = (350.0 + w.area * _player.area_mult * 3.0)
+	max_range_csq *= max_range_csq
 	var nearest: Node2D = null
-	var min_dist = INF
+	var min_dist = max_range_csq
 	var ppos = _player.global_position
 	for e in enemies:
 		if not is_instance_valid(e):
@@ -574,6 +635,7 @@ func _fire_cross(w: WeaponState):
 			nearest = e
 	if not nearest:
 		return
+	AudioManager.play_sfx("wpn_cross")
 	var p = Area2D.new()
 	p.collision_mask = 4
 	var s = CollisionShape2D.new()
@@ -611,7 +673,7 @@ func _fire_king_bible(w: WeaponState):
 	if w.evolved:
 		count += 2
 	var orbit_radius = 60.0 + w.area * _player.area_mult * 0.5
-	var dmg = w.damage * _player.damage_mult
+	var dmg = _calc_damage(w)
 	var dur = 2.5 + _player.duration_bonus
 
 	_bible_projectiles = _bible_projectiles.filter(func(x): return is_instance_valid(x))
@@ -649,19 +711,15 @@ func _fire_king_bible(w: WeaponState):
 		p.body_entered.connect(_on_proj_hit.bind(p, dmg))
 		_bible_projectiles.append(p)
 
-		var timer = Timer.new()
-		timer.wait_time = dur
-		timer.one_shot = true
-		timer.timeout.connect(_on_bible_expire.bind(p))
-		_player.add_child(timer)
-		timer.start()
+		# Use SceneTree.create_timer() instead of Timer.new() (no Node overhead)
+		_player.get_tree().create_timer(dur).timeout.connect(_on_bible_expire.bind(p))
 
 
 # ── SANTA WATER ──────────────────────────────────────────────────────
 
 func _fire_santa_water(w: WeaponState):
 	AudioManager.play_sfx("wpn_water")
-	var dmg = w.damage * _player.damage_mult
+	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult
 	var dur = 3.0 + _player.duration_bonus
 
@@ -699,25 +757,16 @@ func _fire_santa_water(w: WeaponState):
 	_player.get_parent().add_child(zone)
 
 	var tick_count = int(dur / 0.5)
-	for i in range(tick_count):
-		var timer = Timer.new()
-		timer.wait_time = 0.5
-		timer.one_shot = true
-		timer.timeout.connect(_on_water_tick.bind(zone, area, dmg, w.evolved))
-		_player.add_child(timer)
-		timer.start()
-	var cleanup = Timer.new()
-	cleanup.wait_time = dur
-	cleanup.one_shot = true
-	cleanup.timeout.connect(_on_water_cleanup.bind(zone))
-	_player.add_child(cleanup)
-	cleanup.start()
+	for i in range(1, tick_count + 1):
+		# SceneTree.create_timer() is lighter than Timer.new()
+		_player.get_tree().create_timer(0.5 * i).timeout.connect(_on_water_tick.bind(zone, area, dmg, w.evolved))
+	_player.get_tree().create_timer(dur).timeout.connect(_on_water_cleanup.bind(zone))
 
 
 # ── RUNETRACER ───────────────────────────────────────────────────────
 
 func _fire_runetracer(w: WeaponState):
-	var dmg = w.damage * _player.damage_mult
+	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult
 
 	if w.evolved:
@@ -748,12 +797,7 @@ func _fire_runetracer(w: WeaponState):
 			wall.global_position = _player.global_position + perp * side * 30
 			_player.get_parent().add_child(wall)
 			wall.body_entered.connect(_on_proj_hit.bind(wall, dmg * 0.3))
-			var cleanup = Timer.new()
-			cleanup.wait_time = wall_dur
-			cleanup.one_shot = true
-			cleanup.timeout.connect(wall.queue_free)
-			_player.add_child(cleanup)
-			cleanup.start()
+			_player.get_tree().create_timer(wall_dur).timeout.connect(wall.queue_free)
 		return
 
 	AudioManager.play_sfx("wpn_runetracer")
@@ -800,14 +844,20 @@ func _fire_runetracer(w: WeaponState):
 # ── LIGHTNING RING ───────────────────────────────────────────────────
 
 func _fire_lightning_ring(w: WeaponState):
-	AudioManager.play_sfx("wpn_lightning")
 	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
-	var target = enemies[randi() % enemies.size()]
+	# Limit to max targeting range
+	var max_range_lsq: float = (350.0 + w.area * _player.area_mult * 3.0)
+	max_range_lsq *= max_range_lsq
+	var in_range = enemies.filter(func(e): return is_instance_valid(e) and _player.global_position.distance_squared_to(e.global_position) <= max_range_lsq)
+	if in_range.is_empty():
+		return
+	AudioManager.play_sfx("wpn_lightning")
+	var target = in_range[randi() % in_range.size()]
 	if not is_instance_valid(target):
 		return
-	var dmg = w.damage * _player.damage_mult
+	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult
 	var strike_radius = area * 1.2
 
@@ -836,7 +886,7 @@ func _fire_lightning_ring(w: WeaponState):
 		var chained = [target]
 		var chain_dmg = dmg * 0.6
 		var chain_radius = strike_radius * 0.8
-		for _c in range(3):
+		for _c in range(5):
 			var last = chained[-1]
 			if not is_instance_valid(last):
 				break
@@ -967,7 +1017,7 @@ func _on_boomerang_return(proj, dmg: float):
 	for e in _get_enemies():
 		if is_instance_valid(e) and proj.global_position.distance_to(e.global_position) < 50:
 			if e.has_method("take_damage"):
-				e.take_damage(dmg * 0.5, Vector2.ZERO)
+				e.take_damage(dmg * 0.75, Vector2.ZERO)
 	if is_instance_valid(proj):
 		proj.queue_free()
 
@@ -989,7 +1039,7 @@ func _on_water_tick(zone: Area2D, area: float, dmg: float, evolved: bool):
 			continue
 		if src_pos.distance_to(e.global_position) <= area:
 			if e.has_method("take_damage"):
-				e.take_damage(dmg * 0.25, Vector2.ZERO)
+				e.take_damage(dmg * 0.5, Vector2.ZERO)
 	if evolved:
 		var nearest: Node2D = null
 		var min_d = INF

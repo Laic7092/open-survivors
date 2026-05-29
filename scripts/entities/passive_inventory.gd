@@ -60,9 +60,9 @@ func recalculate(player):
 			Player.UpgradeType.CANDELABRADOR:
 				player.area_mult += 0.1 * lv
 			Player.UpgradeType.CROWN:
-				player.growth_mult = 1.0 + 0.05 * lv
+				player.growth_mult = 1.0 + 0.08 * lv
 			Player.UpgradeType.PUMMAROLA:
-				player.recovery += 0.2 * lv
+				player.recovery += 0.5 * lv
 			Player.UpgradeType.DUPLICATOR:
 				player.projectile_bonus = lv
 			Player.UpgradeType.STONE_MASK:
@@ -72,10 +72,11 @@ func recalculate(player):
 				player.pickup_range = 60.0 + 20.0 * lv
 			Player.UpgradeType.CLOVER:
 				player.luck = 0.08 * lv
+				player._crit_chance = player.luck * 0.5  # Lv5 = 20% crit
 			Player.UpgradeType.SPELLBINDER:
 				player.duration_bonus += 0.3 * lv
 			Player.UpgradeType.ARMOR:
-				player.armor = lv
+				player.armor = 0.08 * lv  # 8% damage reduction per level
 			Player.UpgradeType.BRACER:
 				player.speed_mult += 0.10 * lv
 			Player.UpgradeType.SKULL:
@@ -101,3 +102,5 @@ func recalculate(player):
 	# Scale health proportionally with max HP changes
 	if player.max_health != old_max and old_max > 0:
 		player.health = player.health * (player.max_health / old_max)
+	# Safety clamp: health must never exceed max_health
+	player.health = min(player.health, player.max_health)

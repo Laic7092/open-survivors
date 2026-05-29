@@ -125,22 +125,26 @@ func _build_ui():
 	bs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_outer.add_child(bs)
 
-	# Buttons
+	# Buttons: Resume | Quit
+	var btn_row = HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	btn_row.add_theme_constant_override("separation", 12)
+	_outer.add_child(btn_row)
+	
 	_resume_btn = Button.new()
 	_resume_btn.text = ""
-	_resume_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_resume_btn.theme_type_variation = &"PrimaryButton"
-	_resume_btn.custom_minimum_size = Vector2(160, 40)
-	_resume_btn.add_theme_font_size_override("font_size", 18)
-	_outer.add_child(_resume_btn)
+	_resume_btn.custom_minimum_size = Vector2(120, 40)
+	_resume_btn.add_theme_font_size_override("font_size", 16)
+	btn_row.add_child(_resume_btn)
 
 	_quit_btn = Button.new()
 	_quit_btn.text = ""
-	_quit_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_quit_btn.theme_type_variation = &"DangerButton"
-	_quit_btn.custom_minimum_size = Vector2(160, 40)
-	_quit_btn.add_theme_font_size_override("font_size", 18)
-	_outer.add_child(_quit_btn)
+	_quit_btn.custom_minimum_size = Vector2(120, 40)
+	_quit_btn.add_theme_font_size_override("font_size", 16)
+	btn_row.add_child(_quit_btn)
 
 
 func _build_stat_labels():

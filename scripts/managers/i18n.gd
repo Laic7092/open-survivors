@@ -145,6 +145,7 @@ static func _zh() -> Dictionary:
 
 		# ── Main Menu — Relics ──
 		"menu.relics": "遗物收集",
+		"menu.load_game": "📂 读取存档",
 
 		# ── Relic Screen ──
 		"relic_screen.title": "遗物图鉴",
@@ -302,6 +303,17 @@ static func _zh() -> Dictionary:
 		"pause.title": "暂停",
 		"pause.resume": "继续",
 		"pause.quit": "退出到主菜单",
+
+		# ── Save / Load ──
+		"pause.save": "💾 保存",
+		"pause.load": "📂 读取",
+		"save_slot.select_title": "选择存档",
+		"save_slot.select": "选择",
+		"save_slot.create": "创建",
+		"save_slot.current": "当前",
+		"save_slot.empty": "— 空栏位 —",
+		"save_slot.back": "返回",
+
 		"pause.character": "角色",
 		"pause.run_stats": "本轮统计",
 		"pause.combat_stats": "战斗属性",
@@ -474,6 +486,10 @@ static func _zh() -> Dictionary:
 		"wave.label": "波次",
 		"boss.announce": "梦魇降临……",
 
+		# ── Cursed Time ──
+		"cursed_time.start": "💀 诅咒时刻开始！敌人随时间不断增强……",
+		"cursed_time.level": "诅咒 Lv.%d",
+
 		# ── Weapon Names (for HUD / pause) ──
 		"wpn.whip": "鞭子",
 		"wpn.wand": "魔法杖",
@@ -638,6 +654,7 @@ static func _en() -> Dictionary:
 
 		# ── Main Menu — Relics ──
 		"menu.relics": "RELICS",
+		"menu.load_game": "📂 LOAD GAME",
 
 		# ── Relic Screen ──
 		"relic_screen.title": "RELIC COLLECTION",
@@ -790,6 +807,17 @@ static func _en() -> Dictionary:
 		"pause.title": "PAUSED",
 		"pause.resume": "RESUME",
 		"pause.quit": "QUIT TO MENU",
+
+		# ── Save / Load ──
+		"pause.save": "💾 SAVE",
+		"pause.load": "📂 LOAD",
+		"save_slot.select_title": "SELECT SAVE",
+		"save_slot.select": "SELECT",
+		"save_slot.create": "CREATE",
+		"save_slot.current": "CURRENT",
+		"save_slot.empty": "— Empty Slot —",
+		"save_slot.back": "BACK",
+
 		"pause.character": "CHARACTER",
 		"pause.run_stats": "RUN STATS",
 		"pause.combat_stats": "COMBAT STATS",
@@ -952,6 +980,10 @@ static func _en() -> Dictionary:
 
 		"wave.label": "Wave",
 		"boss.announce": "Nightmare approaches...",
+
+		# ── Cursed Time ──
+		"cursed_time.start": "💀 CURSED TIME! Enemies grow stronger over time…",
+		"cursed_time.level": "Curse Lv.%d",
 
 		"wpn.whip": "Whip",
 		"wpn.wand": "Magic Wand",

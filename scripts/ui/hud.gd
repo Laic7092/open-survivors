@@ -12,6 +12,7 @@ const HudCell = preload("res://scripts/ui/hud_cell.gd")
 @onready var _kills_label: Label = $KillsLabel
 @onready var _wave_label: Label = $WaveLabel
 @onready var _gold_label: Label = $GoldLabel
+@onready var _curse_label: Label = $CurseLabel
 @onready var _arcana_container: HBoxContainer = $ArcanaContainer
 @onready var _weapon_grid: GridContainer = $WeaponGrid
 @onready var _relic_arrow: Control = $RelicArrow
@@ -41,12 +42,27 @@ var _cells: Array = []
 var _last_timer_text: String = ""
 var _last_xp_bar_w: float = -1.0
 
+# Speed display
+var _speed_label: Label
+
+# Pre-cached I18N strings (called every frame)
+var _str_lv: String = ""
+var _str_kills: String = ""
+var _str_gold: String = ""
+var _str_timer_fmt: String = ""
+
 # Arcana display cache — avoid creating/destroying nodes every frame
 var _last_arcana_ids: Array = []
 var _arcana_badges: Array = []
 
 
 func _ready():
+	# Pre-cache I18N strings used every frame
+	_str_lv = I18N.t("hud.lv")
+	_str_kills = I18N.t("hud.kills")
+	_str_gold = I18N.t("hud.gold")
+	_str_timer_fmt = I18N.t("hud.timer_format")
+	
 	# 覆盖层按钮事件
 	_restart_btn.pressed.connect(_on_restart)
 	_menu_btn.pressed.connect(_on_menu)
@@ -56,11 +72,22 @@ func _ready():
 	_menu_btn.text = I18N.t("hud.main_menu")
 
 	# 初始文字
-	_level_label.text = I18N.t("hud.lv") + "1"
-	_timer_label.text = I18N.t("hud.timer_format") % [0, 0]
-	_kills_label.text = I18N.t("hud.kills") + "0"
-	_gold_label.text = I18N.t("hud.gold") + "0"
+	_level_label.text = _str_lv + "1"
+	_timer_label.text = _str_timer_fmt % [0, 0]
+	_kills_label.text = _str_kills + "0"
+	_gold_label.text = _str_gold + "0"
 
+	# 速度倍率标签
+	_speed_label = Label.new()
+	_speed_label.name = "SpeedLabel"
+	_speed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_speed_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_speed_label.add_theme_font_size_override("font_size", 14)
+	_speed_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.8, 0.9))
+	_speed_label.position = Vector2(12, 42)
+	_speed_label.text = "x1.0"
+	add_child(_speed_label)
+	
 	# 在网格中预创建 12 个武器/被动格子
 	for i in range(12):
 		var cell = Control.new()
@@ -82,6 +109,10 @@ func set_health(_cur: float, _max_hp: float):
 	pass
 
 
+func set_speed(speed: float):
+	_speed_label.text = "x" + str(speed)
+
+
 func set_xp(cur: int, need: int):
 	_xp_pct = float(cur) / float(need) if need > 0 else 0
 	var bar_w = _xp_bar_bg.size.x
@@ -93,14 +124,14 @@ func set_xp(cur: int, need: int):
 
 
 func set_level(lv: int):
-	_level_label.text = I18N.t("hud.lv") + str(lv)
+	_level_label.text = _str_lv + str(lv)
 
 
 func set_timer(t: float):
 	var m = int(t) / 60
 	var s = int(t) % 60
 	# Cache string to avoid redundant updates (called every frame)
-	var display = I18N.t("hud.timer_format") % [m, s]
+	var display = _str_timer_fmt % [m, s]
 	if time_limit_str != "":
 		display += " / " + time_limit_str
 	if display != _last_timer_text:
@@ -115,15 +146,24 @@ func set_time_limit(limit: float):
 
 
 func set_kills(c: int):
-	_kills_label.text = I18N.t("hud.kills") + str(c)
+	_kills_label.text = _str_kills + str(c)
 
 
 func set_gold(g: int):
-	_gold_label.text = I18N.t("hud.gold") + str(g)
+	_gold_label.text = _str_gold + str(g)
 
 
 func set_wave(n: int):
 	_wave_label.text = "Wave " + str(n)
+
+
+func set_curse_level(n: int):
+	if n > 0:
+		_curse_label.visible = true
+		_curse_label.text = I18N.t("cursed_time.level") % n
+	else:
+		_curse_label.visible = false
+		_curse_label.text = ""
 
 
 func set_relic_arrow(angle, dist: float):

@@ -63,7 +63,7 @@ func _on_runetracer_tick(proj: Node2D, delta: float):
 		proj.set_meta("rune_bounces", bounces)
 		AudioManager.play_sfx("wpn_bounce")
 	
-	if bounces >= 4:
+	if bounces >= 6:
 		_cleanup()
 
 
