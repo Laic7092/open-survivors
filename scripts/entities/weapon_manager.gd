@@ -85,6 +85,18 @@ const EVOLUTION_RECIPES = {
 }
 
 
+# Helper: creates a Node2D that draws an emoji character at its origin
+static func _make_emoji_node(emoji: String, sz: float) -> Node2D:
+	var n = Node2D.new()
+	var font_size = maxi(12, int(sz * 1.5))
+	var draw_func = func():
+		var f = ThemeDB.get_project_theme().default_font if ThemeDB.get_project_theme() else ThemeDB.get_default_theme().default_font
+		if f:
+			n.draw_string(f, Vector2(-sz * 0.4, sz * 0.35), emoji, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color(1, 1, 1, 0.95))
+	n.draw.connect(draw_func)
+	return n
+
+
 func _init(player: Player):
 	_player = player
 
@@ -294,7 +306,8 @@ func _fire_wand(w: WeaponState):
 		_player.get_parent().add_child(p)
 		p.body_entered.connect(_on_proj_hit.bind(p, dmg))
 		var tw = _player.create_tween()
-		tw.tween_property(p, "global_position", target.global_position, 0.4)
+		var dist = _player.global_position.distance_to(target.global_position)
+		tw.tween_property(p, "global_position", target.global_position, dist / max(w.speed, 1.0))
 		tw.finished.connect(_on_tween_done.bind(p))
 
 
@@ -335,23 +348,15 @@ func _fire_knife(w: WeaponState):
 		c.radius = area
 		s.shape = c
 		p.add_child(s)
-		var vis = ColorRect.new()
-		vis.color = Color(0.75, 0.75, 0.75)
-		vis.size = Vector2(5, 20)
-		vis.position = Vector2(-2.5, -10)
-		p.add_child(vis)
-		var handle = ColorRect.new()
-		handle.color = Color(0.4, 0.25, 0.1)
-		handle.size = Vector2(3, 5)
-		handle.position = Vector2(-1.5, 10)
-		p.add_child(handle)
+		var knife_emoji = _make_emoji_node("🗡️", max(area * 1.2, 16.0))
+		p.add_child(knife_emoji)
 		p.global_position = _player.global_position + dir * 20 + side_offset
 		p.rotation = dir.angle()
 		_player.get_parent().add_child(p)
 		p.body_entered.connect(_on_proj_hit_and_free.bind(p, dmg))
 		var target = _player.global_position + dir * 500.0 + side_offset
 		var tw = _player.create_tween()
-		tw.tween_property(p, "global_position", target, 0.12)
+		tw.tween_property(p, "global_position", target, 500.0 / max(w.speed, 1.0))
 		tw.finished.connect(_on_tween_done.bind(p))
 
 
@@ -388,26 +393,8 @@ func _fire_axe_normal(w: WeaponState, dmg: float, area: float):
 		c.radius = area
 		s.shape = c
 		p.add_child(s)
-		var axe_gfx = Node2D.new()
-		var axe_sz = max(area * 0.7, 14.0)
-		var draw_axe = func():
-			axe_gfx.draw_rect(Rect2(-4, -axe_sz * 0.6, 8, axe_sz * 4.2), Color(0.4, 0.25, 0.1))
-			var blade = PackedVector2Array([
-				Vector2(-3, -axe_sz * 1.4),
-				Vector2(axe_sz * 1.4, -axe_sz * 0.8),
-				Vector2(axe_sz * 1.4, axe_sz * 0.6),
-				Vector2(-3, axe_sz * 1.0),
-			])
-			axe_gfx.draw_polygon(blade, [Color(0.6, 0.6, 0.65)])
-			var edge_poly = PackedVector2Array([
-				Vector2(axe_sz * 1.4, -axe_sz * 0.8),
-				Vector2(axe_sz * 1.8, 0),
-				Vector2(axe_sz * 1.4, axe_sz * 0.6),
-			])
-			axe_gfx.draw_polygon(edge_poly, [Color(0.8, 0.8, 0.85)])
-			axe_gfx.draw_polyline(blade, Color(0.3, 0.3, 0.35), 2.0, true)
-		axe_gfx.draw.connect(draw_axe)
-		p.add_child(axe_gfx)
+		var axe_emoji = _make_emoji_node("🪓", max(area * 1.3, 16.0))
+		p.add_child(axe_emoji)
 		p.global_position = _player.global_position + spawn_dir * 20 + side
 		p.rotation = h_dir.angle()
 		_player.get_parent().add_child(p)
@@ -437,16 +424,8 @@ func _fire_death_spiral(w: WeaponState, dmg: float, area: float):
 		s.shape = c
 		p.add_child(s)
 		var axe_sz = max(area * 2.5, 16.0)
-		var vis = ColorRect.new()
-		vis.color = Color(0.5, 0.3, 0.8)
-		vis.size = Vector2(axe_sz, axe_sz * 0.6)
-		vis.position = Vector2(-axe_sz / 2, -axe_sz * 0.3)
-		p.add_child(vis)
-		var edge = ColorRect.new()
-		edge.color = Color(0.8, 0.4, 0.9)
-		edge.size = Vector2(axe_sz * 1.1, 3)
-		edge.position = Vector2(-axe_sz * 0.55, -1.5)
-		p.add_child(edge)
+		var death_emoji = _make_emoji_node("🪓", axe_sz)
+		p.add_child(death_emoji)
 
 		p.global_position = _player.global_position + spawn_dir * 10
 		p.rotation = angle
@@ -507,7 +486,7 @@ func _fire_one_fireball(target: Node2D, dmg: float, area: float, explosion_radiu
 	_player.get_parent().add_child(p)
 	p.body_entered.connect(_on_firewand_hit.bind(p, explosion_radius, dmg, w))
 	var tw = _player.create_tween()
-	tw.tween_property(p, "global_position", target.global_position, 0.5)
+	tw.tween_property(p, "global_position", target.global_position, _player.global_position.distance_to(target.global_position) / max(w.speed, 1.0))
 	p.set_meta("_wand_tween", tw)
 	tw.finished.connect(_on_firewand_explode.bind(p, explosion_radius, dmg, w))
 
@@ -587,8 +566,8 @@ func _fire_cross(w: WeaponState):
 	p.global_position = _player.global_position
 	_player.get_parent().add_child(p)
 	p.body_entered.connect(_on_proj_hit.bind(p, dmg))
-	var fly_time = 0.35
 	var target_pos = nearest.global_position
+	var fly_time = _player.global_position.distance_to(target_pos) / max(w.speed, 1.0)
 	var tw = _player.create_tween()
 	tw.tween_property(p, "global_position", target_pos, fly_time)
 	tw.tween_property(p, "global_position", _player.global_position, fly_time * 1.2)
@@ -889,8 +868,8 @@ func _on_axe_arc_done(proj, end_pos: Vector2):
 		return
 	var tw2 = _player.create_tween()
 	tw2.set_parallel(true)
-	tw2.tween_property(proj, "global_position", end_pos, 1.2)
-	tw2.tween_property(proj, "rotation", proj.rotation - TAU * 3, 1.2)
+	tw2.tween_property(proj, "global_position", end_pos, 0.5)
+	tw2.tween_property(proj, "rotation", proj.rotation - TAU * 1.5, 0.5)
 	tw2.finished.connect(_on_tween_done.bind(proj))
 
 

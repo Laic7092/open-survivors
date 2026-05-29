@@ -12,8 +12,8 @@ var evolved: bool = false
 
 static var _BASE = {
 	Player.UpgradeType.WHIP: {"cd": 1.0, "dmg": 75.0, "area": 60.0, "speed": 0.0},
-	Player.UpgradeType.MAGIC_WAND: {"cd": 0.5, "dmg": 12.0, "area": 12.0, "speed": 400.0},
-	Player.UpgradeType.GARLIC: {"cd": 0.3, "dmg": 6.0, "area": 50.0, "speed": 0.0},
+	Player.UpgradeType.MAGIC_WAND: {"cd": 0.4, "dmg": 12.0, "area": 12.0, "speed": 400.0},
+	Player.UpgradeType.GARLIC: {"cd": 0.3, "dmg": 6.0, "area": 70.0, "speed": 0.0},
 	Player.UpgradeType.KNIFE: {"cd": 0.3, "dmg": 30.0, "area": 10.0, "speed": 600.0},
 	Player.UpgradeType.AXE: {"cd": 1.2, "dmg": 100.0, "area": 40.0, "speed": 0.0},
 	Player.UpgradeType.FIRE_WAND: {"cd": 0.8, "dmg": 50.0, "area": 20.0, "speed": 300.0},

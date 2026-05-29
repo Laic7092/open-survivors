@@ -1,10 +1,47 @@
 extends RefCounted
 class_name IconGenerator
 # Runtime icon generator — creates colored circular icon textures via Image pixel drawing.
+# Also provides make_icon_node() factory to eliminate TextureRect+emoji duplication.
 # No asset files needed. Textures are cached statically.
 
 static var CACHE: Dictionary = {}
 const DEFAULT_SIZE := 32
+
+# Item type → emoji character for icon rendering
+const EMOJI := {
+	0: "🪢",   # Whip
+	1: "🪄",   # Magic Wand
+	2: "🧄",   # Garlic
+	10: "🔪",  # Knife
+	11: "🪓",  # Axe
+	12: "🔥",  # Fire Wand
+	16: "❌",  # Cross
+	17: "📖",  # King Bible
+	18: "💧",  # Santa Water
+	19: "✨",  # Runetracer
+	20: "⚡",  # Lightning Ring
+	3: "👼",   # Wings
+	4: "🥬",   # Spinach
+	5: "📕",   # Empty Tome
+	6: "❤️",  # Hollow Heart
+	7: "🕯️",  # Candelabrador
+	8: "👑",   # Crown
+	9: "🍅",   # Pummarola
+	13: "🪞",  # Duplicator
+	14: "🗿",  # Stone Mask
+	15: "🧲",  # Magnet
+	21: "🍀",  # Clover
+	22: "📿",  # Spellbinder
+	23: "🛡️", # Armor
+	24: "🏹",  # Bracer
+	25: "💀",  # Skull O'Maniac
+	26: "🍰",  # Tiragisú
+	27: "📦",  # Torrona's Box
+	28: "💍",  # Silver Ring
+	29: "💍",  # Gold Ring
+	30: "🔮",  # Metaglio Left
+	31: "⚗️", # Metaglio Right
+}
 
 # Item type → color (mirrors level_up_screen.gd _color())
 static func get_color(t: int) -> Color:
@@ -42,6 +79,11 @@ static func get_color(t: int) -> Color:
 		30: return Color(0.5, 0.3, 0.8)   # Metaglio Left
 		31: return Color(0.8, 0.3, 0.5)   # Metaglio Right
 	return Color.WHITE
+
+
+# Get the emoji character for a given item type
+static func get_emoji(t: int) -> String:
+	return EMOJI.get(t, "❓")
 
 
 # Generate a colored circular icon texture. Results are cached by (type, size).
@@ -87,3 +129,37 @@ static func generate(t: int, size: int = DEFAULT_SIZE) -> ImageTexture:
 # Clear cached textures (call if color scheme changes at runtime)
 static func clear_cache():
 	CACHE.clear()
+
+
+# ── Icon node factory (replaces TextureRect + emoji Label duplication) ──
+
+# Returns a pre-assembled Control with colored circular texture + emoji overlay.
+# Consumers add this single node instead of creating TextureRect + Label pairs.
+static func make_icon_node(t: int, size: int, modulate: Color = Color.WHITE, emoji_scale: float = 0.55) -> Control:
+	var container = Control.new()
+	container.custom_minimum_size = Vector2(size, size)
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var tex_rect = TextureRect.new()
+	tex_rect.texture = generate(t, size)
+	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	tex_rect.modulate = modulate
+	tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	container.add_child(tex_rect)
+
+	var emoji_lbl = Label.new()
+	emoji_lbl.text = get_emoji(t)
+	emoji_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	emoji_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var font_sz = max(10, int(size * emoji_scale))
+	emoji_lbl.add_theme_font_size_override("font_size", font_sz)
+	emoji_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.9))
+	emoji_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	emoji_lbl.add_theme_constant_override("shadow_offset_x", 1)
+	emoji_lbl.add_theme_constant_override("shadow_offset_y", 1)
+	emoji_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	emoji_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	container.add_child(emoji_lbl)
+
+	return container

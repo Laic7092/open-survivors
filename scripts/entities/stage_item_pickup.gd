@@ -96,3 +96,15 @@ func _draw():
 		var tex = _icon_gen.generate(item_type, 16)
 		if tex:
 			draw_texture(tex, Vector2(-8, -8))
+	
+	# Emoji overlay
+	var emoji_str = _icon_gen.get_emoji(item_type)
+	if emoji_str:
+		var emoji_font = SystemFont.new()
+		emoji_font.font_names = [
+			"Noto Color Emoji",
+			"Segoe UI Emoji",
+			"Apple Color Emoji",
+			"Twitter Color Emoji",
+		]
+		draw_string(emoji_font, Vector2(-6, 5), emoji_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)

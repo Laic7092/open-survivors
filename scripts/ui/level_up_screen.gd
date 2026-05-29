@@ -180,13 +180,11 @@ func _add_choice_button(t: int):
 	var desc = I18N.t(_item_desc_key(t), _desc(t))
 	var col = _color(t)
 
-	# Icon at top
-	var icon = TextureRect.new()
-	icon.texture = IconGenerator.generate(t, 40)
-	icon.custom_minimum_size = Vector2(40, 40)
-	icon.stretch_mode = TextureRect.STRETCH_KEEP
-	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	vb2.add_child(icon)
+	# Icon at top (colored circle + emoji, single node from factory)
+	var icon_node = IconGenerator.make_icon_node(t, 40)
+	icon_node.custom_minimum_size = Vector2(40, 40)
+	icon_node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	vb2.add_child(icon_node)
 
 	var btn = Button.new()
 	btn.custom_minimum_size = Vector2(0, 120)
@@ -230,14 +228,11 @@ func _add_evolution_choice(weapon_type: int):
 	var evo_name = recipe["name"]
 	var evo_desc = recipe["desc"]
 
-	# Golden icon at top
-	var icon = TextureRect.new()
-	icon.texture = IconGenerator.generate(weapon_type, 44)
-	icon.custom_minimum_size = Vector2(44, 44)
-	icon.stretch_mode = TextureRect.STRETCH_KEEP
-	icon.modulate = Color(0.9, 0.7, 0.1)  # golden tint
-	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	vb2.add_child(icon)
+	# Golden icon at top (colored circle + emoji, single node)
+	var icon_node = IconGenerator.make_icon_node(weapon_type, 44, Color(0.9, 0.7, 0.1))
+	icon_node.custom_minimum_size = Vector2(44, 44)
+	icon_node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	vb2.add_child(icon_node)
 
 	# Golden border button
 	var btn = Button.new()
