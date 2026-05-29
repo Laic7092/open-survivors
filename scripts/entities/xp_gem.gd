@@ -5,6 +5,7 @@ var player: Node2D
 var attracted: bool = false
 var collected: bool = false
 var float_offset: float = 0.0
+var attract_speed: float = 300.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -23,7 +24,7 @@ func _process(delta):
 			attracted = true
 	if attracted and is_instance_valid(player):
 		var dir = (player.global_position - global_position).normalized()
-		global_position += dir * 300.0 * delta
+		global_position += dir * attract_speed * delta
 	float_offset += delta * 2.0
 	queue_redraw()
 

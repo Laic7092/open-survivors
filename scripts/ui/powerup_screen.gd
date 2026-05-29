@@ -1,10 +1,13 @@
 extends Control
 
+const UiUtils = preload("res://scripts/ui/ui_utils.gd")
+
 
 func _ready():
 	anchor_right = 1.0
 	anchor_bottom = 1.0
 	_show()
+	get_viewport().size_changed.connect(_show)
 
 
 func _show():
@@ -60,17 +63,7 @@ func _show():
 	back_btn.position = Vector2(vp.x / 2 - 80, vp.y - 60)
 	back_btn.pressed.connect(_on_back)
 	# Style the back button
-	var s = StyleBoxFlat.new()
-	s.bg_color = Color(0.2, 0.2, 0.3)
-	s.border_width_left = 2; s.border_width_right = 2
-	s.border_width_top = 2; s.border_width_bottom = 2
-	s.border_color = Color(0.4, 0.4, 0.6)
-	s.corner_radius_top_left = 6; s.corner_radius_top_right = 6
-	s.corner_radius_bottom_left = 6; s.corner_radius_bottom_right = 6
-	back_btn.add_theme_stylebox_override("normal", s)
-	back_btn.add_theme_stylebox_override("hover", s)
-	back_btn.add_theme_color_override("font_color", Color.WHITE)
-	back_btn.add_theme_font_size_override("font_size", 18)
+	UiUtils.style_button(back_btn, Color(0.2, 0.2, 0.3), Color(0.4, 0.4, 0.6))
 	add_child(back_btn)
 
 
@@ -134,16 +127,10 @@ func _add_powerup_card(grid: GridContainer, id: String):
 		buy_btn.text = I18N.t("powerup.buy")
 		buy_btn.custom_minimum_size = Vector2(80, 32)
 		var can_afford = PowerUpManager.gold >= cost
-		var btn_s = StyleBoxFlat.new()
-		btn_s.bg_color = Color(0.15, 0.5, 0.15) if can_afford else Color(0.3, 0.15, 0.15)
-		btn_s.border_width_left = 2; btn_s.border_width_right = 2
-		btn_s.border_width_top = 2; btn_s.border_width_bottom = 2
-		btn_s.border_color = Color(0.3, 0.8, 0.3) if can_afford else Color(0.5, 0.2, 0.2)
-		btn_s.corner_radius_top_left = 4; btn_s.corner_radius_top_right = 4
-		btn_s.corner_radius_bottom_left = 4; btn_s.corner_radius_bottom_right = 4
-		buy_btn.add_theme_stylebox_override("normal", btn_s)
-		buy_btn.add_theme_stylebox_override("hover", btn_s)
-		buy_btn.add_theme_color_override("font_color", Color.WHITE)
+		if can_afford:
+			UiUtils.style_button(buy_btn, Color(0.15, 0.5, 0.15), Color(0.3, 0.8, 0.3))
+		else:
+			UiUtils.style_button(buy_btn, Color(0.3, 0.15, 0.15), Color(0.5, 0.2, 0.2))
 		buy_btn.disabled = not can_afford
 		buy_btn.pressed.connect(_on_buy.bind(id))
 		buy_row.add_child(buy_btn)

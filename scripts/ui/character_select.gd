@@ -1,12 +1,14 @@
 extends Control
 
 const CharacterDefs = preload("res://scripts/data/character_defs.gd")
+const UiUtils = preload("res://scripts/ui/ui_utils.gd")
 
 
 func _ready():
 	anchor_right = 1.0
 	anchor_bottom = 1.0
 	_show()
+	get_viewport().size_changed.connect(_show)
 
 
 func _show():
@@ -40,18 +42,26 @@ func _show():
 	gold_lbl.size = Vector2(160, 24)
 	add_child(gold_lbl)
 
-	# Character grid
+	# Character grid — 自适应列数
 	var chars = CharacterDefs.CHARACTERS
-	var card_w = 200
-	var card_h = 250
-	var gap = 24
-	var total_w = chars.size() * card_w + (chars.size() - 1) * gap
-	var start_x = (vp.x - total_w) / 2
-	var start_y = vp.y / 2 - card_h / 2 - 20
+	var cols = UiUtils.calc_columns(vp.x, 180, 16, 40, 6)
+	cols = mini(cols, chars.size())
+	var card_w = mini(180, max(140, int((vp.x - 80) / cols - 16)))
+	var card_h = mini(220, max(180, int((vp.y - 150) / 2)))
+	var gap_x = 12
+	var gap_y = 12
+	var grid_w = cols * card_w + (cols - 1) * gap_x
+	var start_x = max(10, (vp.x - grid_w) / 2)
+	var rows = ceil(float(chars.size()) / cols)
+	var grid_h = rows * card_h + (rows - 1) * gap_y
+	var start_y = max(10, (vp.y - grid_h) / 2)
 
 	for i in range(chars.size()):
 		var c = chars[i]
-		_add_character_card(c, Vector2(start_x + i * (card_w + gap), start_y), card_w, card_h)
+		var row = i / cols
+		var col = i % cols
+		var pos = Vector2(start_x + col * (card_w + gap_x), start_y + row * (card_h + gap_y))
+		_add_character_card(c, pos, card_w, card_h)
 
 	# Back button
 	var back_btn = Button.new()
@@ -138,19 +148,7 @@ func _add_character_card(char_data: Dictionary, pos: Vector2, w: int, h: int):
 		var btn = Button.new()
 		btn.text = I18N.t("char_select.select")
 		btn.custom_minimum_size = Vector2(0, 36)
-		var btn_s = StyleBoxFlat.new()
-		btn_s.bg_color = col * 0.3
-		btn_s.border_width_left = 2; btn_s.border_width_right = 2
-		btn_s.border_width_top = 2; btn_s.border_width_bottom = 2
-		btn_s.border_color = col
-		btn_s.corner_radius_top_left = 6
-		btn_s.corner_radius_top_right = 6
-		btn_s.corner_radius_bottom_left = 6
-		btn_s.corner_radius_bottom_right = 6
-		btn.add_theme_stylebox_override("normal", btn_s)
-		btn.add_theme_stylebox_override("hover", btn_s)
-		btn.add_theme_color_override("font_color", Color.WHITE)
-		btn.add_theme_font_size_override("font_size", 16)
+		UiUtils.style_button(btn, col * 0.3, col)
 		card.add_child(btn)
 		btn.pressed.connect(_on_select.bind(char_data))
 	else:
@@ -167,17 +165,10 @@ func _add_character_card(char_data: Dictionary, pos: Vector2, w: int, h: int):
 		buy_btn.text = I18N.t("char_select.buy")
 		buy_btn.disabled = PowerUpManager.gold < cost
 		buy_btn.custom_minimum_size = Vector2(0, 36)
-		var btn_s2 = StyleBoxFlat.new()
-		btn_s2.bg_color = Color(0.15, 0.5, 0.15) if PowerUpManager.gold >= cost else Color(0.1, 0.1, 0.1)
-		btn_s2.border_width_left = 2; btn_s2.border_width_right = 2
-		btn_s2.border_width_top = 2; btn_s2.border_width_bottom = 2
-		btn_s2.border_color = Color(0.3, 0.7, 0.3) if PowerUpManager.gold >= cost else Color(0.2, 0.2, 0.2)
-		btn_s2.corner_radius_top_left = 6
-		btn_s2.corner_radius_top_right = 6
-		btn_s2.corner_radius_bottom_left = 6
-		btn_s2.corner_radius_bottom_right = 6
-		buy_btn.add_theme_stylebox_override("normal", btn_s2)
-		buy_btn.add_theme_stylebox_override("hover", btn_s2)
+		if PowerUpManager.gold >= cost:
+			UiUtils.style_button(buy_btn, Color(0.15, 0.5, 0.15), Color(0.3, 0.7, 0.3))
+		else:
+			UiUtils.style_button(buy_btn, Color(0.1, 0.1, 0.1), Color(0.2, 0.2, 0.2))
 		buy_btn.add_theme_color_override("font_color", Color.WHITE if PowerUpManager.gold >= cost else Color(0.4, 0.4, 0.4))
 		buy_btn.add_theme_font_size_override("font_size", 16)
 		card.add_child(buy_btn)
@@ -223,6 +214,11 @@ static func _wep_name_key(type: int) -> String:
 		10: return "item.knife_name"
 		11: return "item.axe_name"
 		12: return "item.firewand_name"
+		16: return "item.cross_name"
+		17: return "item.bible_name"
+		18: return "item.santa_water_name"
+		19: return "item.runetracer_name"
+		20: return "item.lightning_name"
 	return "item.whip_name"
 
 

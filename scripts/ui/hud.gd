@@ -1,5 +1,7 @@
 extends Control
 
+const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
+
 var health_pct: float = 1.0
 var xp_pct: float = 0.0
 var level_str: String = "LV 1"
@@ -14,11 +16,21 @@ var victory_data: Dictionary = {}
 var restart_btn: Button
 var menu_btn: Button
 
-var _weapon_list: Array = []  # [{name, level, max_level}]
+var _weapon_list: Array = []  # [{name, level, evolved, color}]
+var _passive_list: Array = []  # [{name, level, color}]
+
+# Relic arrow indicator
+var _relic_arrow_angle: float = 0.0
+var _relic_arrow_dist: float = 0.0
+var _show_relic_arrow: bool = false
+
+# Active Arcana display
+var _active_arcanas: Array = []  # arcana data dicts
 
 
 func _ready():
 	process_mode = PROCESS_MODE_WHEN_PAUSED
+	mouse_filter = MOUSE_FILTER_STOP
 	anchor_right = 1.0
 	anchor_bottom = 1.0
 
@@ -26,42 +38,69 @@ func _ready():
 func _draw():
 	var vp = get_viewport().get_visible_rect().size
 	var m = 12.0
-	var bw = 220.0
-	var bh = 18.0
-	var y = m
 	var font = ThemeDB.fallback_font
-	var fs = 16
+	var bar_w = vp.x - m * 2
 
-	# Health bar
-	draw_rect(Rect2(m, y, bw, bh), Color(0.3, 0.05, 0.05))
-	draw_rect(Rect2(m, y, bw * health_pct, bh), Color(0.9, 0.15, 0.15))
-	draw_rect(Rect2(m + bw + 6, y, 2, bh), Color(0.1, 0.1, 0.1))
-	y += bh + 4
-	# XP bar
-	draw_rect(Rect2(m, y, bw, 8), Color(0.05, 0.05, 0.3))
-	draw_rect(Rect2(m, y, bw * xp_pct, 8), Color(0.2, 0.3, 0.9))
-	# Level (i18n prefix)
-	draw_string(font, Vector2(m + bw + 8, m + 14), I18N.t("hud.lv") + level_str, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
-	# Timer with time limit
+	# XP bar (full width)
+	draw_rect(Rect2(m, m, bar_w, 8), Color(0.05, 0.05, 0.3))
+	draw_rect(Rect2(m, m, bar_w * xp_pct, 8), Color(0.2, 0.3, 0.9))
+	# Level on top of XP bar
+	draw_string(font, Vector2(m + 4, m + 7), I18N.t("hud.lv") + level_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.7, 0.7, 0.9, 0.8))
+	# Timer (centered, large)
 	var timer_display = timer_str
 	if time_limit_str != "":
 		timer_display = timer_str + " / " + time_limit_str
-	draw_string(font, Vector2(m, m + 50), timer_display, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+	var timer_fs = 28
+	var timer_w = font.get_string_size(timer_display, HORIZONTAL_ALIGNMENT_LEFT, -1, timer_fs).x
+	draw_string(font, Vector2((vp.x - timer_w) / 2, m + 32), timer_display, HORIZONTAL_ALIGNMENT_LEFT, -1, timer_fs, Color.WHITE)
 	# Stats
-	draw_string(font, Vector2(m, m + 72), kills_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
-	draw_string(font, Vector2(m, m + 90), gold_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.9, 0.8, 0.1))
+	draw_string(font, Vector2(m, m + 46), kills_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+	draw_string(font, Vector2(m + 120, m + 46), gold_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.9, 0.8, 0.1))
 
-	# Weapon display (bottom-right)
-	var wx = vp.x - 200
-	var wy = vp.y - 30 * _weapon_list.size() - 10
-	for w in _weapon_list:
-		var wep_col = w.get("color", Color.WHITE)
-		var evo_mark = I18N.t("wpn.evolved") if w.get("evolved", false) else ""
-		var wpn_name = I18N.t(w.get("name_key", ""), w.get("name", "?"))
-		var wep_txt = "%s%s Lv.%d" % [evo_mark, wpn_name, w.get("level", 1)]
-		var wep_col_display = Color(0.8, 0.3, 0.9, 0.9) if w.get("evolved", false) else wep_col
-		draw_string(font, Vector2(wx, wy), wep_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, wep_col_display)
-		wy += 22
+	# ── Active Arcana badges (top-right) ──
+	if not _active_arcanas.is_empty():
+		var badge_size = 36.0
+		var badge_gap = 4.0
+		var badge_x = vp.x - (badge_size + badge_gap) * _active_arcanas.size() - m
+		var badge_y = m + 10.0
+		for i in range(_active_arcanas.size()):
+			var a = _active_arcanas[i]
+			var col = a.get("color", Color(0.5, 0.5, 0.5))
+			var roman = a.get("roman", "?")
+			var bx = badge_x + i * (badge_size + badge_gap)
+			# Badge background
+			draw_rect(Rect2(bx, badge_y, badge_size, badge_size), col * 0.25)
+			draw_rect(Rect2(bx, badge_y, badge_size, badge_size), col, false, 2.0)
+			# Roman numeral text
+			var text_sz = 12 if roman.length() <= 2 else 9
+			var tw = font.get_string_size(roman, HORIZONTAL_ALIGNMENT_LEFT, -1, text_sz).x
+			draw_string(font, Vector2(bx + (badge_size - tw) / 2, badge_y + badge_size - 8), roman, HORIZONTAL_ALIGNMENT_LEFT, -1, text_sz, col)
+
+	# ── Relic arrow indicator (green pointer toward uncollected relics) ──
+	if _show_relic_arrow:
+		var arrow_center = Vector2(vp.x / 2, vp.y / 2)
+		var arrow_len = 40.0
+		var arrow_size = 12.0
+		var tip = arrow_center + Vector2(cos(_relic_arrow_angle), sin(_relic_arrow_angle)) * arrow_len
+		var perp = Vector2(-sin(_relic_arrow_angle), cos(_relic_arrow_angle))
+		var base_left = arrow_center + perp * arrow_size
+		var base_right = arrow_center - perp * arrow_size
+		var arrow_tri = PackedVector2Array([tip, base_left, base_right])
+		draw_polygon(arrow_tri, [Color(0.3, 0.8, 0.3, 0.85)])
+		# Outline via polyline
+		draw_polyline(PackedVector2Array([base_left, tip, base_right]), Color(0.5, 1.0, 0.5, 0.6), 2.0)
+		# Distance text
+		var dist_str = str(int(_relic_arrow_dist)) + "m"
+		var dist_pos = arrow_center + Vector2(cos(_relic_arrow_angle), sin(_relic_arrow_angle)) * (arrow_len + 18)
+		draw_string(font, dist_pos - Vector2(10, 5), dist_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.3, 0.8, 0.3))
+
+	# ── Weapon & passive cells (bottom-right) ──
+	var cell_sz = 36.0
+	var gap = 4.0
+	var cells_start_x = vp.x - (cell_sz + gap) * 6 - 10
+	var cells_y = vp.y - (cell_sz + gap) * 2 - 10
+	_draw_cell_row(cells_start_x, cells_y, cell_sz, gap, _weapon_list, false)
+	_draw_cell_row(cells_start_x, cells_y + cell_sz + gap, cell_sz, gap, _passive_list, true)
 
 	if show_go:
 		_draw_overlay(vp, font, I18N.t("hud.game_over"), Color(0.9, 0.2, 0.2))
@@ -124,19 +163,180 @@ func set_gold(g: int):
 	queue_redraw()
 
 
+func set_relic_arrow(angle, dist: float):
+	if angle == null:
+		_show_relic_arrow = false
+	else:
+		_show_relic_arrow = true
+		_relic_arrow_angle = angle
+		_relic_arrow_dist = dist
+	queue_redraw()
+
+
 func set_weapons(weapons: Array):
 	_weapon_list = weapons.duplicate()
 	queue_redraw()
 
 
+func set_passives(passives: Array):
+	_passive_list = passives.duplicate()
+	queue_redraw()
+
+
+func set_arcanas(arcana_ids: Array):
+	# Convert arcana IDs to data dicts with color and roman numeral
+	var data: Array = []
+	for id in arcana_ids:
+		var a = ArcanaDefs.get_arcana(id)
+		data.append({
+			"id": id,
+			"roman": a["roman"],
+			"color": a["color"],
+		})
+	_active_arcanas = data
+	queue_redraw()
+
+
+func _draw_cell_row(start_x: float, y: float, sz: float, gap: float, items: Array, dim: bool):
+	var font = ThemeDB.fallback_font
+	for i in range(6):
+		var x = start_x + i * (sz + gap)
+		if i < items.size():
+			var item = items[i]
+			var col = item.get("color", Color(0.5, 0.5, 0.5))
+			var lv = item.get("level", 1)
+			var evolved = item.get("evolved", false)
+			var t = item.get("type", -1)
+			# Background
+			var bg = Color(col.r * 0.25, col.g * 0.25, col.b * 0.25, 0.7)
+			draw_rect(Rect2(x, y, sz, sz), bg)
+			# Fill bar (level indicator on left edge)
+			var max_fill_lv = 8.0
+			if RelicManager.has_relic("great_gospel"):
+				max_fill_lv = 20.0
+			var fill_h = (sz - 2) * min(lv / max_fill_lv, 1.0)
+			draw_rect(Rect2(x + 1, y + sz - 1 - fill_h, 3, fill_h), col)
+			# Draw item symbol (white, centered)
+			if t >= 0:
+				_draw_item_symbol(x, y, sz, t)
+			# Level number
+			draw_string(font, Vector2(x + 8, y + sz - 4), str(lv), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
+			# Evolved indicator
+			if evolved:
+				draw_string(font, Vector2(x + sz - 14, y + 12), "*", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.8, 0.2))
+		else:
+			# Empty cell (dim outline)
+			draw_rect(Rect2(x, y, sz, sz), Color(0.2, 0.2, 0.2, 0.3), false, 1.0)
+
+
+# Draw a simple white symbol inside a HUD cell to identify the item at a glance.
+func _draw_item_symbol(cx: float, cy: float, sz: float, t: int):
+	var center_x = cx + sz / 2
+	var center_y = cy + sz / 2
+	var s = sz * 0.2  # scale factor
+	var white = Color(1, 1, 1, 0.85)
+	
+	match t:
+		0:  # Whip — diagonal slash
+			draw_line(Vector2(center_x - s, center_y + s), Vector2(center_x + s, center_y - s), white, 2.0)
+		1:  # Magic Wand — vertical line + dot
+			draw_line(Vector2(center_x, center_y - s * 0.8), Vector2(center_x, center_y + s * 0.8), white, 2.0)
+			draw_circle(Vector2(center_x, center_y - s * 1.0), 1.5, white)
+		2:  # Garlic — small filled circle
+			draw_circle(Vector2(center_x, center_y), s * 0.5, white)
+		10: # Knife — small triangle pointing right
+			var tri = PackedVector2Array([
+				Vector2(center_x + s * 0.8, center_y),
+				Vector2(center_x - s * 0.6, center_y - s * 0.7),
+				Vector2(center_x - s * 0.6, center_y + s * 0.7),
+			])
+			draw_polygon(tri, [white])
+		11: # Axe — horizontal bar
+			draw_line(Vector2(center_x - s, center_y), Vector2(center_x + s, center_y), white, 2.5)
+		12: # Fire Wand — diamond
+			var diamond = PackedVector2Array([
+				Vector2(center_x, center_y - s * 0.9),
+				Vector2(center_x + s * 0.7, center_y),
+				Vector2(center_x, center_y + s * 0.9),
+				Vector2(center_x - s * 0.7, center_y),
+			])
+			draw_polygon(diamond, [white])
+		3:  # Wings — V shape
+			draw_line(Vector2(center_x - s, center_y + s * 0.3), Vector2(center_x, center_y - s * 0.6), white, 2.0)
+			draw_line(Vector2(center_x, center_y - s * 0.6), Vector2(center_x + s, center_y + s * 0.3), white, 2.0)
+		4:  # Spinach — + cross
+			draw_line(Vector2(center_x - s * 0.7, center_y), Vector2(center_x + s * 0.7, center_y), white, 2.0)
+			draw_line(Vector2(center_x, center_y - s * 0.7), Vector2(center_x, center_y + s * 0.7), white, 2.0)
+		5:  # Empty Tome — square outline
+			var r = s * 0.7
+			draw_rect(Rect2(center_x - r, center_y - r, r * 2, r * 2), white, false, 1.5)
+		6:  # Hollow Heart — heart shape (two arcs + V)
+			var hr = s * 0.4
+			draw_circle(Vector2(center_x - hr, center_y - hr * 0.3), hr * 0.6, white)
+			draw_circle(Vector2(center_x + hr, center_y - hr * 0.3), hr * 0.6, white)
+			draw_line(Vector2(center_x - hr * 1.0, center_y - hr * 0.1), Vector2(center_x, center_y + hr * 0.9), white, 1.5)
+			draw_line(Vector2(center_x + hr * 1.0, center_y - hr * 0.1), Vector2(center_x, center_y + hr * 0.9), white, 1.5)
+		7:  # Candelabrador — circle outline
+			draw_circle(Vector2(center_x, center_y), s * 0.55, white, false, 1.5)
+		8:  # Crown — 3-point crown
+			var cw = s * 0.8
+			var ch = s * 0.6
+			var crown_tri = PackedVector2Array([
+				Vector2(center_x - cw, center_y + ch * 0.5),
+				Vector2(center_x - cw * 0.6, center_y - ch),
+				Vector2(center_x - cw * 0.2, center_y - ch * 0.2),
+				Vector2(center_x + cw * 0.2, center_y - ch * 0.2),
+				Vector2(center_x + cw * 0.6, center_y - ch),
+				Vector2(center_x + cw, center_y + ch * 0.5),
+			])
+			draw_polygon(crown_tri, [white])
+		9:  # Pummarola — small filled circle
+			draw_circle(Vector2(center_x, center_y), s * 0.4, white)
+		13: # Duplicator — II (two vertical lines)
+			draw_line(Vector2(center_x - s * 0.35, center_y - s * 0.6), Vector2(center_x - s * 0.35, center_y + s * 0.6), white, 2.0)
+			draw_line(Vector2(center_x + s * 0.35, center_y - s * 0.6), Vector2(center_x + s * 0.35, center_y + s * 0.6), white, 2.0)
+		14: # Stone Mask — two dots (eyes)
+			draw_circle(Vector2(center_x - s * 0.4, center_y), s * 0.15, white)
+			draw_circle(Vector2(center_x + s * 0.4, center_y), s * 0.15, white)
+		15: # Magnet — U shape
+			var ms = s * 0.6
+			draw_line(Vector2(center_x - ms, center_y - ms), Vector2(center_x - ms, center_y + ms * 0.5), white, 2.0)
+			draw_line(Vector2(center_x + ms, center_y - ms), Vector2(center_x + ms, center_y + ms * 0.5), white, 2.0)
+			draw_line(Vector2(center_x - ms, center_y + ms * 0.5), Vector2(center_x + ms, center_y + ms * 0.5), white, 2.0)
+		16: # Cross — cross shape
+			draw_line(Vector2(center_x - s * 0.7, center_y), Vector2(center_x + s * 0.7, center_y), white, 2.5)
+			draw_line(Vector2(center_x, center_y - s * 0.7), Vector2(center_x, center_y + s * 0.7), white, 2.5)
+		17: # King Bible — circle with cross
+			draw_circle(Vector2(center_x, center_y), s * 0.55, white, false, 2.0)
+			draw_line(Vector2(center_x - s * 0.4, center_y), Vector2(center_x + s * 0.4, center_y), white, 2.0)
+			draw_line(Vector2(center_x, center_y - s * 0.4), Vector2(center_x, center_y + s * 0.4), white, 2.0)
+		18: # Santa Water — water drop (triangle)
+			var drop = PackedVector2Array([
+				Vector2(center_x, center_y - s * 0.7),
+				Vector2(center_x - s * 0.6, center_y + s * 0.4),
+				Vector2(center_x + s * 0.6, center_y + s * 0.4),
+			])
+			draw_polygon(drop, [white])
+		19: # Runetracer — angled lines (runes)
+			draw_line(Vector2(center_x - s * 0.8, center_y - s * 0.5), Vector2(center_x + s * 0.8, center_y + s * 0.5), white, 2.0)
+			draw_line(Vector2(center_x - s * 0.5, center_y - s * 0.8), Vector2(center_x + s * 0.5, center_y + s * 0.8), white, 1.5)
+		20: # Lightning Ring — zigzag
+			draw_line(Vector2(center_x - s * 0.3, center_y - s * 0.7), Vector2(center_x + s * 0.2, center_y - s * 0.2), white, 2.0)
+			draw_line(Vector2(center_x + s * 0.2, center_y - s * 0.2), Vector2(center_x - s * 0.2, center_y + s * 0.2), white, 2.0)
+			draw_line(Vector2(center_x - s * 0.2, center_y + s * 0.2), Vector2(center_x + s * 0.3, center_y + s * 0.7), white, 2.0)
+
+
 func _make_buttons():
 	if restart_btn and menu_btn:
 		return
+	var vp = get_viewport().get_visible_rect().size
 	
 	if not restart_btn:
 		restart_btn = Button.new()
 		restart_btn.text = I18N.t("hud.restart")
 		restart_btn.custom_minimum_size = Vector2(160, 50)
+		restart_btn.size = Vector2(160, 50)
+		restart_btn.position = vp / 2 - Vector2(80, 90)
 		add_child(restart_btn)
 		restart_btn.pressed.connect(_on_restart)
 	
@@ -144,21 +344,10 @@ func _make_buttons():
 		menu_btn = Button.new()
 		menu_btn.text = I18N.t("hud.main_menu")
 		menu_btn.custom_minimum_size = Vector2(160, 50)
+		menu_btn.size = Vector2(160, 50)
+		menu_btn.position = vp / 2 - Vector2(80, 150)
 		add_child(menu_btn)
 		menu_btn.pressed.connect(_on_menu)
-	
-	# Position buttons — use call_deferred to avoid await issues when paused
-	call_deferred(&"_position_result_buttons")
-
-
-func _position_result_buttons():
-	if not is_inside_tree():
-		return
-	var vp = get_viewport().get_visible_rect().size
-	if restart_btn:
-		restart_btn.global_position = vp / 2 - Vector2(80, 90)
-	if menu_btn:
-		menu_btn.global_position = vp / 2 - Vector2(80, 150)
 
 
 func _on_restart():

@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://c51le4ga87nt3"]
+
+[ext_resource type="Script" path="res://scripts/ui/relic_screen.gd" id="1_unk34"]
+
+[node name="RelicScreen" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_unk34")

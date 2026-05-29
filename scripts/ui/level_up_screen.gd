@@ -3,6 +3,9 @@ extends Control
 signal upgrade_selected(upgrade_type: int)
 signal evolution_selected(weapon_type: int)
 
+const IconGenerator = preload("res://scripts/ui/icon_generator.gd")
+const UiUtils = preload("res://scripts/ui/ui_utils.gd")
+
 var player_ref
 var panel: Panel
 var title: Label
@@ -42,11 +45,15 @@ func _create_ui():
 	bg.bg_color = Color(0, 0, 0, 0.85)
 	panel.add_theme_stylebox_override("panel", bg)
 
-	# Center the choice panel using viewport-relative positioning
+	# Center the choice panel using anchors
 	var vp = get_viewport().get_visible_rect().size
+	var panel_w = mini(700, vp.x - 40)
+	var panel_h = mini(400, vp.y - 40)
 	var vb = VBoxContainer.new()
-	vb.position = Vector2(vp.x / 2 - 350, vp.y / 2 - 175)
-	vb.size = Vector2(700, 350)
+	vb.anchor_left = 0.5; vb.anchor_top = 0.5
+	vb.anchor_right = 0.5; vb.anchor_bottom = 0.5
+	vb.offset_left = -panel_w / 2; vb.offset_top = -panel_h / 2
+	vb.offset_right = panel_w / 2; vb.offset_bottom = panel_h / 2
 	panel.add_child(vb)
 
 	title = Label.new()
@@ -69,7 +76,7 @@ func _create_ui():
 
 
 func _generate_and_show():
-	var possible = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+	var possible = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 	possible.shuffle()
 
 	# Gather evolution candidates from owned weapons
@@ -93,7 +100,8 @@ func _generate_and_show():
 		if _is_weapon(p) and evolutions.has(p):
 			continue
 		var lv = player_ref.get_weapon_level(p) if _is_weapon(p) else player_ref.get_passive_level(p)
-		if lv < 8:
+		var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else 8
+		if lv < max_lv:
 			chosen.append(p)
 
 	if chosen.is_empty():
@@ -108,24 +116,25 @@ func _generate_and_show():
 
 func _add_choice_button(t: int):
 	var vb2 = VBoxContainer.new()
-	vb2.custom_minimum_size = Vector2(190, 160)
+	vb2.custom_minimum_size = Vector2(190, 200)
+	vb2.alignment = BoxContainer.ALIGNMENT_CENTER
 	var nm = I18N.t(_item_name_key(t), _name(t))
 	var lv = player_ref.get_weapon_level(t) if _is_weapon(t) else player_ref.get_passive_level(t)
 	var lv_txt = I18N.t("levelup.new") if lv == 0 else I18N.t("levelup.level") % [lv, lv + 1]
 	var desc = I18N.t(_item_desc_key(t), _desc(t))
 	var col = _color(t)
 
+	# Icon at top
+	var icon = TextureRect.new()
+	icon.texture = IconGenerator.generate(t, 40)
+	icon.custom_minimum_size = Vector2(40, 40)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP
+	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	vb2.add_child(icon)
+
 	var btn = Button.new()
 	btn.custom_minimum_size = Vector2(0, 120)
-	var s = StyleBoxFlat.new()
-	s.bg_color = col * 0.25
-	s.border_width_left = 2; s.border_width_right = 2
-	s.border_width_top = 2; s.border_width_bottom = 2
-	s.border_color = col
-	s.corner_radius_top_left = 10; s.corner_radius_top_right = 10
-	s.corner_radius_bottom_left = 10; s.corner_radius_bottom_right = 10
-	btn.add_theme_stylebox_override("normal", s)
-	btn.add_theme_stylebox_override("hover", s)
+	UiUtils.style_button(btn, col * 0.25, col)
 
 	var l1 = Label.new()
 	l1.text = nm
@@ -158,24 +167,26 @@ func _add_choice_button(t: int):
 
 func _add_evolution_choice(weapon_type: int):
 	var vb2 = VBoxContainer.new()
-	vb2.custom_minimum_size = Vector2(210, 180)
+	vb2.custom_minimum_size = Vector2(210, 220)
+	vb2.alignment = BoxContainer.ALIGNMENT_CENTER
 
 	var recipe = Player.EVOLUTION_RECIPES[weapon_type]
 	var evo_name = recipe["name"]
 	var evo_desc = recipe["desc"]
 
+	# Golden icon at top
+	var icon = TextureRect.new()
+	icon.texture = IconGenerator.generate(weapon_type, 44)
+	icon.custom_minimum_size = Vector2(44, 44)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP
+	icon.modulate = Color(0.9, 0.7, 0.1)  # golden tint
+	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	vb2.add_child(icon)
+
 	# Golden border button
 	var btn = Button.new()
 	btn.custom_minimum_size = Vector2(0, 140)
-	var s = StyleBoxFlat.new()
-	s.bg_color = Color(0.3, 0.2, 0.0)
-	s.border_width_left = 3; s.border_width_right = 3
-	s.border_width_top = 3; s.border_width_bottom = 3
-	s.border_color = Color(0.9, 0.7, 0.1)
-	s.corner_radius_top_left = 10; s.corner_radius_top_right = 10
-	s.corner_radius_bottom_left = 10; s.corner_radius_bottom_right = 10
-	btn.add_theme_stylebox_override("normal", s)
-	btn.add_theme_stylebox_override("hover", s)
+	UiUtils.style_button(btn, Color(0.3, 0.2, 0.0), Color(0.9, 0.7, 0.1))
 
 	# EVOLVE badge
 	var badge = Label.new()
@@ -239,11 +250,11 @@ func _clear():
 
 
 static func _is_weapon(t: int) -> bool:
-	return t in [0, 1, 2, 10, 11, 12]
+	return t in [0, 1, 2, 10, 11, 12, 16, 17, 18, 19, 20]
 
 
 static func _is_passive(t: int) -> bool:
-	return t in [3, 4, 5, 6, 7, 8, 9, 13, 14, 15]
+	return t in [3, 4, 5, 6, 7, 8, 9, 13, 14, 15, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
 
 
 static func _name(t: int) -> String:
@@ -254,6 +265,11 @@ static func _name(t: int) -> String:
 		10: return "Knife"
 		11: return "Axe"
 		12: return "Fire Wand"
+		16: return "Cross"
+		17: return "King Bible"
+		18: return "Santa Water"
+		19: return "Runetracer"
+		20: return "Lightning Ring"
 		3: return "Wings"
 		4: return "Spinach"
 		5: return "Empty Tome"
@@ -264,6 +280,17 @@ static func _name(t: int) -> String:
 		13: return "Duplicator"
 		14: return "Stone Mask"
 		15: return "Magnet"
+		21: return "Clover"
+		22: return "Spellbinder"
+		23: return "Armor"
+		24: return "Bracer"
+		25: return "Skull O'Maniac"
+		26: return "Tiragisú"
+		27: return "Torrona's Box"
+		28: return "Silver Ring"
+		29: return "Gold Ring"
+		30: return "Metaglio Left"
+		31: return "Metaglio Right"
 	return ""
 
 
@@ -275,6 +302,11 @@ static func _desc(t: int) -> String:
 		10: return "Throw daggers in faced direction"
 		11: return "Hurl a heavy axe in an arc"
 		12: return "Shoot explosive fire at enemies"
+		16: return "Boomerang that seeks enemies"
+		17: return "Orbiting projectiles"
+		18: return "Create damaging puddles"
+		19: return "Bouncing tracer projectiles"
+		20: return "Strike enemies with lightning"
 		3: return "Increase movement speed"
 		4: return "Increase all damage"
 		5: return "Reduce all weapon cooldowns"
@@ -285,6 +317,17 @@ static func _desc(t: int) -> String:
 		13: return "+1 Projectile per level"
 		14: return "+20% Gold per level"
 		15: return "Increase pickup range"
+		21: return "Increase luck"
+		22: return "Increase effect duration"
+		23: return "Reduce damage taken"
+		24: return "Increase projectile speed"
+		25: return "Increase enemy difficulty"
+		26: return "Revive on death"
+		27: return "Boost all stats slightly"
+		28: return "+Duration, +Area"
+		29: return "Curse enemies"
+		30: return "+Recovery, +Max HP"
+		31: return "Curse enemies"
 	return ""
 
 
@@ -297,6 +340,11 @@ static func _item_name_key(t: int) -> String:
 		10: return "item.knife_name"
 		11: return "item.axe_name"
 		12: return "item.firewand_name"
+		16: return "item.cross_name"
+		17: return "item.bible_name"
+		18: return "item.santa_water_name"
+		19: return "item.runetracer_name"
+		20: return "item.lightning_name"
 		3: return "item.wings_name"
 		4: return "item.spinach_name"
 		5: return "item.tome_name"
@@ -307,6 +355,17 @@ static func _item_name_key(t: int) -> String:
 		13: return "item.duplicator_name"
 		14: return "item.stonemask_name"
 		15: return "item.magnet_name"
+		21: return "item.clover_name"
+		22: return "item.spellbinder_name"
+		23: return "item.armor_name"
+		24: return "item.bracer_name"
+		25: return "item.skull_name"
+		26: return "item.tiragisu_name"
+		27: return "item.torrona_name"
+		28: return "item.silver_ring_name"
+		29: return "item.gold_ring_name"
+		30: return "item.metaglio_left_name"
+		31: return "item.metaglio_right_name"
 	return ""
 
 
@@ -319,6 +378,11 @@ static func _item_desc_key(t: int) -> String:
 		10: return "item.knife_desc"
 		11: return "item.axe_desc"
 		12: return "item.firewand_desc"
+		16: return "item.cross_desc"
+		17: return "item.bible_desc"
+		18: return "item.santa_water_desc"
+		19: return "item.runetracer_desc"
+		20: return "item.lightning_desc"
 		3: return "item.wings_desc"
 		4: return "item.spinach_desc"
 		5: return "item.tome_desc"
@@ -329,6 +393,17 @@ static func _item_desc_key(t: int) -> String:
 		13: return "item.duplicator_desc"
 		14: return "item.stonemask_desc"
 		15: return "item.magnet_desc"
+		21: return "item.clover_desc"
+		22: return "item.spellbinder_desc"
+		23: return "item.armor_desc"
+		24: return "item.bracer_desc"
+		25: return "item.skull_desc"
+		26: return "item.tiragisu_desc"
+		27: return "item.torrona_desc"
+		28: return "item.silver_ring_desc"
+		29: return "item.gold_ring_desc"
+		30: return "item.metaglio_left_desc"
+		31: return "item.metaglio_right_desc"
 	return ""
 
 
@@ -340,6 +415,12 @@ static func _evo_i18n_key(weapon_type: int) -> String:
 		2: return "garlic"
 		10: return "knife"
 		11: return "axe"
+		12: return "firewand"
+		16: return "cross"
+		17: return "king_bible"
+		18: return "santa_water"
+		19: return "runetracer"
+		20: return "lightning_ring"
 	return "whip"
 
 
@@ -351,6 +432,11 @@ static func _color(t: int) -> Color:
 		10: return Color(0.7, 0.7, 0.7)
 		11: return Color(0.6, 0.3, 0.1)
 		12: return Color(0.9, 0.4, 0.1)
+		16: return Color(0.9, 0.6, 0.2)    # Cross
+		17: return Color(0.2, 0.6, 0.9)    # King Bible
+		18: return Color(0.1, 0.5, 0.8)    # Santa Water
+		19: return Color(0.8, 0.3, 0.7)    # Runetracer
+		20: return Color(0.9, 0.9, 0.2)    # Lightning Ring
 		3: return Color(0.2, 0.8, 0.4)
 		4: return Color(0.9, 0.3, 0.3)
 		5: return Color(0.2, 0.5, 0.8)
@@ -361,4 +447,15 @@ static func _color(t: int) -> Color:
 		13: return Color(0.2, 0.7, 0.9)
 		14: return Color(0.7, 0.7, 0.8)
 		15: return Color(0.1, 0.7, 0.8)
+		21: return Color(0.2, 0.9, 0.3)    # Clover
+		22: return Color(0.5, 0.3, 0.9)    # Spellbinder
+		23: return Color(0.6, 0.6, 0.6)    # Armor
+		24: return Color(0.3, 0.9, 0.6)    # Bracer
+		25: return Color(0.6, 0.2, 0.2)    # Skull O'Maniac
+		26: return Color(0.9, 0.7, 0.9)    # Tiragisú
+		27: return Color(0.4, 0.2, 0.6)    # Torrona's Box
+		28: return Color(0.6, 0.7, 0.9)    # Silver Ring
+		29: return Color(0.9, 0.8, 0.2)    # Gold Ring
+		30: return Color(0.5, 0.3, 0.8)    # Metaglio Left
+		31: return Color(0.8, 0.3, 0.5)    # Metaglio Right
 	return Color.WHITE

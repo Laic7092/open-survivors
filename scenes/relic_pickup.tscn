@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://dgfpo3cc4mkqe"]
+
+[ext_resource type="Script" path="res://scripts/entities/relic_entity.gd" id="1_cfbf6"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3jm4n"]
+radius = 24.0
+
+[node name="RelicPickup" type="Area2D"]
+groups = ["relics"]
+script = ExtResource("1_cfbf6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_3jm4n")

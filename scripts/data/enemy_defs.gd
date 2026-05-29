@@ -116,6 +116,26 @@ static func _load_types():
 			0.9, true,
 			5.0, 0.3, 0.1
 		),
+		# 6 — Giant Crab (Dairy Plant boss, high armor, spawns adds)
+		EnemyTypeData.new(
+			6, "Giant Crab",
+			500.0, 35.0, 20.0, 3.0, 80,
+			Color(0.3, 0.6, 0.8), Color(0.5, 0.8, 1.0), 3.0,
+			"hexagon", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.95, true,
+			8.0, 0.5, 0.15
+		),
+		# 7 — Trinacria (Gallo Tower boss, triple-form, spread projectiles)
+		EnemyTypeData.new(
+			7, "Trinacria",
+			800.0, 30.0, 30.0, 3.5, 120,
+			Color(0.8, 0.3, 0.1), Color(1.0, 0.5, 0.2), 3.5,
+			"triangle", "chase",
+			true, 1.5, 300.0, 1.2,
+			0.9, true,
+			10.0, 0.6, 0.2
+		),
 	]
 
 
@@ -157,6 +177,66 @@ static func get_types_for_stage(stage_id: int, game_time: float) -> Array[int]:
 			pool = [0, 1, 2]
 			if game_time > 180.0:   # 3 min
 				pool.append(4)
+		3:  # Dairy Plant — factory dwellers, mixed types
+			pool = [0, 1, 2, 4]
+			if game_time > 180.0:   # 3 min
+				pool.append(3)
+			if game_time > 480.0:   # 8 min
+				pool = [0, 1, 2, 3, 4]
+		4:  # Gallo Tower — magic-heavy, more ranged
+			pool = [1, 3, 4]
+			if game_time > 120.0:
+				pool.append(0)
+			if game_time > 300.0:
+				pool.append(2)
+			if game_time > 600.0:
+				pool = [0, 1, 2, 3, 4]
+		5:  # Cappella Magna — full bestiary, high difficulty
+			pool = [0, 1, 2, 3, 4]
+			if game_time > 120.0:
+				pool = [1, 2, 3, 4]
+		6:  # Moongolow — aggressive, mixed types
+			pool = [1, 2, 3, 4]
+			if game_time > 180.0:
+				pool = [0, 1, 2, 3, 4]
+		7:  # Green Acres — random mix (full pool early)
+			pool = [0, 1, 2, 3, 4]
+		8:  # The Bone Zone — fast, aggressive
+			pool = [1, 2, 4]
+			if game_time > 120.0:
+				pool = [0, 1, 2, 3, 4]
+			if game_time > 360.0:
+				pool = [1, 2, 4]  # fast types dominate
+		9:  # Boss Rash — uses boss types as regular enemies
+			pool = [5, 6, 7]
+		10: # Whiteout — mixed with extra speed
+			pool = [0, 1, 4]
+			if game_time > 180.0:
+				pool.append(2)
+			if game_time > 360.0:
+				pool.append(3)
+		11: # The Lycaeum — underwater dwellers
+			pool = [0, 3, 4]
+			if game_time > 180.0:
+				pool.append(1)
+			if game_time > 360.0:
+				pool.append(2)
+		12: # The Coop — mostly melee swarms
+			pool = [0, 1, 4]
+			if game_time > 240.0:
+				pool.append(2)
+		13: # Space 54 — chaotic, all types
+			pool = [0, 1, 2, 3, 4]
+		14: # Bat Country — extreme speed + scaling
+			pool = [1, 4]
+			if game_time > 60.0:
+				pool = [0, 1, 2, 4]
+			if game_time > 180.0:
+				pool = [0, 1, 2, 3, 4]
+		15: # Eudaimonia Machine — endgame gauntlet
+			pool = [0, 1, 2, 3, 4]
+			if game_time > 180.0:
+				pool = [1, 2, 3, 4, 5]
 		_:
 			pool = [0, 1, 2, 3, 4]
 
@@ -166,7 +246,27 @@ static func get_types_for_stage(stage_id: int, game_time: float) -> Array[int]:
 # Returns the boss type ID for a given stage, or -1 if no boss.
 static func get_boss_type(stage_id: int, game_time: float) -> int:
 	_ensure_loaded()
-	# Boss appears at 15:00 (900s) on non-Il Molise stages
-	if stage_id != 2 and game_time >= 900.0:
-		return 5
+	match stage_id:
+		0, 1:  # Mad Forest, Inlaid Library — Nightmare at 15:00
+			if game_time >= 900.0:
+				return 5
+		2:  # Il Molise — no boss (15 min stage)
+			return -1
+		3:  # Dairy Plant — Giant Crab at 15:00
+			if game_time >= 900.0:
+				return 6
+		4:  # Gallo Tower — Trinacria at 15:00
+			if game_time >= 900.0:
+				return 7
+		5:  # Cappella Magna — Nightmare (enhanced) at 15:00
+			if game_time >= 900.0:
+				return 5
+		6:  # Moongolow — Nightmare at 7:30
+			if game_time >= 450.0:
+				return 5
+		7, 8, 9, 10, 11, 12, 13, 14:
+			# Challenge/bonus stages — no traditional boss; use scaling instead
+			return -1
+		15: # Eudaimonia Machine — no boss (99-min endurance)
+			return -1
 	return -1

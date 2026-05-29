@@ -87,9 +87,19 @@ func _generate_sounds() -> Dictionary:
 		"wpn_axe": _mk_sweep(300, 150, 0.12, 0.22),
 		"wpn_fire": _mk_sweep(400, 800, 0.15, 0.20),
 		"wpn_evo": _mk_arpeggio([660, 880, 1100], 0.2, 0.25),
+		"wpn_cross": _mk_sweep(500, 900, 0.12, 0.2),
+		"wpn_heaven": _mk_arpeggio([880, 1100, 1320], 0.2, 0.3),
+		"wpn_bible": _mk_tone(880, 0.08, 0.2),
+		"wpn_water": _mk_sweep(200, 400, 0.15, 0.25),
+		"wpn_runetracer": _mk_sweep(600, 1200, 0.1, 0.18),
+		"wpn_nofuture": _mk_sweep(300, 1400, 0.2, 0.3),
+		"wpn_lightning": _mk_noise(0.08, 0.15),
+		"wpn_bounce": _mk_tone(600, 0.03, 0.08),
+		"player_revive": _mk_arpeggio([660, 880, 1100, 1320], 0.3, 0.4),
 
 		"bgm_menu": _mk_bgm_loop(8.0),
 		"bgm_game": _mk_bgm_loop(10.0),
+		"bgm_alt": _mk_bgm_loop_alt(12.0),
 	}
 
 
@@ -124,6 +134,45 @@ func _mk_bgm_loop(length_sec: float) -> AudioStreamWAV:
 		var val = int(clamp(amp * 16384, -16384, 16383))
 		data.encode_s16(i * 2, val)
 
+	var wav = AudioStreamWAV.new()
+	wav.data = data
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = SAMPLE_RATE
+	wav.stereo = false
+	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	wav.loop_begin = 0
+	wav.loop_end = frames
+	return wav
+
+
+# Alternate BGM — minor key, darker mood
+func _mk_bgm_loop_alt(length_sec: float) -> AudioStreamWAV:
+	var frames = int(SAMPLE_RATE * length_sec)
+	var data = PackedByteArray()
+	data.resize(frames * 2)
+	for i in range(frames):
+		var t = float(i) / SAMPLE_RATE
+		var amp = 0.0
+		# Minor chord: root + minor third + fifth
+		amp += sin(2.0 * PI * 110.0 * t) * 0.07          # A2
+		amp += sin(2.0 * PI * 130.81 * t) * 0.05          # C3 (minor third)
+		amp += sin(2.0 * PI * 164.81 * t) * 0.04          # E3
+		amp += sin(2.0 * PI * 220.0 * t) * 0.03           # A3 (octave)
+		# Slow LFO
+		var lfo = sin(2.0 * PI * 0.3 * t) * 0.4 + 0.6
+		amp += sin(2.0 * PI * 130.81 * 2.0 * t) * 0.04 * lfo
+		# Pulsing bass
+		var pulse = (sin(2.0 * PI * 2.5 * t) * 0.5 + 0.5)
+		amp += sin(2.0 * PI * 55.0 * t) * 0.06 * pulse
+		# Envelope
+		var envelope = 1.0
+		if t < 0.1:
+			envelope = t / 0.1
+		elif t > length_sec - 0.1:
+			envelope = (length_sec - t) / 0.1
+		amp *= envelope * 0.6
+		var val = int(clamp(amp * 16384, -16384, 16383))
+		data.encode_s16(i * 2, val)
 	var wav = AudioStreamWAV.new()
 	wav.data = data
 	wav.format = AudioStreamWAV.FORMAT_16_BITS

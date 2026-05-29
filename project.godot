@@ -19,16 +19,20 @@ config/features=PackedStringArray("4.6")
 AudioManager="*res://scripts/managers/audio_manager.gd"
 PowerUpManager="*res://scripts/managers/powerup_manager.gd"
 I18N="*res://scripts/managers/i18n.gd"
-
-[gui]
-
-theme/custom_font="res://assets/fonts/NotoSansSC-6.ttf"
+RelicManager="*res://scripts/managers/relic_manager.gd"
+DebugManager="*res://scripts/managers/debug_manager.gd"
+ArcanaManager="*res://scripts/managers/arcana_manager.gd"
+UnlockManager="*res://scripts/managers/unlock_manager.gd"
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+
+[gui]
+
+theme/custom_font="res://assets/fonts/NotoSansSC-6.ttf"
 
 [input]
 

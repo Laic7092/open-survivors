@@ -24,8 +24,9 @@ var gold: int = 0
 var levels: Dictionary = {}  # powerup_id -> current level (0 = not bought)
 
 # Unlock state — bitmasks
-var unlocked_stages: int = 1  # bit 0 = stage 0 (Mad Forest) always unlocked
-var unlocked_chars: int = 1   # bit 0 = char 0 (Antonio) always unlocked
+var unlocked_stages: int = 1      # bit 0 = stage 0 (Mad Forest) always unlocked
+var unlocked_hyper: int = 0       # bit N = hyper mode for stage N
+var unlocked_chars: int = 1       # bit 0 = char 0 (Antonio) always unlocked
 
 # Run-local gold accumulator (not saved until game over)
 var run_gold: int = 0
@@ -39,17 +40,37 @@ func _ready():
 # ── Persistence ────────────────────────────────────────────
 
 func _save_data():
+	# Read existing save data to preserve relic state written by RelicManager
+	var data = _read_raw_save()
+	data["gold"] = gold
+	data["levels"] = levels.duplicate()
+	data["unlocked_stages"] = unlocked_stages
+	data["unlocked_hyper"] = unlocked_hyper
+	data["unlocked_chars"] = unlocked_chars
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if not file:
 		return
-	var data = {
-		"gold": gold,
-		"levels": levels.duplicate(),
-		"unlocked_stages": unlocked_stages,
-		"unlocked_chars": unlocked_chars,
-	}
 	file.store_string(JSON.stringify(data, "\t"))
 	file.close()
+
+
+# Read raw save data preserving all fields (used by RelicManager too)
+func _read_raw_save() -> Dictionary:
+	if not FileAccess.file_exists(SAVE_PATH):
+		return {}
+	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if not file:
+		return {}
+	var text = file.get_as_text()
+	file.close()
+	var json = JSON.new()
+	var err = json.parse(text)
+	if err != OK:
+		return {}
+	var data = json.data
+	if typeof(data) != TYPE_DICTIONARY:
+		return {}
+	return data
 
 
 func _load_data():
@@ -76,6 +97,7 @@ func _load_data():
 	gold = data.get("gold", 0)
 	levels = data.get("levels", {})
 	unlocked_stages = data.get("unlocked_stages", 1)
+	unlocked_hyper = data.get("unlocked_hyper", 0)
 	unlocked_chars = data.get("unlocked_chars", 1)
 	# Ensure every powerup exists in levels dict
 	for id in POWERUPS:
@@ -145,6 +167,15 @@ func has_unlocked_stage(stage_id: int) -> bool:
 	return (unlocked_stages & (1 << stage_id)) != 0
 
 
+func unlock_hyper(stage_id: int):
+	unlocked_hyper |= (1 << stage_id)
+	_save_data()
+
+
+func has_hyper(stage_id: int) -> bool:
+	return (unlocked_hyper & (1 << stage_id)) != 0
+
+
 # Unlock the next stage after current_id (stage id = current_id + 1)
 func unlock_next_stage(current_id: int):
 	var next_id = current_id + 1
@@ -168,6 +199,9 @@ func buy_character(char_id: int, cost: int) -> bool:
 	gold -= cost
 	unlock_character(char_id)
 	_save_data()
+	# Notify UnlockManager for notification tracking
+	if UnlockManager:
+		UnlockManager.purchase_unlock("char_" + str(char_id))
 	return true
 
 
