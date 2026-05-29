@@ -14,8 +14,23 @@ var _has_data: bool = false
 # 图标节点（由 IconGenerator.make_icon_node() 创建，含纹理 + emoji）
 var _icon_node: Control = null
 
+# Cache: avoid rebuilding when data hasn't changed (called every frame)
+var _cache_type: int = -2
+var _cache_level: int = -1
+var _cache_evolved: bool = false
+var _cache_color: Color = Color()
+
 
 func set_data(type: int, level: int, max_lv: int, evolved: bool, color: Color):
+	# Skip if unchanged (called every frame from HUD)
+	if _has_data and type == _cache_type and level == _cache_level and evolved == _cache_evolved and color == _cache_color:
+		return
+	
+	_cache_type = type
+	_cache_level = level
+	_cache_evolved = evolved
+	_cache_color = color
+	
 	item_type = type
 	item_level = level
 	item_max_lv = max_lv if max_lv > 0 else ItemDefs.get_max_level(type)

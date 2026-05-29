@@ -65,24 +65,20 @@ func _collect():
 
 	AudioManager.play_sfx("pickup_chicken")
 
-	var ft_scene = preload("res://scenes/floating_text.tscn")
-	var ft = ft_scene.instantiate()
-	ft.display_text = _name_label.text if _name_label else "?"
-	ft.text_color = Color(0.9, 0.8, 0.2)
-	ft.font_size = 14
-	ft.global_position = global_position
-	if is_inside_tree():
-		get_parent().add_child(ft)
+	# Pooled floating text
+	if is_inside_tree() and FloatingTextPool:
+		FloatingTextPool.spawn(get_parent(), global_position, _name_label.text if _name_label else "?", Color(0.9, 0.8, 0.2), 14)
 
 	queue_free()
 
 
 func _process(_delta):
 	if _name_label:
-		# Float up/down
-		var off = sin(Time.get_ticks_msec() * 0.003) * 3
-		_name_label.position = Vector2(-40, -24 + off)
-	queue_redraw()
+		# Float up/down — only redraw every 4 frames
+		if Engine.get_frames_drawn() % 4 == 0:
+			var off = sin(Time.get_ticks_msec() * 0.003) * 3
+			_name_label.position = Vector2(-40, -24 + off)
+			queue_redraw()
 
 
 func _draw():

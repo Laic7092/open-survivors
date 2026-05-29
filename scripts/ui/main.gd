@@ -42,6 +42,12 @@ var stage_enemy_speed_mod: float = 1.0
 var map_width: float = 3200.0
 var map_height: float = 2400.0
 
+# Cached stage data lookups (avoid .get() every frame)
+var _stage_id: int = 0
+var _diff_ramp_time: float = 60.0
+var _spawn_base_interval: float = 1.0
+var _spawn_min_interval: float = 0.15
+
 # Obstacle positions for minimap
 var _obstacle_positions: Array[Vector2] = []
 
@@ -60,6 +66,21 @@ var _has_relic_arrow: bool = false
 # Camera shake
 var _shake_intensity: float = 0.0
 var _shake_duration: float = 0.0
+
+# HUD data cache — avoid rebuilding every frame when nothing changed
+var _hud_weapon_cache: Array = []
+var _hud_passive_cache: Array = []
+var _hud_last_level: int = -1
+var _hud_last_kills: int = -1
+var _hud_last_gold: int = -1
+var _hud_last_wave: int = -1
+var _hud_last_xp: int = -1
+var _hud_last_xp_to_next: int = -1
+var _frame_count: int = 0
+
+# Cached values for per-frame hot paths
+var _last_speed_mult: float = -1.0
+var _cached_vp_size: Vector2 = Vector2.ZERO
 
 var _player_scene = preload("res://scenes/player.tscn")
 var _enemy_scene = preload("res://scenes/enemy.tscn")
@@ -84,6 +105,11 @@ func _ready():
 		stage_data = Engine.get_meta("selected_stage")
 	else:
 		stage_data = StageDefs.get_stage(0)
+	
+	_stage_id = stage_data.get("id", 0)
+	_diff_ramp_time = stage_data.get("difficulty_ramp_time", 60.0)
+	_spawn_base_interval = stage_data.get("spawn_base_interval", 1.0)
+	_spawn_min_interval = stage_data.get("spawn_min_interval", 0.15)
 	
 	stage_time_limit = stage_data.get("time_limit", 1800.0)
 	# Endless mode removes time limit
@@ -1085,7 +1111,11 @@ func _clamp_to_map(pos: Vector2, margin: float = 40.0) -> Vector2:
 func _process(delta):
 	if game_over or stage_complete or not _map_ready:
 		return
-	# Hurry mode: 1.5x game speed
+	
+	_frame_count += 1
+	var every_n = func(n: int): return _frame_count % n == 0
+	
+	# Hurry mode: 1.5x game speed (cache to avoid Engine.get_meta every frame)
 	var speed_mult = 1.0
 	if Engine.has_meta("hurry_mode") and Engine.get_meta("hurry_mode"):
 		speed_mult = 1.5
@@ -1099,7 +1129,7 @@ func _process(delta):
 		return
 	
 	# ── Continuous spawn system ──
-	difficulty = 1.0 + game_time / stage_data.get("difficulty_ramp_time", 60.0)
+	difficulty = 1.0 + game_time / _diff_ramp_time
 	_spawn_timer -= delta * speed_mult
 	if _spawn_timer <= 0.0:
 		_spawn_continuous()
@@ -1119,48 +1149,92 @@ func _process(delta):
 			if _wave_break_timer <= 0.0:
 				_start_wave()
 	
-	# Apply speed_mult to enemy speed via metadata
-	Engine.set_meta("stage_speed_mult", speed_mult)
+	# Apply speed_mult to enemy speed via metadata (only when changed)
+	if speed_mult != _last_speed_mult:
+		_last_speed_mult = speed_mult
+		Engine.set_meta("stage_speed_mult", speed_mult)
 	
 	# Boss spawn check (at 15:00 for eligible stages)
 	if not _boss_spawned and game_time >= 900.0:
-		var boss_t = EnemyDefs.get_boss_type(stage_data.get("id", 0), game_time)
+		var boss_t = EnemyDefs.get_boss_type(_stage_id, game_time)
 		if boss_t >= 0:
 			_spawn_boss()
 	
-	# HUD
+	# HUD — cache simple values to avoid redundant calls
+	if player.level != _hud_last_level:
+		_hud_last_level = player.level
+		hud.set_level(player.level)
+	if total_kills != _hud_last_kills:
+		_hud_last_kills = total_kills
+		hud.set_kills(total_kills)
+	if PowerUpManager.run_gold != _hud_last_gold:
+		_hud_last_gold = PowerUpManager.run_gold
+		hud.set_gold(PowerUpManager.run_gold)
+	if wave_number != _hud_last_wave:
+		_hud_last_wave = wave_number
+		hud.set_wave(wave_number)
+	if player.xp != _hud_last_xp or player.xp_to_next != _hud_last_xp_to_next:
+		_hud_last_xp = player.xp
+		_hud_last_xp_to_next = player.xp_to_next
+		hud.set_xp(player.xp, player.xp_to_next)
 	hud.set_health(player.health, player.max_health)
-	hud.set_xp(player.xp, player.xp_to_next)
-	hud.set_level(player.level)
 	hud.set_timer(game_time)
-	hud.set_kills(total_kills)
-	hud.set_gold(PowerUpManager.run_gold)
-	hud.set_wave(wave_number)
 	
-	# Weapon display data for HUD
-	var wep_data: Array = []
-	for w in player.weapon_manager.weapons:
-		wep_data.append({
-			"name": _get_wep_name(w.type),
-			"name_key": _get_wep_name_key(w.type),
-			"type": w.type,
-			"level": w.level,
-			"evolved": w.evolved,
-			"color": _get_wep_color(w.type),
-		})
-	hud.set_weapons(wep_data)
+	# Weapon display data — only rebuild when weapons actually change
+	var wep_changed = false
+	var weapons = player.weapon_manager.weapons
+	if weapons.size() != _hud_weapon_cache.size():
+		wep_changed = true
+	else:
+		for i in range(weapons.size()):
+			var w = weapons[i]
+			var cached = _hud_weapon_cache[i]
+			if w.type != cached.get("type", -1) or w.level != cached.get("level", -1) or w.evolved != cached.get("evolved", false):
+				wep_changed = true
+				break
+	if wep_changed:
+		var wep_data: Array = []
+		_hud_weapon_cache.clear()
+		for w in weapons:
+			var entry = {
+				"name": _get_wep_name(w.type),
+				"name_key": _get_wep_name_key(w.type),
+				"type": w.type,
+				"level": w.level,
+				"evolved": w.evolved,
+				"color": _get_wep_color(w.type),
+			}
+			wep_data.append(entry)
+			_hud_weapon_cache.append(entry)
+		hud.set_weapons(wep_data)
 	
-	# Passive display data for HUD
-	var pas_data: Array = []
+	# Passive display data — only rebuild when passives change
+	var pas_changed = false
 	var pas_dict = player.passive_inventory.get_all()
-	for t in pas_dict:
-		var lv = pas_dict[t]
-		pas_data.append({
-			"type": t,
-			"level": lv,
-			"color": _get_wep_color(t),
-		})
-	hud.set_passives(pas_data)
+	if pas_dict.size() != _hud_passive_cache.size():
+		pas_changed = true
+	else:
+		var i = 0
+		for t in pas_dict:
+			var lv = pas_dict[t]
+			var cached = _hud_passive_cache[i]
+			if t != cached.get("type", -1) or lv != cached.get("level", -1):
+				pas_changed = true
+				break
+			i += 1
+	if pas_changed:
+		var pas_data: Array = []
+		_hud_passive_cache.clear()
+		for t in pas_dict:
+			var lv = pas_dict[t]
+			var entry = {
+				"type": t,
+				"level": lv,
+				"color": _get_wep_color(t),
+			}
+			pas_data.append(entry)
+			_hud_passive_cache.append(entry)
+		hud.set_passives(pas_data)
 	
 	# Camera follows player with shake offset
 	if _camera:
@@ -1179,9 +1253,9 @@ func _process(delta):
 		var active_arcanas = ArcanaManager.get_active()
 		hud.set_arcanas(active_arcanas)
 	
-	# Arcana boss at 11:00
+	# Arcana boss at 11:00 (throttled: only check every 30 frames after time passes)
 	var arcanas_enabled = Engine.has_meta("arcanas_enabled") and Engine.get_meta("arcanas_enabled")
-	if arcanas_enabled and ArcanaManager.is_system_enabled():
+	if arcanas_enabled and ArcanaManager.is_system_enabled() and (_frame_count % 30 == 0 or game_time < 660.0):
 		if not _arcana_boss_spawned_11 and game_time >= 660.0:  # 11:00
 			_arcana_boss_spawned_11 = true
 			_spawn_arcana_boss()
@@ -1189,8 +1263,8 @@ func _process(delta):
 			_arcana_boss_spawned_21 = true
 			_spawn_arcana_boss()
 	
-	# Relic arrow indicator (green arrow toward nearest uncollected relic)
-	if _has_relic_arrow and is_instance_valid(player):
+	# Relic arrow — throttle to every 6 frames
+	if _has_relic_arrow and is_instance_valid(player) and every_n.call(6):
 		var target = _get_nearest_relic_pos()
 		if target != Vector2.ZERO:
 			var offset = target - player.global_position
@@ -1203,13 +1277,14 @@ func _process(delta):
 		else:
 			hud.set_relic_arrow(null, 0.0)
 	
-	# ── Interaction prompt (nearest interactable element) ──
-	if prop_manager and is_instance_valid(player):
+	# ── Interaction prompt (throttled to every 6 frames) —─
+	if prop_manager and is_instance_valid(player) and every_n.call(6):
 		prop_manager.update_nearest(player.global_position, 80.0)
 		if prop_manager.highlight_prompt != "":
 			_interact_prompt.text = "[E] " + prop_manager.highlight_prompt
-			var vp = get_viewport_rect().size
-			_interact_prompt.position = Vector2(vp.x / 2.0 - 100, vp.y - 50)
+			if _cached_vp_size == Vector2.ZERO:
+				_cached_vp_size = get_viewport_rect().size
+			_interact_prompt.position = Vector2(_cached_vp_size.x / 2.0 - 100, _cached_vp_size.y - 50)
 			_interact_prompt.visible = true
 		else:
 			_interact_prompt.visible = false
@@ -1221,17 +1296,15 @@ func _spawn_continuous():
 	if not is_instance_valid(player):
 		return
 	
-	var pool = EnemyDefs.get_types_for_stage(stage_data.get("id", 0), game_time)
+	var pool = EnemyDefs.get_types_for_stage(_stage_id, game_time)
 	if pool.is_empty():
 		pool = [0]
 	var type_idx = EnemyDefs.pick_weighted(pool)
 	_spawn_enemy(type_idx)
 	
-	# Ramp up spawn rate over time using per-stage config
+	# Ramp up spawn rate over time using per-stage config (cached values)
 	var ramp = stage_data.get("spawn_ramp_time", 30.0)
-	var base = stage_data.get("spawn_base_interval", 1.0)
-	var minimum = stage_data.get("spawn_min_interval", 0.15)
-	var interval = max(base - game_time / ramp * (base - minimum), minimum)
+	var interval = max(_spawn_base_interval - game_time / ramp * (_spawn_base_interval - _spawn_min_interval), _spawn_min_interval)
 	_spawn_timer = interval
 
 

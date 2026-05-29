@@ -12,7 +12,7 @@ var _arrow_visible: bool = true  # green arrow indicator near player
 # Reference to player for arrow direction
 var player_ref: Node2D
 
-var _ft_scene = preload("res://scenes/floating_text.tscn")
+# _ft_scene removed — using FloatingTextPool
 
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
@@ -37,7 +37,9 @@ func _process(delta):
 	_float_offset += delta * 1.5
 	_pulse += delta * 3.0
 	_arrow_bob += delta * 2.0
-	queue_redraw()
+	# Throttle redraw to every 4 frames
+	if Engine.get_frames_drawn() % 4 == 0:
+		queue_redraw()
 
 
 func initialize(id: String, player: Node2D):
@@ -70,13 +72,8 @@ func _collect():
 		var r = defs.get_relic(relic_id)
 		var relic_name = r.get("name", "Relic")
 		
-		var ft = _ft_scene.instantiate()
-		ft.display_text = "🔮 " + relic_name + " collected!"
-		ft.text_color = r.get("color", Color(0.9, 0.8, 0.2))
-		ft.font_size = 22
-		ft.global_position = global_position
-		if is_inside_tree():
-			get_parent().add_child(ft)
+		if is_inside_tree() and FloatingTextPool:
+			FloatingTextPool.spawn(get_parent(), global_position, "🔮 " + relic_name + " collected!", r.get("color", Color(0.9, 0.8, 0.2)), 22)
 		
 		# SFX
 		AudioManager.play_sfx("evolution")

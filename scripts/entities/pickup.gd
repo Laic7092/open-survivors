@@ -7,7 +7,7 @@ var player: Node2D
 var collected: bool = false
 var float_offset: float = 0.0
 
-var _ft_scene = preload("res://scenes/floating_text.tscn")
+# _ft_scene removed — using FloatingTextPool
 
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
@@ -30,7 +30,9 @@ func _ready():
 
 func _process(delta):
 	float_offset += delta * 2.0
-	queue_redraw()
+	# Only redraw every 4 frames to reduce overhead
+	if Engine.get_frames_drawn() % 4 == 0:
+		queue_redraw()
 
 
 func _on_body_entered(body: Node):
@@ -39,13 +41,8 @@ func _on_body_entered(body: Node):
 
 
 func _show_text(txt: String, col: Color, sz: int = 16):
-	var ft = _ft_scene.instantiate()
-	ft.display_text = txt
-	ft.text_color = col
-	ft.font_size = sz
-	ft.global_position = global_position
-	if is_inside_tree():
-		get_parent().add_child(ft)
+	if is_inside_tree() and FloatingTextPool:
+		FloatingTextPool.spawn(get_parent(), global_position, txt, col, sz)
 
 
 func apply_effect():

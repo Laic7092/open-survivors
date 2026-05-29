@@ -43,9 +43,12 @@ var _ranged_timer: float = 0.0
 # ── Wavy movement state ──
 var _wavy_time: float = 0.0
 
+# Visibility culling — skip AI processing for distant enemies
+const CULL_DIST_SQ: float = 1000.0 * 1000.0  # ~1000px max processing range
+var _culled: bool = false
+
 # ── Scene references ──
 var _proj_scene = preload("res://scenes/enemy_projectile.tscn")
-var _ft_scene = preload("res://scenes/floating_text.tscn")
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -117,10 +120,30 @@ func _physics_process(delta):
 	if health <= 0 or not is_instance_valid(player):
 		return
 	
-	# Hit flash timer
+	# Visibility culling: skip full AI for distant enemies
+	var dist_sq = global_position.distance_squared_to(player.global_position)
+	if dist_sq > CULL_DIST_SQ:
+		if not _culled:
+			_culled = true
+			# Disable collision entirely for culled enemies (big physics savings)
+			collision_layer = 0
+			collision_mask = 0
+			# Simple slow drift toward player when culled
+			var dir = (player.global_position - global_position).normalized()
+			velocity = dir * move_speed * 0.3  # 30% speed when culled
+		move_and_slide()
+		return
+	elif _culled:
+		_culled = false
+		# Re-enable collision
+		collision_layer = CollisionLayers.ENEMY
+		collision_mask = 0
+	
+	# Hit flash — use modulate which is GPU-side
 	if hit_flash_time > 0:
 		hit_flash_time -= delta
-		queue_redraw()
+		if hit_flash_time <= 0:
+			modulate = Color(1.0, 1.0, 1.0, 1.0)
 	
 	# Knockback decay
 	if knockback_velocity.length_squared() > 0.0:
@@ -199,21 +222,17 @@ func _fire_projectile():
 func take_damage(amount: float, source_pos: Vector2 = Vector2.ZERO):
 	health -= amount
 	hit_flash_time = 0.08
-	queue_redraw()
+	# Use modulate for hit flash — cheaper than queue_redraw every frame
+	modulate = Color(3.0, 3.0, 3.0, 1.0)
 	
 	# Knockback
 	if source_pos != Vector2.ZERO and _knockback_resist < 1.0:
 		var kb_dir = (global_position - source_pos).normalized()
 		knockback_velocity = kb_dir * KNOCKBACK_STRENGTH * (1.0 - _knockback_resist)
 	
-	# Floating damage number
-	var ft = _ft_scene.instantiate()
-	ft.display_text = str(int(amount))
-	ft.text_color = Color(1, 0.9, 0.6)
-	ft.font_size = 16 + mini(int(amount) / 10, 14)
-	ft.global_position = global_position + Vector2(randf_range(-8, 8), -10)
-	if is_inside_tree():
-		get_parent().add_child(ft)
+	# Floating damage number (via pooled system)
+	if is_inside_tree() and FloatingTextPool:
+		FloatingTextPool.spawn(get_parent(), global_position + Vector2(randf_range(-8, 8), -10), str(int(amount)), Color(1, 0.9, 0.6), 16 + mini(int(amount) / 10, 14))
 	
 	if health <= 0:
 		die()
@@ -280,13 +299,7 @@ func _draw():
 		_:
 			_draw_circle_style(r)
 	
-	# Hit flash overlay
-	if hit_flash_time > 0:
-		var alpha = min(hit_flash_time * 12, 0.9)
-		if _shape == "circle":
-			draw_circle(Vector2.ZERO, r, Color(1, 1, 1, alpha))
-		else:
-			draw_circle(Vector2.ZERO, r * 0.6, Color(1, 1, 1, alpha * 0.6))
+	# Hit flash removed — handled via modulate in _physics_process
 	
 	# Health arc (only show when damaged)
 	if health < max_health and not _is_boss:

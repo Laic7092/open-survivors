@@ -53,6 +53,17 @@ var xp_to_next: int = 10
 var invincible: float = 0.0
 var direction: Vector2 = Vector2.DOWN
 
+# Dirty flag for _draw — avoids queue_redraw every frame
+var _visual_dirty: bool = false
+var _last_health: float = -1.0
+var _last_max_health: float = -1.0
+var _last_invincible: float = -1.0
+var _last_whip_vis: float = -1.0
+var _last_whip_evolved: bool = false
+var _last_garlic_evolved: bool = false
+var _last_garlic_area: float = 0.0
+var _last_direction: Vector2 = Vector2.DOWN
+
 var weapon_manager
 var passive_inventory
 
@@ -128,7 +139,7 @@ func _process(delta):
 	weapon_manager.process(delta)
 	if magnet_level > 0:
 		_magnet_pull(delta)
-	update_visual()
+	_mark_visual_dirty_if_needed()
 
 
 func _physics_process(delta):
@@ -192,7 +203,60 @@ func _draw():
 
 
 func update_visual():
+	_visual_dirty = true
 	queue_redraw()
+
+
+func _mark_visual_dirty_if_needed():
+	# Only mark dirty when something visible actually changed
+	var dirty = false
+	if health != _last_health or max_health != _last_max_health:
+		_last_health = health
+		_last_max_health = max_health
+		dirty = true
+	if invincible != _last_invincible:
+		_last_invincible = invincible
+		dirty = true
+	
+	# Direction change (player arrow indicator)
+	if direction != _last_direction:
+		_last_direction = direction
+		dirty = true
+	
+	# Check whip visibility
+	var wv = weapon_manager.whip_vis_time
+	if wv != _last_whip_vis:
+		_last_whip_vis = wv
+		dirty = true
+	if wv > 0:
+		# Check evolved state during whip swing
+		var we = false
+		for w in weapon_manager.weapons:
+			if w.type == UpgradeType.WHIP and w.evolved:
+				we = true
+				break
+		if we != _last_whip_evolved:
+			_last_whip_evolved = we
+			dirty = true
+	
+	# Check garlic presence
+	var ga = 0.0
+	var ge = false
+	for w in weapon_manager.weapons:
+		if w.type == UpgradeType.GARLIC:
+			ga = w.area * area_mult
+			ge = w.evolved
+			break
+	if ga != _last_garlic_area:
+		_last_garlic_area = ga
+		dirty = true
+	if ge != _last_garlic_evolved:
+		_last_garlic_evolved = ge
+		dirty = true
+	
+	if dirty:
+		_visual_dirty = true
+		queue_redraw()
 
 
 func get_weapon_count() -> int:
@@ -433,7 +497,7 @@ func _on_hurt_area(area: Area2D):
 
 
 func _damage_nearby_enemies(amount: float):
-	var enemies = get_tree().get_nodes_in_group("enemies")
+	var enemies = EnemyRegistry.get_all() if EnemyRegistry else []
 	var pos = global_position
 	for e in enemies:
 		if not is_instance_valid(e):
@@ -444,13 +508,8 @@ func _damage_nearby_enemies(amount: float):
 
 
 func show_floating_text(txt: String, col: Color = Color.WHITE, sz: int = 16):
-	var ft = _ft_scene.instantiate()
-	ft.display_text = txt
-	ft.text_color = col
-	ft.font_size = sz
-	ft.global_position = global_position + Vector2(randf_range(-10, 10), -30)
-	if is_inside_tree():
-		get_parent().add_child(ft)
+	if is_inside_tree() and FloatingTextPool:
+		FloatingTextPool.spawn(get_parent(), global_position + Vector2(randf_range(-10, 10), -30), txt, col, sz)
 
 
 func _revive():

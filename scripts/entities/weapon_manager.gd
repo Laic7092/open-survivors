@@ -14,7 +14,21 @@ var _knife_sfx_cooldown: float = 0.0
 var _bible_projectiles: Array[Node2D] = []
 var _bible_angle: float = 0.0
 
+# Cache the EnemyRegistry reference for hot path access
+var _enemy_registry_cache = null
+
+
+func _get_enemies() -> Array:
+	# Lazily cache the EnemyRegistry autoload reference
+	if _enemy_registry_cache == null:
+		_enemy_registry_cache = EnemyRegistry
+	if _enemy_registry_cache != null and _enemy_registry_cache.get_count() > 0:
+		return _enemy_registry_cache.get_all_ref()
+	return []
+
 var _proj_vis_script = preload("res://scripts/entities/proj_vis.gd")
+var _proj_mover_script = preload("res://scripts/entities/projectile_mover.gd")
+var _explosion_fx_script = preload("res://scripts/entities/explosion_fx.gd")
 
 
 const EVOLUTION_RECIPES = {
@@ -131,18 +145,21 @@ func process(delta: float):
 		w.cooldown_timer -= delta
 		if w.cooldown_timer <= 0:
 			w.cooldown_timer = w.cooldown * (1.0 - _player.cooldown_reduction)
-			if not _player.get_tree().get_nodes_in_group("enemies").is_empty():
+			if not _get_enemies().is_empty():
 				fire_weapon(w)
-	# King Bible orbit update
+	# King Bible orbit update — avoid filter() allocation every frame
 	if not _bible_projectiles.is_empty():
-		_bible_projectiles = _bible_projectiles.filter(func(x): return is_instance_valid(x))
 		_bible_angle += delta * 3.0
-		for p in _bible_projectiles:
+		var i = _bible_projectiles.size() - 1
+		while i >= 0:
+			var p = _bible_projectiles[i]
 			if not is_instance_valid(p):
-				continue
-			var angle = p.get_meta("orbit_angle", 0.0) + _bible_angle
-			var radius = p.get_meta("orbit_radius", 60.0)
-			p.global_position = _player.global_position + Vector2(cos(angle), sin(angle)) * radius
+				_bible_projectiles.remove_at(i)
+			else:
+				var angle = p.get_meta("orbit_angle", 0.0) + _bible_angle
+				var radius = p.get_meta("orbit_radius", 60.0)
+				p.global_position = _player.global_position + Vector2(cos(angle), sin(angle)) * radius
+			i -= 1
 
 
 func _find_weapon(t: int) -> WeaponState:
@@ -250,7 +267,7 @@ func _fire_whip(w: WeaponState):
 
 
 func _check_whip_hits(w: WeaponState):
-	var enemies = _player.get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	var effective_area = w.area * _player.area_mult
 	var arc_r = effective_area * 2.0
 	var half_w = arc_r * 0.65
@@ -281,15 +298,17 @@ func _fire_wand(w: WeaponState):
 	if _wand_sfx_cooldown <= 0:
 		AudioManager.play_sfx("wpn_wand" if not w.evolved else "wpn_evo")
 		_wand_sfx_cooldown = 0.3
-	var enemies = _player.get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
 	var dmg = w.damage * _player.damage_mult
 	var area = w.area * _player.area_mult
 	var count = get_projectile_count(Player.UpgradeType.MAGIC_WAND)
 
-	enemies.sort_custom(func(a, b): return _player.global_position.distance_squared_to(a.global_position) < _player.global_position.distance_squared_to(b.global_position))
-	var targets = enemies.slice(0, min(count, enemies.size()))
+	# Sort a copy to avoid modifying the registry's internal array
+	var sorted = enemies.duplicate()
+	sorted.sort_custom(func(a, b): return _player.global_position.distance_squared_to(a.global_position) < _player.global_position.distance_squared_to(b.global_position))
+	var targets = sorted.slice(0, min(count, sorted.size()))
 
 	for target in targets:
 		if not is_instance_valid(target):
@@ -307,16 +326,18 @@ func _fire_wand(w: WeaponState):
 		p.add_child(vis)
 		_player.get_parent().add_child(p)
 		p.body_entered.connect(_on_proj_hit.bind(p, dmg))
-		var tw = _player.create_tween()
-		var dist = _player.global_position.distance_to(target.global_position)
-		tw.tween_property(p, "global_position", target.global_position, dist / max(w.speed, 1.0))
-		tw.finished.connect(_on_tween_done.bind(p))
+		# Use projectile_mover instead of Tween for linear movement
+		var dir = (target.global_position - _player.global_position).normalized()
+		var mover = Node2D.new()
+		mover.set_script(_proj_mover_script)
+		mover.set_movement(dir * w.speed, _player.global_position.distance_to(target.global_position) / max(w.speed, 1.0))
+		p.add_child(mover)
 
 
 # ── GARLIC ───────────────────────────────────────────────────────────
 
 func _fire_garlic(w: WeaponState):
-	var enemies = _player.get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	var effective_area = w.area * _player.area_mult
 	for e in enemies:
 		if not is_instance_valid(e): continue
@@ -356,10 +377,11 @@ func _fire_knife(w: WeaponState):
 		p.rotation = dir.angle()
 		_player.get_parent().add_child(p)
 		p.body_entered.connect(_on_proj_hit_and_free.bind(p, dmg))
-		var target = _player.global_position + dir * 500.0 + side_offset
-		var tw = _player.create_tween()
-		tw.tween_property(p, "global_position", target, 500.0 / max(w.speed, 1.0))
-		tw.finished.connect(_on_tween_done.bind(p))
+		# Use projectile_mover instead of Tween for linear movement
+		var mover = Node2D.new()
+		mover.set_script(_proj_mover_script)
+		mover.set_movement(dir * w.speed, 500.0 / max(w.speed, 1.0))
+		p.add_child(mover)
 
 
 # ── AXE ──────────────────────────────────────────────────────────────
@@ -447,7 +469,7 @@ func _fire_death_spiral(w: WeaponState, dmg: float, area: float):
 
 func _fire_fire_wand(w: WeaponState):
 	AudioManager.play_sfx("wpn_fire")
-	var enemies = _player.get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
 	var dmg = w.damage * _player.damage_mult
@@ -487,16 +509,21 @@ func _fire_one_fireball(target: Node2D, dmg: float, area: float, explosion_radiu
 	p.global_position = _player.global_position
 	_player.get_parent().add_child(p)
 	p.body_entered.connect(_on_firewand_hit.bind(p, explosion_radius, dmg, w))
+	# Use projectile_mover instead of Tween for linear movement
+	var dir = (target.global_position - _player.global_position).normalized()
+	var mover = _proj_mover_script.new()
+	var travel_time = _player.global_position.distance_to(target.global_position) / max(w.speed, 1.0)
+	mover.set_movement(dir * w.speed, travel_time)
+	p.add_child(mover)
 	var tw = _player.create_tween()
-	tw.tween_property(p, "global_position", target.global_position, _player.global_position.distance_to(target.global_position) / max(w.speed, 1.0))
-	p.set_meta("_wand_tween", tw)
+	tw.tween_interval(travel_time)
 	tw.finished.connect(_on_firewand_explode.bind(p, explosion_radius, dmg, w))
 
 
 # ── CROSS ────────────────────────────────────────────────────────────
 
 func _fire_cross(w: WeaponState):
-	var enemies = _player.get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
 	var dmg = w.damage * _player.damage_mult
@@ -760,25 +787,21 @@ func _fire_runetracer(w: WeaponState):
 	_player.get_parent().add_child(p)
 	p.body_entered.connect(_on_proj_hit.bind(p, dmg))
 
-	var rune_update = Timer.new()
-	rune_update.wait_time = 0.016
-	rune_update.timeout.connect(_on_runetracer_tick.bind(p))
-	_player.add_child(rune_update)
-	rune_update.start()
-
-	var cleanup = Timer.new()
-	cleanup.wait_time = 4.0
-	cleanup.one_shot = true
-	cleanup.timeout.connect(_on_runetracer_cleanup.bind(p, rune_update))
-	_player.add_child(cleanup)
-	cleanup.start()
+	# Use process-based update via a Node2D child on the player
+	var updater = Node2D.new()
+	updater.name = "RuneTracerUpdater"
+	var rune_p = p
+	var rune_lifetime = 4.0
+	updater.set_script(preload("res://scripts/entities/runetracer_updater.gd"))
+	updater.set_meta("rune_proj", rune_p)
+	_player.add_child(updater)
 
 
 # ── LIGHTNING RING ───────────────────────────────────────────────────
 
 func _fire_lightning_ring(w: WeaponState):
 	AudioManager.play_sfx("wpn_lightning")
-	var enemies = _player.get_tree().get_nodes_in_group("enemies")
+	var enemies = _get_enemies()
 	if enemies.is_empty():
 		return
 	var target = enemies[randi() % enemies.size()]
@@ -796,7 +819,7 @@ func _fire_lightning_ring(w: WeaponState):
 	flash.global_position = target.global_position
 	_player.get_parent().add_child(flash)
 
-	var all_enemies = _player.get_tree().get_nodes_in_group("enemies")
+	var all_enemies = _get_enemies()
 	for e in all_enemies:
 		if not is_instance_valid(e):
 			continue
@@ -891,10 +914,11 @@ func _on_firewand_hit(body, proj, explosion_radius: float, dmg: float, w: Weapon
 	if body.has_method("take_damage"):
 		body.take_damage(dmg, Vector2.ZERO)
 	_explode_at(pos, explosion_radius, dmg, w)
-	var tw = proj.get_meta("_wand_tween", null)
-	if tw and is_instance_valid(tw):
-		tw.kill()
 	if is_instance_valid(proj):
+		# Mark mover as hit to stop movement
+		for c in proj.get_children():
+			if c.has_method("mark_hit"):
+				c.mark_hit()
 		proj.queue_free()
 
 
@@ -908,7 +932,8 @@ func _on_firewand_explode(proj, explosion_radius: float, dmg: float, w: WeaponSt
 
 func _explode_at(pos: Vector2, explosion_radius: float, dmg: float, w: WeaponState):
 	_spawn_explosion_fx(pos, explosion_radius, Color(0.9, 0.4, 0.1))
-	for e in _player.get_tree().get_nodes_in_group("enemies"):
+	var enemies = _get_enemies()
+	for e in enemies:
 		if is_instance_valid(e) and pos.distance_to(e.global_position) < explosion_radius:
 			if e.has_method("take_damage"):
 				e.take_damage(dmg, Vector2.ZERO)
@@ -916,24 +941,20 @@ func _explode_at(pos: Vector2, explosion_radius: float, dmg: float, w: WeaponSta
 	if evolved:
 		var dbl_radius = explosion_radius * 1.6
 		_spawn_explosion_fx(pos, dbl_radius, Color(1.0, 0.3, 0.0))
-		for e in _player.get_tree().get_nodes_in_group("enemies"):
+		for e in enemies:
 			if is_instance_valid(e) and pos.distance_to(e.global_position) < dbl_radius:
 				if e.has_method("take_damage"):
 					e.take_damage(dmg, Vector2.ZERO)
 
 
 func _spawn_explosion_fx(pos: Vector2, radius: float, color: Color):
-	var node = Node2D.new()
+	var node = _explosion_fx_script.new()
+	node._radius = radius
+	node._color = color
 	node.global_position = pos
 	node.name = "FireWandExplosion"
-	var lifetime = 0.3
-	var draw_fn = func():
-		var a = node.modulate.a
-		node.draw_circle(Vector2.ZERO, radius, Color(color.r, color.g, color.b, a * 0.25))
-		node.draw_arc(Vector2.ZERO, radius, 0, TAU, 32, Color(color.r, color.g, color.b, a * 0.8), max(2.0, radius * 0.08))
-		node.draw_circle(Vector2.ZERO, radius * 0.35, Color(1.0, 0.8, 0.4, a * 0.6))
-	node.draw.connect(draw_fn)
 	_player.get_parent().add_child(node)
+	var lifetime = 0.3
 	var tw = _player.create_tween()
 	tw.tween_property(node, "modulate:a", 0.0, lifetime).from(1.0)
 	tw.parallel().tween_property(node, "scale", Vector2(1.6, 1.6), lifetime).from(Vector2(0.4, 0.4))
@@ -943,7 +964,7 @@ func _spawn_explosion_fx(pos: Vector2, radius: float, color: Color):
 func _on_boomerang_return(proj, dmg: float):
 	if not is_instance_valid(proj):
 		return
-	for e in _player.get_tree().get_nodes_in_group("enemies"):
+	for e in _get_enemies():
 		if is_instance_valid(e) and proj.global_position.distance_to(e.global_position) < 50:
 			if e.has_method("take_damage"):
 				e.take_damage(dmg * 0.5, Vector2.ZERO)
@@ -952,7 +973,9 @@ func _on_boomerang_return(proj, dmg: float):
 
 
 func _on_bible_expire(proj):
-	_bible_projectiles = _bible_projectiles.filter(func(x): return is_instance_valid(x) and x != proj)
+	var idx = _bible_projectiles.find(proj)
+	if idx >= 0:
+		_bible_projectiles.remove_at(idx)
 	if is_instance_valid(proj):
 		proj.queue_free()
 
@@ -961,7 +984,7 @@ func _on_water_tick(zone: Area2D, area: float, dmg: float, evolved: bool):
 	if not is_instance_valid(zone):
 		return
 	var src_pos = zone.global_position
-	for e in _player.get_tree().get_nodes_in_group("enemies"):
+	for e in _get_enemies():
 		if not is_instance_valid(e):
 			continue
 		if src_pos.distance_to(e.global_position) <= area:
@@ -970,7 +993,7 @@ func _on_water_tick(zone: Area2D, area: float, dmg: float, evolved: bool):
 	if evolved:
 		var nearest: Node2D = null
 		var min_d = INF
-		for e in _player.get_tree().get_nodes_in_group("enemies"):
+		for e in _get_enemies():
 			if not is_instance_valid(e):
 				continue
 			var d = src_pos.distance_squared_to(e.global_position)

@@ -22,6 +22,11 @@ func unregister(e: Node):
 
 
 func get_all() -> Array[Node]:
+	return _enemies.duplicate()
+
+
+# Fast path: returns reference, caller must NOT modify the array
+func get_all_ref() -> Array[Node]:
 	return _enemies
 
 

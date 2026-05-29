@@ -26,6 +26,7 @@ UnlockManager="*res://scripts/managers/unlock_manager.gd"
 SceneManager="*res://scripts/managers/scene_manager.gd"
 EnemyRegistry="*res://scripts/managers/enemy_registry.gd"
 GemPool="*res://scripts/managers/gem_pool.gd"
+FloatingTextPool="*res://scripts/managers/floating_text_pool.gd"
 
 [display]
 

@@ -37,6 +37,14 @@ var _xp_pct: float = 0.0
 # 预创建的 12 个格子：前 6 = 武器，后 6 = 被动
 var _cells: Array = []
 
+# Timer cache
+var _last_timer_text: String = ""
+var _last_xp_bar_w: float = -1.0
+
+# Arcana display cache — avoid creating/destroying nodes every frame
+var _last_arcana_ids: Array = []
+var _arcana_badges: Array = []
+
 
 func _ready():
 	# 覆盖层按钮事件
@@ -77,7 +85,10 @@ func set_health(_cur: float, _max_hp: float):
 func set_xp(cur: int, need: int):
 	_xp_pct = float(cur) / float(need) if need > 0 else 0
 	var bar_w = _xp_bar_bg.size.x
-	if bar_w > 0:
+	if bar_w > 0 and bar_w != _last_xp_bar_w:
+		_last_xp_bar_w = bar_w
+		_xp_bar_fill.offset_right = 12.0 + bar_w * _xp_pct
+	elif bar_w > 0 and _xp_pct < 1.0:
 		_xp_bar_fill.offset_right = 12.0 + bar_w * _xp_pct
 
 
@@ -88,10 +99,13 @@ func set_level(lv: int):
 func set_timer(t: float):
 	var m = int(t) / 60
 	var s = int(t) % 60
+	# Cache string to avoid redundant updates (called every frame)
 	var display = I18N.t("hud.timer_format") % [m, s]
 	if time_limit_str != "":
 		display += " / " + time_limit_str
-	_timer_label.text = display
+	if display != _last_timer_text:
+		_last_timer_text = display
+		_timer_label.text = display
 
 
 func set_time_limit(limit: float):
@@ -155,16 +169,38 @@ func set_passives(passives: Array):
 
 
 func set_arcanas(arcana_ids: Array):
-	for c in _arcana_container.get_children():
-		c.queue_free()
+	# Skip if unchanged (called every frame)
+	if arcana_ids == _last_arcana_ids:
+		return
+	_last_arcana_ids = arcana_ids.duplicate()
 
-	for id in arcana_ids:
+	# Reuse existing badge nodes, create new ones as needed
+	while _arcana_badges.size() < arcana_ids.size():
+		var badge = Panel.new()
+		badge.custom_minimum_size = Vector2(36, 36)
+		var roman_label = Label.new()
+		roman_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		roman_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		roman_label.size = Vector2(36, 36)
+		roman_label.position = Vector2(0, 0)
+		badge.add_child(roman_label)
+		_arcana_container.add_child(badge)
+		_arcana_badges.append(badge)
+
+	# Hide excess badges
+	for i in range(arcana_ids.size(), _arcana_badges.size()):
+		_arcana_badges[i].visible = false
+
+	# Update visible badges
+	for i in range(arcana_ids.size()):
+		var id = arcana_ids[i]
 		var a = ArcanaDefs.get_arcana(id)
 		var col = a.get("color", Color(0.5, 0.5, 0.5))
 		var roman = a.get("roman", "?")
 
-		var badge = Panel.new()
-		badge.custom_minimum_size = Vector2(36, 36)
+		var badge = _arcana_badges[i]
+		badge.visible = true
+		# Update stylebox
 		var s = StyleBoxFlat.new()
 		s.bg_color = col * 0.25
 		s.set_border_width_all(2)
@@ -174,18 +210,12 @@ func set_arcanas(arcana_ids: Array):
 		s.corner_radius_bottom_left = 4
 		s.corner_radius_bottom_right = 4
 		badge.add_theme_stylebox_override("panel", s)
-		_arcana_container.add_child(badge)
 
-		var roman_label = Label.new()
+		var roman_label = badge.get_child(0) as Label
 		roman_label.text = roman
-		roman_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		roman_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		roman_label.size = Vector2(36, 36)
-		roman_label.position = Vector2(0, 0)
 		var fs = 12 if roman.length() <= 2 else 9
 		roman_label.add_theme_font_size_override("font_size", fs)
 		roman_label.add_theme_color_override("font_color", col)
-		badge.add_child(roman_label)
 
 
 func set_relic_arrow_visible(visible: bool):
