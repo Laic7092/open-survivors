@@ -148,8 +148,9 @@ func buy_character(char_id: int, cost: int) -> bool:
 	gold -= cost
 	unlock_character(char_id)
 	_save_data()
-	if UnlockManager:
-		UnlockManager.purchase_unlock("char_" + str(char_id))
+	var um = EventBus.get_unlock_manager() if EventBus else null
+	if um:
+		um.purchase_unlock("char_" + str(char_id))
 	return true
 
 

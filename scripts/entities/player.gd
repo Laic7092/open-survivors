@@ -353,7 +353,7 @@ func get_passive_level(t: int) -> int:
 
 
 func get_passive_max_level(t: int) -> int:
-	return ItemDefs.get_max_level(t)
+	return ItemDefs.item_max_level(t)
 
 
 func can_evolve(weapon_type: int) -> bool:
@@ -542,8 +542,8 @@ func _damage_nearby_enemies(amount: float):
 
 
 func show_floating_text(txt: String, col: Color = Color.WHITE, sz: int = 16):
-	if is_inside_tree() and FloatingTextPool:
-		FloatingTextPool.spawn(get_parent(), global_position + Vector2(randf_range(-10, 10), -30), txt, col, sz)
+	if is_inside_tree() and ObjectPoolManager:
+		ObjectPoolManager.spawn_ft(get_parent(), global_position + Vector2(randf_range(-10, 10), -30), txt, col, sz)
 
 
 func _revive():

@@ -82,7 +82,7 @@ func _spawn_loot(player: Node2D):
 	# XP gems
 	var gem_count = 2 + randi() % 3
 	for i in range(gem_count):
-		var gem = GemPool.borrow()
+		var gem = ObjectPoolManager.borrow_gem()
 		gem.value = randi_range(min_xp, max_xp)
 		gem.player = player
 		gem.global_position = global_position + Vector2(randf_range(-15, 15), randf_range(-15, 15))

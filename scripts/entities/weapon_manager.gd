@@ -213,7 +213,7 @@ func get_level(t: int) -> int:
 
 func get_max_level(t: int) -> int:
 	var w = _find_weapon(t)
-	return w.max_level if w else ItemDefs.get_max_level(t)
+	return w.max_level if w else ItemDefs.item_max_level(t)
 
 
 func get_count() -> int:

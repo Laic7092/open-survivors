@@ -66,8 +66,8 @@ func _collect():
 	AudioManager.play_sfx("pickup_chicken")
 
 	# Pooled floating text
-	if is_inside_tree() and FloatingTextPool:
-		FloatingTextPool.spawn(get_parent(), global_position, _name_label.text if _name_label else "?", Color(0.9, 0.8, 0.2), 14)
+	if is_inside_tree() and ObjectPoolManager:
+		ObjectPoolManager.spawn_ft(get_parent(), global_position, _name_label.text if _name_label else "?", Color(0.9, 0.8, 0.2), 14)
 
 	queue_free()
 

@@ -229,15 +229,24 @@ func _cache_map_data():
 	var main = get_parent().get_parent()
 	if not is_instance_valid(main):
 		return
-	_cached_map_w = main.map_width
-	_cached_map_h = main.map_height
-	_cached_obstacles = main._obstacle_positions.duplicate()
+	
+	# 通过访问器获取数据（向后兼容）
+	if main.has_method("get_game_state"):
+		var gs = main.get_game_state()
+		_cached_map_w = gs.map_width if gs else 3200.0
+		_cached_map_h = gs.map_height if gs else 2400.0
+	else:
+		_cached_map_w = main.map_width if "map_width" in main else 3200.0
+		_cached_map_h = main.map_height if "map_height" in main else 2400.0
+	
+	_cached_obstacles = main.get_obstacle_positions() if main.has_method("get_obstacle_positions") else []
 
-	if main.prop_manager:
-		_cached_chests = main.prop_manager.get_chest_positions()
-		_cached_fountains = main.prop_manager.get_fountain_positions()
-		_cached_hazards = main.prop_manager.get_hazard_positions()
-		_cached_boosts = main.prop_manager.get_boost_positions()
+	var pm = main.get_prop_manager() if main.has_method("get_prop_manager") else null
+	if pm:
+		_cached_chests = pm.get_chest_positions() if pm.has_method("get_chest_positions") else []
+		_cached_fountains = pm.get_fountain_positions() if pm.has_method("get_fountain_positions") else []
+		_cached_hazards = pm.get_hazard_positions() if pm.has_method("get_hazard_positions") else []
+		_cached_boosts = pm.get_boost_positions() if pm.has_method("get_boost_positions") else []
 	else:
 		_cached_chests = []
 		_cached_fountains = []
@@ -272,8 +281,16 @@ func _update_stats():
 	_stat_labels[1].text = I18N.t("pause.level") % [player.level, player.xp, player.xp_to_next]
 
 	var main = get_parent().get_parent()
-	var kills = main.total_kills if is_instance_valid(main) else 0
-	var run_time = main.game_time if is_instance_valid(main) else 0.0
+	var kills = 0
+	var run_time = 0.0
+	if is_instance_valid(main) and main.has_method("get_game_state"):
+		var gs = main.get_game_state()
+		kills = gs.total_kills
+		run_time = gs.game_time
+	elif is_instance_valid(main):
+		# 向后兼容
+		kills = main.total_kills if "total_kills" in main else 0
+		run_time = main.game_time if "game_time" in main else 0.0
 	var m = int(run_time) / 60
 	var s = int(run_time) % 60
 	var gold_amt = PowerUpManager.run_gold if PowerUpManager else 0
@@ -315,9 +332,11 @@ func _update_minimap_state(player, main):
 		_minimap.set_player_pos(player.global_position)
 		var vs = get_viewport().get_visible_rect().size
 		if is_instance_valid(main):
-			_minimap.set_camera_view(main._camera.global_position if main._camera else Vector2.ZERO, vs)
+			var cam = main.get_camera() if main.has_method("get_camera") else null
+			var cam_pos = cam.global_position if cam else Vector2.ZERO
+			_minimap.set_camera_view(cam_pos, vs)
 			var poses: Array[Vector2] = []
-			for r in main._stage_relics:
+			for r in (main._stage_relics if "_stage_relics" in main else []):
 				if is_instance_valid(r):
 					poses.append(r.global_position)
 			_minimap.set_relic_positions(poses)

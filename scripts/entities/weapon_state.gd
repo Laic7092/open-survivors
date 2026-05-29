@@ -27,7 +27,7 @@ static var _BASE = {
 }
 
 func _init(t: int):
-	type = t; level = 1; max_level = ItemDefs.get_max_level(t)
+	type = t; level = 1; max_level = ItemDefs.item_max_level(t)
 	var b = _BASE[t]
 	cooldown = b["cd"]; damage = b["dmg"]
 	area = b["area"]; speed = b["speed"]

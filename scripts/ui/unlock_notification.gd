@@ -17,7 +17,7 @@ func _ready():
 
 
 func check_and_show():
-	var new_unlocks = UnlockManager.get_newly_unlocked()
+	var new_unlocks = _lazy_unlock_manager().get_newly_unlocked()
 	if new_unlocks.is_empty():
 		return
 
@@ -137,7 +137,7 @@ func _show_notification():
 
 
 func _on_dismiss():
-	UnlockManager.mark_all_seen()
+	_lazy_unlock_manager().mark_all_seen()
 	visible = false
 	_clear()
 	dismissed.emit()
@@ -168,3 +168,14 @@ func _type_name(ut: int) -> String:
 func _clear():
 	for c in get_children():
 		c.queue_free()
+
+
+# UnlockManager 延迟加载
+var _unlock_manager: Node = null
+
+func _lazy_unlock_manager() -> Node:
+	if _unlock_manager == null:
+		_unlock_manager = load("res://scripts/managers/unlock_manager.gd").new()
+		add_child(_unlock_manager)
+		EventBus.register_unlock_manager(_unlock_manager)
+	return _unlock_manager

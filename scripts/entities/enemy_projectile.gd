@@ -84,7 +84,7 @@ func _recycle():
 	collision_layer = 0
 	collision_mask = 0
 	target = null
-	if EnemyProjectilePool:
-		EnemyProjectilePool.return_proj(self)
+	if ObjectPoolManager:
+		ObjectPoolManager.return_enemy_proj(self)
 	else:
 		queue_free()

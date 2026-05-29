@@ -99,7 +99,7 @@ func _generate_and_show():
 		if _is_weapon(p) and evolutions.has(p):
 			continue
 		var lv = player_ref.get_weapon_level(p) if _is_weapon(p) else player_ref.get_passive_level(p)
-		var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else ItemDefs.get_max_level(p)
+		var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else ItemDefs.item_max_level(p)
 		# Skip new items beyond the slot limit
 		if lv == 0:
 			if _is_weapon(p) and player_ref.weapon_manager.weapons.size() >= MAX_WEAPONS:
@@ -118,7 +118,7 @@ func _generate_and_show():
 		if chosen.is_empty():
 			var p = player_ref.passive_inventory.get_all()
 			for t in p:
-				if player_ref.get_passive_level(t) < ItemDefs.get_max_level(t):
+				if player_ref.get_passive_level(t) < ItemDefs.item_max_level(t):
 					chosen.append(t)
 					break
 	if chosen.is_empty():
@@ -175,11 +175,11 @@ func _add_choice_button(t: int):
 		container.add_child(vb2)
 		return
 
-	var nm = I18N.t(_item_name_key(t), _name(t))
-	var lv = player_ref.get_weapon_level(t) if _is_weapon(t) else player_ref.get_passive_level(t)
+	var nm = I18N.t(ItemDefs.item_name_key(t), ItemDefs.item_name(t))
+	var lv = player_ref.get_weapon_level(t) if ItemDefs.is_weapon(t) else player_ref.get_passive_level(t)
 	var lv_txt = I18N.t("levelup.new") if lv == 0 else I18N.t("levelup.level") % [lv, lv + 1]
-	var desc = I18N.t(_item_desc_key(t), _desc(t))
-	var col = _color(t)
+	var desc = I18N.t(ItemDefs.item_desc_key(t), ItemDefs.item_desc(t))
+	var col = ItemDefs.item_color(t)
 
 	# Icon at top (colored circle + emoji, single node from factory)
 	var icon_node = IconGenerator.make_icon_node(t, 40)
@@ -258,7 +258,7 @@ func _add_evolution_choice(weapon_type: int):
 	vb2.add_child(l1)
 
 	# Source arrow
-	var src_i18n = I18N.t(_item_name_key(weapon_type), _name(weapon_type))
+	var src_i18n = I18N.t(ItemDefs.item_name_key(weapon_type), ItemDefs.item_name(weapon_type))
 	var l2 = Label.new()
 	l2.text = src_i18n + I18N.t("levelup.evo_arrow") + evo_i18n_name
 	l2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -305,213 +305,28 @@ func _clear():
 	panel = null; title = null; container = null
 
 
+# ── 统一委托到 ItemDefs 数据源，消除重复 ──
 static func _is_weapon(t: int) -> bool:
-	return t in [0, 1, 2, 10, 11, 12, 16, 17, 18, 19, 20]
-
+	return ItemDefs.is_weapon(t)
 
 static func _is_passive(t: int) -> bool:
-	return t in [3, 4, 5, 6, 7, 8, 9, 13, 14, 15, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
-
+	return not ItemDefs.is_weapon(t)
 
 static func _name(t: int) -> String:
-	match t:
-		0: return "Whip"
-		1: return "Magic Wand"
-		2: return "Garlic"
-		10: return "Knife"
-		11: return "Axe"
-		12: return "Fire Wand"
-		16: return "Cross"
-		17: return "King Bible"
-		18: return "Santa Water"
-		19: return "Runetracer"
-		20: return "Lightning Ring"
-		3: return "Wings"
-		4: return "Spinach"
-		5: return "Empty Tome"
-		6: return "Hollow Heart"
-		7: return "Candelabrador"
-		8: return "Crown"
-		9: return "Pummarola"
-		13: return "Duplicator"
-		14: return "Stone Mask"
-		15: return "Magnet"
-		21: return "Clover"
-		22: return "Spellbinder"
-		23: return "Armor"
-		24: return "Bracer"
-		25: return "Skull O'Maniac"
-		26: return "Tiragisú"
-		27: return "Torrona's Box"
-		28: return "Silver Ring"
-		29: return "Gold Ring"
-		30: return "Metaglio Left"
-		31: return "Metaglio Right"
-	return ""
-
+	return ItemDefs.item_name(t)
 
 static func _desc(t: int) -> String:
-	match t:
-		0: return "Strike enemies in a wide arc"
-		1: return "Fire homing bolts at enemies"
-		2: return "Damage enemies around you"
-		10: return "Throw daggers in faced direction"
-		11: return "Hurl a heavy axe in an arc"
-		12: return "Shoot explosive fire at enemies"
-		16: return "Boomerang that seeks enemies"
-		17: return "Orbiting projectiles"
-		18: return "Create damaging puddles"
-		19: return "Bouncing tracer projectiles"
-		20: return "Strike enemies with lightning"
-		3: return "Increase movement speed"
-		4: return "Increase all damage"
-		5: return "Reduce all weapon cooldowns"
-		6: return "Increase max health"
-		7: return "Increase attack area"
-		8: return "Gain more XP"
-		9: return "Regenerate HP over time"
-		13: return "+1 Projectile per level"
-		14: return "+20% Gold per level"
-		15: return "Increase pickup range"
-		21: return "Increase luck"
-		22: return "Increase effect duration"
-		23: return "Reduce damage taken"
-		24: return "Increase projectile speed"
-		25: return "Increase enemy difficulty"
-		26: return "Revive on death"
-		27: return "Boost all stats slightly"
-		28: return "+Duration, +Area"
-		29: return "Curse enemies"
-		30: return "+Recovery, +Max HP"
-		31: return "Curse enemies"
-	return ""
+	return ItemDefs.item_desc(t)
 
-
-# Map item type to i18n key for name
 static func _item_name_key(t: int) -> String:
-	match t:
-		0: return "item.whip_name"
-		1: return "item.wand_name"
-		2: return "item.garlic_name"
-		10: return "item.knife_name"
-		11: return "item.axe_name"
-		12: return "item.firewand_name"
-		16: return "item.cross_name"
-		17: return "item.bible_name"
-		18: return "item.santa_water_name"
-		19: return "item.runetracer_name"
-		20: return "item.lightning_name"
-		3: return "item.wings_name"
-		4: return "item.spinach_name"
-		5: return "item.tome_name"
-		6: return "item.hollow_name"
-		7: return "item.candel_name"
-		8: return "item.crown_name"
-		9: return "item.pummarola_name"
-		13: return "item.duplicator_name"
-		14: return "item.stonemask_name"
-		15: return "item.magnet_name"
-		21: return "item.clover_name"
-		22: return "item.spellbinder_name"
-		23: return "item.armor_name"
-		24: return "item.bracer_name"
-		25: return "item.skull_name"
-		26: return "item.tiragisu_name"
-		27: return "item.torrona_name"
-		28: return "item.silver_ring_name"
-		29: return "item.gold_ring_name"
-		30: return "item.metaglio_left_name"
-		31: return "item.metaglio_right_name"
-	return ""
+	return ItemDefs.item_name_key(t)
 
-
-# Map item type to i18n key for description
 static func _item_desc_key(t: int) -> String:
-	match t:
-		0: return "item.whip_desc"
-		1: return "item.wand_desc"
-		2: return "item.garlic_desc"
-		10: return "item.knife_desc"
-		11: return "item.axe_desc"
-		12: return "item.firewand_desc"
-		16: return "item.cross_desc"
-		17: return "item.bible_desc"
-		18: return "item.santa_water_desc"
-		19: return "item.runetracer_desc"
-		20: return "item.lightning_desc"
-		3: return "item.wings_desc"
-		4: return "item.spinach_desc"
-		5: return "item.tome_desc"
-		6: return "item.hollow_desc"
-		7: return "item.candel_desc"
-		8: return "item.crown_desc"
-		9: return "item.pummarola_desc"
-		13: return "item.duplicator_desc"
-		14: return "item.stonemask_desc"
-		15: return "item.magnet_desc"
-		21: return "item.clover_desc"
-		22: return "item.spellbinder_desc"
-		23: return "item.armor_desc"
-		24: return "item.bracer_desc"
-		25: return "item.skull_desc"
-		26: return "item.tiragisu_desc"
-		27: return "item.torrona_desc"
-		28: return "item.silver_ring_desc"
-		29: return "item.gold_ring_desc"
-		30: return "item.metaglio_left_desc"
-		31: return "item.metaglio_right_desc"
-	return ""
+	return ItemDefs.item_desc_key(t)
 
-
-# Map weapon type to evo i18n key prefix
+# 委托到 ItemDefs 统一数据源
 static func _evo_i18n_key(weapon_type: int) -> String:
-	match weapon_type:
-		0: return "whip"
-		1: return "wand"
-		2: return "garlic"
-		10: return "knife"
-		11: return "axe"
-		12: return "firewand"
-		16: return "cross"
-		17: return "king_bible"
-		18: return "santa_water"
-		19: return "runetracer"
-		20: return "lightning_ring"
-	return "whip"
-
+	return ItemDefs.item_evo_key(weapon_type)
 
 static func _color(t: int) -> Color:
-	match t:
-		0: return Color(0.8, 0.6, 0.3)
-		1: return Color(0.3, 0.5, 1.0)
-		2: return Color(0.6, 0.2, 0.8)
-		10: return Color(0.7, 0.7, 0.7)
-		11: return Color(0.6, 0.3, 0.1)
-		12: return Color(0.9, 0.4, 0.1)
-		16: return Color(0.9, 0.6, 0.2)    # Cross
-		17: return Color(0.2, 0.6, 0.9)    # King Bible
-		18: return Color(0.1, 0.5, 0.8)    # Santa Water
-		19: return Color(0.8, 0.3, 0.7)    # Runetracer
-		20: return Color(0.9, 0.9, 0.2)    # Lightning Ring
-		3: return Color(0.2, 0.8, 0.4)
-		4: return Color(0.9, 0.3, 0.3)
-		5: return Color(0.2, 0.5, 0.8)
-		6: return Color(0.9, 0.2, 0.2)
-		7: return Color(0.9, 0.7, 0.2)
-		8: return Color(0.9, 0.8, 0.0)
-		9: return Color(0.2, 0.9, 0.2)
-		13: return Color(0.2, 0.7, 0.9)
-		14: return Color(0.7, 0.7, 0.8)
-		15: return Color(0.1, 0.7, 0.8)
-		21: return Color(0.2, 0.9, 0.3)    # Clover
-		22: return Color(0.5, 0.3, 0.9)    # Spellbinder
-		23: return Color(0.6, 0.6, 0.6)    # Armor
-		24: return Color(0.3, 0.9, 0.6)    # Bracer
-		25: return Color(0.6, 0.2, 0.2)    # Skull O'Maniac
-		26: return Color(0.9, 0.7, 0.9)    # Tiragisú
-		27: return Color(0.4, 0.2, 0.6)    # Torrona's Box
-		28: return Color(0.6, 0.7, 0.9)    # Silver Ring
-		29: return Color(0.9, 0.8, 0.2)    # Gold Ring
-		30: return Color(0.5, 0.3, 0.8)    # Metaglio Left
-		31: return Color(0.8, 0.3, 0.5)    # Metaglio Right
-	return Color.WHITE
+	return ItemDefs.item_color(t)

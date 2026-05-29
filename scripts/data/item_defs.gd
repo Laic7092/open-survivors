@@ -190,33 +190,33 @@ static func is_weapon(t: int) -> bool:
 	return t in WEAPON_TYPES
 
 
-static func get_data(t: int) -> Dictionary:
+static func item_data(t: int) -> Dictionary:
 	return DATA.get(t, DATA[0])
 
 
-static func get_name(t: int) -> String:
+static func item_name(t: int) -> String:
 	return DATA.get(t, {}).get("name", "?")
 
 
-static func get_name_key(t: int) -> String:
+static func item_name_key(t: int) -> String:
 	return DATA.get(t, {}).get("name_key", "item.whip_name")
 
 
-static func get_desc(t: int) -> String:
+static func item_desc(t: int) -> String:
 	return DATA.get(t, {}).get("desc", "")
 
 
-static func get_desc_key(t: int) -> String:
+static func item_desc_key(t: int) -> String:
 	return DATA.get(t, {}).get("desc_key", "item.whip_desc")
 
 
-static func get_color(t: int) -> Color:
+static func item_color(t: int) -> Color:
 	return DATA.get(t, {}).get("color", Color.WHITE)
 
 
-static func get_evo_key(t: int) -> String:
+static func item_evo_key(t: int) -> String:
 	return DATA.get(t, {}).get("evo_key", "whip")
 
 
-static func get_max_level(t: int) -> int:
+static func item_max_level(t: int) -> int:
 	return DATA.get(t, {}).get("max_level", 8)

@@ -71,7 +71,7 @@ func _on_body_entered(body: Node):
 
 
 func _return_to_pool():
-	GemPool.return_gem(self)
+	ObjectPoolManager.return_gem(self)
 
 
 func _draw():

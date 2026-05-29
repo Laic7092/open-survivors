@@ -72,8 +72,8 @@ func _collect():
 		var r = defs.get_relic(relic_id)
 		var relic_name = r.get("name", "Relic")
 		
-		if is_inside_tree() and FloatingTextPool:
-			FloatingTextPool.spawn(get_parent(), global_position, "🔮 " + relic_name + " collected!", r.get("color", Color(0.9, 0.8, 0.2)), 22)
+		if is_inside_tree() and ObjectPoolManager:
+			ObjectPoolManager.spawn_ft(get_parent(), global_position, "🔮 " + relic_name + " collected!", r.get("color", Color(0.9, 0.8, 0.2)), 22)
 		
 		# SFX
 		AudioManager.play_sfx("evolution")

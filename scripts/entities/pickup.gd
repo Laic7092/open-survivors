@@ -41,8 +41,8 @@ func _on_body_entered(body: Node):
 
 
 func _show_text(txt: String, col: Color, sz: int = 16):
-	if is_inside_tree() and FloatingTextPool:
-		FloatingTextPool.spawn(get_parent(), global_position, txt, col, sz)
+	if is_inside_tree() and ObjectPoolManager:
+		ObjectPoolManager.spawn_ft(get_parent(), global_position, txt, col, sz)
 
 
 func apply_effect():

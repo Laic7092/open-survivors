@@ -110,9 +110,7 @@ func _scale_difficulty(diff: float):
 	xp_value = t.base_xp + int((diff - 1.0) * 3 * t.drop_xp_mult)
 	
 	# ── Cursed Time: additional stacking penalty ──
-	var curse_level = 0
-	if Engine.has_meta("stage_curse_level"):
-		curse_level = Engine.get_meta("stage_curse_level")
+	var curse_level = EventBus.get_curse_level() if EventBus else 0
 	if curse_level > 0:
 		var curse_factor = curse_level * 0.15  # 15% per curse level
 		health *= (1.0 + curse_factor)
@@ -166,7 +164,7 @@ func _physics_process(delta):
 			knockback_velocity = Vector2.ZERO
 	
 	# Stationary enemies (Il Molise override)
-	var spd_mod = Engine.get_meta("stage_enemy_speed_mod", 1.0)
+	var spd_mod = EventBus.get_config("stage_enemy_speed_mod", 1.0) if EventBus else 1.0
 	if spd_mod <= 0.0:
 		velocity = Vector2.ZERO + knockback_velocity
 		move_and_slide()
@@ -192,13 +190,13 @@ func _physics_process(delta):
 
 
 func _behavior_chase(_delta: float):
-	var spd_mod = Engine.get_meta("stage_enemy_speed_mod", 1.0)
+	var spd_mod = EventBus.get_config("stage_enemy_speed_mod", 1.0) if EventBus else 1.0
 	var dir = (player.global_position - global_position).normalized()
 	velocity = dir * move_speed * spd_mod
 
 
 func _behavior_wavy(delta: float):
-	var spd_mod = Engine.get_meta("stage_enemy_speed_mod", 1.0)
+	var spd_mod = EventBus.get_config("stage_enemy_speed_mod", 1.0) if EventBus else 1.0
 	var dir = (player.global_position - global_position).normalized()
 	var perp = dir.rotated(PI / 2.0)
 	_wavy_time += delta
@@ -225,15 +223,13 @@ func _fire_projectile():
 	if not is_instance_valid(player) or not is_inside_tree():
 		return
 	# Cursed Time: extra projectiles per volley
-	var curse_level = 0
-	if Engine.has_meta("stage_curse_level"):
-		curse_level = Engine.get_meta("stage_curse_level")
+	var curse_level = EventBus.get_curse_level() if EventBus else 0
 	var extra_shots = curse_level / 5  # +1 projectile every 5 curse levels
 	
 	var shot_count = 1 + extra_shots
 	for s in range(shot_count):
-		if EnemyProjectilePool:
-			var proj = EnemyProjectilePool.borrow(player, _ranged_speed, contact_damage * _ranged_dmg_mult, 4.0)
+		if ObjectPoolManager:
+			var proj = ObjectPoolManager.borrow_enemy_proj(player, _ranged_speed, contact_damage * _ranged_dmg_mult, 4.0)
 			proj.global_position = global_position
 			if s > 0:
 				# Spread extra projectiles slightly
@@ -263,8 +259,8 @@ func take_damage(amount: float, source_pos: Vector2 = Vector2.ZERO):
 		knockback_velocity = kb_dir * KNOCKBACK_STRENGTH * (1.0 - _knockback_resist)
 	
 	# Floating damage number (via pooled system)
-	if is_inside_tree() and FloatingTextPool:
-		FloatingTextPool.spawn(get_parent(), global_position + Vector2(randf_range(-8, 8), -10), str(int(amount)), Color(1, 0.9, 0.6), 16 + mini(int(amount) / 10, 14))
+	if is_inside_tree() and ObjectPoolManager:
+		ObjectPoolManager.spawn_ft(get_parent(), global_position + Vector2(randf_range(-8, 8), -10), str(int(amount)), Color(1, 0.9, 0.6), 16 + mini(int(amount) / 10, 14))
 	
 	if health <= 0:
 		die()

@@ -108,7 +108,7 @@ func _destroy_deferred():
 	# Spawn XP gems
 	var gem_count = 1 + randi() % 2
 	for i in range(gem_count):
-		var gem = GemPool.borrow()
+		var gem = ObjectPoolManager.borrow_gem()
 		gem.value = xp_drop
 		if _player_ref and is_instance_valid(_player_ref):
 			gem.player = _player_ref

@@ -33,7 +33,7 @@ func set_data(type: int, level: int, max_lv: int, evolved: bool, color: Color):
 	
 	item_type = type
 	item_level = level
-	item_max_lv = max_lv if max_lv > 0 else ItemDefs.get_max_level(type)
+	item_max_lv = max_lv if max_lv > 0 else ItemDefs.item_max_level(type)
 	is_evolved = evolved
 	cell_color = color
 	_has_data = true

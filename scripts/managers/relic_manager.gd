@@ -25,8 +25,9 @@ func collect_relic(id: String) -> bool:
 		return false
 	_collected[id] = true
 	_save_data()
-	if UnlockManager:
-		UnlockManager.on_relic_collected(id)
+	var um = EventBus.get_unlock_manager() if EventBus else null
+	if um:
+		um.on_relic_collected(id)
 	return true
 
 

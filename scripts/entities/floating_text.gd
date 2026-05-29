@@ -6,7 +6,7 @@ extends Node2D
 var display_text: String = ""
 var text_color: Color = Color.WHITE
 var font_size: int = 18
-var lifetime: float = 0.9
+var lifetime: float = 0.5
 var age: float = 0.0
 var velocity: Vector2 = Vector2(0, -50)
 
@@ -16,8 +16,8 @@ func _process(delta):
 	position += velocity * delta
 	if age >= lifetime:
 		if is_inside_tree():
-			if FloatingTextPool:
-				FloatingTextPool.return_ft(self)
+			if ObjectPoolManager:
+				ObjectPoolManager.return_ft(self)
 			else:
 				queue_free()
 

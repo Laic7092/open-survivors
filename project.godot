@@ -22,12 +22,10 @@ PowerUpManager="*res://scripts/managers/powerup_manager.gd"
 I18N="*res://scripts/managers/i18n.gd"
 RelicManager="*res://scripts/managers/relic_manager.gd"
 ArcanaManager="*res://scripts/managers/arcana_manager.gd"
-UnlockManager="*res://scripts/managers/unlock_manager.gd"
 SceneManager="*res://scripts/managers/scene_manager.gd"
 EnemyRegistry="*res://scripts/managers/enemy_registry.gd"
-GemPool="*res://scripts/managers/gem_pool.gd"
-FloatingTextPool="*res://scripts/managers/floating_text_pool.gd"
-EnemyProjectilePool="*res://scripts/managers/enemy_projectile_pool.gd"
+ObjectPoolManager="*res://scripts/managers/object_pool_manager.gd"
+EventBus="*res://scripts/core/event_bus.gd"
 
 [display]
 
