@@ -1,6 +1,7 @@
 extends Control
 
 const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
+const ItemDefs = preload("res://scripts/data/item_defs.gd")
 const HudCell = preload("res://scripts/ui/hud_cell.gd")
 
 # ── Scene node references ──
@@ -9,6 +10,7 @@ const HudCell = preload("res://scripts/ui/hud_cell.gd")
 @onready var _level_label: Label = $LevelLabel
 @onready var _timer_label: Label = $TimerLabel
 @onready var _kills_label: Label = $KillsLabel
+@onready var _wave_label: Label = $WaveLabel
 @onready var _gold_label: Label = $GoldLabel
 @onready var _arcana_container: HBoxContainer = $ArcanaContainer
 @onready var _weapon_grid: GridContainer = $WeaponGrid
@@ -106,6 +108,10 @@ func set_gold(g: int):
 	_gold_label.text = I18N.t("hud.gold") + str(g)
 
 
+func set_wave(n: int):
+	_wave_label.text = "Wave " + str(n)
+
+
 func set_relic_arrow(angle, dist: float):
 	if angle == null:
 		_show_relic_arrow = false
@@ -121,9 +127,7 @@ func set_weapons(weapons: Array):
 	for i in range(min(weapons.size(), 6)):
 		var w = weapons[i]
 		var cell = _cells[i]
-		var max_lv = 8
-		if RelicManager.has_relic("great_gospel"):
-			max_lv = 20
+		var max_lv = ItemDefs.get_max_level(w.get("type", -1))
 		cell.set_data(
 			w.get("type", -1),
 			w.get("level", 1),
@@ -142,7 +146,7 @@ func set_passives(passives: Array):
 		cell.set_data(
 			p.get("type", -1),
 			p.get("level", 1),
-			8,
+			ItemDefs.get_max_level(p.get("type", -1)),
 			false,
 			p.get("color", Color(0.5, 0.5, 0.5))
 		)

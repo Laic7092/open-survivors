@@ -60,7 +60,7 @@ static func _load_types():
 		# 0 — Wraith (basic chaser)
 		EnemyTypeData.new(
 			0, "Wraith",
-			14.0, 60.0, 10.0, 1.0, 2,
+			14.0, 45.0, 10.0, 1.0, 2,
 			Color(0.3, 0.4, 0.9), Color(0.5, 0.6, 1.0), 1.5,
 			"circle", "chase",
 			false, 0.0, 0.0, 0.0,
@@ -70,7 +70,7 @@ static func _load_types():
 		# 1 — Viper (fast swarm)
 		EnemyTypeData.new(
 			1, "Viper",
-			6.0, 100.0, 8.0, 0.7, 1,
+			6.0, 75.0, 8.0, 0.7, 1,
 			Color(0.2, 0.7, 0.2), Color(0.4, 0.9, 0.3), 1.5,
 			"triangle", "chase",
 			false, 0.0, 0.0, 0.0,
@@ -80,7 +80,7 @@ static func _load_types():
 		# 2 — Golem (slow tank)
 		EnemyTypeData.new(
 			2, "Golem",
-			50.0, 30.0, 18.0, 1.6, 5,
+			50.0, 24.0, 18.0, 1.6, 5,
 			Color(0.4, 0.25, 0.15), Color(0.55, 0.35, 0.2), 2.5,
 			"circle", "chase",
 			false, 0.0, 0.0, 0.0,
@@ -100,7 +100,7 @@ static func _load_types():
 		# 4 — Mantis (erratic wavy chaser)
 		EnemyTypeData.new(
 			4, "Mantis",
-			12.0, 70.0, 12.0, 0.9, 3,
+			12.0, 55.0, 12.0, 0.9, 3,
 			Color(0.85, 0.5, 0.1), Color(1.0, 0.65, 0.15), 1.5,
 			"hexagon", "wavy",
 			false, 0.0, 0.0, 0.0,
@@ -110,7 +110,7 @@ static func _load_types():
 		# 5 — Nightmare (boss)
 		EnemyTypeData.new(
 			5, "Nightmare",
-			200.0, 40.0, 25.0, 2.5, 50,
+			200.0, 32.0, 25.0, 2.5, 50,
 			Color(0.5, 0.05, 0.05), Color(0.7, 0.1, 0.1), 3.0,
 			"circle", "chase",
 			false, 0.0, 0.0, 0.0,
@@ -120,7 +120,7 @@ static func _load_types():
 		# 6 — Giant Crab (Dairy Plant boss, high armor, spawns adds)
 		EnemyTypeData.new(
 			6, "Giant Crab",
-			300.0, 35.0, 20.0, 3.0, 80,
+			300.0, 28.0, 20.0, 3.0, 80,
 			Color(0.3, 0.6, 0.8), Color(0.5, 0.8, 1.0), 3.0,
 			"hexagon", "chase",
 			false, 0.0, 0.0, 0.0,
@@ -130,7 +130,7 @@ static func _load_types():
 		# 7 — Trinacria (Gallo Tower boss, triple-form, spread projectiles)
 		EnemyTypeData.new(
 			7, "Trinacria",
-			500.0, 30.0, 30.0, 3.5, 120,
+			500.0, 24.0, 30.0, 3.5, 120,
 			Color(0.8, 0.3, 0.1), Color(1.0, 0.5, 0.2), 3.5,
 			"triangle", "chase",
 			true, 1.5, 300.0, 1.2,

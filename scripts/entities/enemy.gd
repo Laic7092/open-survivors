@@ -21,6 +21,7 @@ var _is_boss: bool = false
 var _drop_xp_mult: float = 1.0
 var _drop_gold_chance: float = 0.0
 var _drop_chest_chance: float = 0.0
+var is_wave_enemy: bool = false
 
 # ── Runtime stats (scaled from base) ──
 var player: Node2D

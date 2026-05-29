@@ -260,6 +260,10 @@ func get_passive_level(t: int) -> int:
 	return passive_inventory.get_level(t)
 
 
+func get_passive_max_level(t: int) -> int:
+	return ItemDefs.get_max_level(t)
+
+
 func can_evolve(weapon_type: int) -> bool:
 	return weapon_manager.can_evolve(weapon_type)
 

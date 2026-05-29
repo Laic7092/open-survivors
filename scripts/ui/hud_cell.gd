@@ -2,6 +2,8 @@ extends Control
 # 单个武器/被动格子，在 HUD 底部网格中显示
 # 通过 set_data() 传入数据，_draw() 绘制背景/等级条/文字
 
+const ItemDefs = preload("res://scripts/data/item_defs.gd")
+
 var item_type: int = -1      # 道具类型 ID
 var item_level: int = 0      # 当前等级
 var item_max_lv: int = 8     # 最大等级
@@ -16,7 +18,7 @@ var _icon_node: Control = null
 func set_data(type: int, level: int, max_lv: int, evolved: bool, color: Color):
 	item_type = type
 	item_level = level
-	item_max_lv = max_lv if max_lv > 0 else 8
+	item_max_lv = max_lv if max_lv > 0 else ItemDefs.get_max_level(type)
 	is_evolved = evolved
 	cell_color = color
 	_has_data = true

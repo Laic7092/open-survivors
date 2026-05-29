@@ -25,9 +25,7 @@ static var _BASE = {
 }
 
 func _init(t: int):
-	type = t; level = 1; max_level = 8
-	if RelicManager.has_relic("great_gospel"):
-		max_level = 20
+	type = t; level = 1; max_level = ItemDefs.get_max_level(t)
 	var b = _BASE[t]
 	cooldown = b["cd"]; damage = b["dmg"]
 	area = b["area"]; speed = b["speed"]

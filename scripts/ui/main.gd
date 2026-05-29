@@ -189,6 +189,9 @@ func _ready():
 
 	# ── Continuous spawning starts after map is ready ──
 	_spawn_timer = 1.0
+	
+	# ── Wave system init ──
+	_wave_break_timer = 15.0  # first wave at 15s
 
 	# pickup_timer removed — floor chicken spawn was too generous
 
@@ -1101,6 +1104,21 @@ func _process(delta):
 	if _spawn_timer <= 0.0:
 		_spawn_continuous()
 	
+	# ── Wave system ──
+	if not game_over and not stage_complete:
+		if _wave_active:
+			if _wave_spawning:
+				_wave_spawn_timer -= delta * speed_mult
+				if _wave_spawn_timer <= 0.0:
+					_spawn_wave_enemy()
+			# Wave ends when all enemies spawned & all dead
+			if not _wave_spawning and _wave_alive <= 0:
+				_end_wave()
+		else:
+			_wave_break_timer -= delta * speed_mult
+			if _wave_break_timer <= 0.0:
+				_start_wave()
+	
 	# Apply speed_mult to enemy speed via metadata
 	Engine.set_meta("stage_speed_mult", speed_mult)
 	
@@ -1117,6 +1135,7 @@ func _process(delta):
 	hud.set_timer(game_time)
 	hud.set_kills(total_kills)
 	hud.set_gold(PowerUpManager.run_gold)
+	hud.set_wave(wave_number)
 	
 	# Weapon display data for HUD
 	var wep_data: Array = []
@@ -1208,10 +1227,47 @@ func _spawn_continuous():
 	var type_idx = EnemyDefs.pick_weighted(pool)
 	_spawn_enemy(type_idx)
 	
-	# Ramp up spawn rate over time
-	var ramp = stage_data.get("difficulty_ramp_time", 60.0)
-	var interval = max(0.6 - game_time / ramp * 0.45, 0.15)
+	# Ramp up spawn rate over time using per-stage config
+	var ramp = stage_data.get("spawn_ramp_time", 30.0)
+	var base = stage_data.get("spawn_base_interval", 1.0)
+	var minimum = stage_data.get("spawn_min_interval", 0.15)
+	var interval = max(base - game_time / ramp * (base - minimum), minimum)
 	_spawn_timer = interval
+
+
+# ── Wave system ──
+
+func _start_wave():
+	wave_number += 1
+	_wave_active = true
+	_wave_spawning = true
+	_wave_total = 1 + int(game_time / 60.0)  # grows with time: ~1 at 0s, 16 at 15min
+	_wave_spawned = 0
+	_wave_alive = _wave_total
+	_wave_spawn_timer = 0.15  # first spawn almost immediately
+	# Slow continuous spawn while wave is active (let wave be the star)
+	_spawn_timer = max(_spawn_timer, 0.3)
+
+
+func _spawn_wave_enemy():
+	var pool = EnemyDefs.get_types_for_stage(stage_data.get("id", 0), game_time)
+	if pool.is_empty():
+		pool = [0]
+	var type_idx = EnemyDefs.pick_weighted(pool)
+	var enemy = _spawn_enemy(type_idx)
+	if is_instance_valid(enemy):
+		enemy.is_wave_enemy = true
+	_wave_spawned += 1
+	_wave_spawn_timer = 0.05  # fast burst interval
+	if _wave_spawned >= _wave_total:
+		_wave_spawning = false
+
+
+func _end_wave():
+	_wave_active = false
+	_wave_break_timer = 3.0 + randf_range(0.0, 2.0)  # 3–5s rest
+	# Restore continuous spawn to normal pace
+	_spawn_timer = 0.3
 
 
 func _spawn_enemy(type_id: int = 0) -> Node2D:
@@ -1413,6 +1469,10 @@ func _on_enemy_died(enemy: Node2D):
 	if not is_instance_valid(enemy):
 		return
 	total_kills += 1
+	
+	# Track wave enemy kills
+	if _wave_active and enemy.is_wave_enemy:
+		_wave_alive -= 1
 	
 	# Check if it was an Arcana boss (special chest drop)
 	var is_arcana_boss = enemy.has_meta("arcana_boss") and enemy.get_meta("arcana_boss")

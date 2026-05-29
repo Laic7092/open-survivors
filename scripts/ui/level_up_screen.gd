@@ -7,6 +7,7 @@ signal gold_selected(amount: int)
 const WeaponManager = preload("res://scripts/entities/weapon_manager.gd")
 const IconGenerator = preload("res://scripts/ui/icon_generator.gd")
 const UiUtils = preload("res://scripts/ui/ui_utils.gd")
+const ItemDefs = preload("res://scripts/data/item_defs.gd")
 
 const MAX_WEAPONS = 6
 const MAX_PASSIVES = 6
@@ -98,7 +99,7 @@ func _generate_and_show():
 		if _is_weapon(p) and evolutions.has(p):
 			continue
 		var lv = player_ref.get_weapon_level(p) if _is_weapon(p) else player_ref.get_passive_level(p)
-		var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else 8
+		var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else ItemDefs.get_max_level(p)
 		# Skip new items beyond the slot limit
 		if lv == 0:
 			if _is_weapon(p) and player_ref.weapon_manager.weapons.size() >= MAX_WEAPONS:
@@ -117,7 +118,7 @@ func _generate_and_show():
 		if chosen.is_empty():
 			var p = player_ref.passive_inventory.get_all()
 			for t in p:
-				if player_ref.get_passive_level(t) < 8:
+			if player_ref.get_passive_level(t) < ItemDefs.get_max_level(t):
 					chosen.append(t)
 					break
 	if chosen.is_empty():
