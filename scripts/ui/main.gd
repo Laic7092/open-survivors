@@ -52,9 +52,11 @@ var _arcana_choice_screen: Control
 var _arcana_boss_spawned_11: bool = false
 var _arcana_boss_spawned_21: bool = false
 var _arcana_active_count: int = 0
+var _map_ready: bool = false
 
 
 func _ready():
+	var _pt0 = Time.get_ticks_msec()
 	# Read stage data from Engine metadata (set by stage_select)
 	if Engine.has_meta("selected_stage"):
 		stage_data = Engine.get_meta("selected_stage")
@@ -103,9 +105,8 @@ func _ready():
 	Engine.set_meta("stage_enemy_speed_mod", stage_enemy_speed_mod)
 	Engine.set_meta("stage_speed_mult", 1.5 if hurry else 1.0)
 
-	# Build the large scrolling map (background + props)
-	_setup_map()
-
+	print("[perf] main._ready stage_cfg: %d ms" % (Time.get_ticks_msec() - _pt0))
+	var _pt1 = Time.get_ticks_msec()
 	# ── UI layer (stays on-screen regardless of camera) ──
 	var ui_layer = CanvasLayer.new()
 	ui_layer.layer = 1
@@ -137,6 +138,8 @@ func _ready():
 	pause_overlay.quit_to_menu.connect(_on_quit_to_menu)
 
 	# ── Player ──
+	print("[perf] main._ready ui_layer: %d ms" % (Time.get_ticks_msec() - _pt1))
+	var _pt2 = Time.get_ticks_msec()
 	player = _player_scene.instantiate()
 	player.leveled_up.connect(_on_player_leveled_up)
 	player.died.connect(_on_player_died)
@@ -181,22 +184,28 @@ func _ready():
 	UnlockManager.reset_run_state()
 	ArcanaManager.deactivate_all()
 	call_deferred("start_game_music")
-	
+
 	# Auto-check relic-based unlocks at game start
 	if RelicManager.has_relic("randomazzo"):
 		UnlockManager.on_relic_collected("randomazzo")
-	
+
+	# Defer heavy map generation — _setup_map builds bg + decorations + props + walls
+	call_deferred("_setup_map")
+
 	# Show Arcana first pick if enabled
 	var arcanas_enabled = Engine.has_meta("arcanas_enabled") and Engine.get_meta("arcanas_enabled")
 	if arcanas_enabled and ArcanaManager.is_system_enabled() and ArcanaManager.get_unlocked_count() > 0:
 		call_deferred("_show_arcana_first_pick")
 
+	print("[perf] main._ready player+spawns: %d ms" % (Time.get_ticks_msec() - _pt2))
+	print("[perf] main._ready TOTAL: %d ms" % (Time.get_ticks_msec() - _pt0))
 
 # ═══════════════════════════════════════════════════════════
 #  MAP SETUP
 # ═══════════════════════════════════════════════════════════
 
 func _setup_map():
+	var _pm0 = Time.get_ticks_msec()
 	var bg_color = stage_data.get("bg_color", Color(0.04, 0.04, 0.10))
 	var hw = map_width / 2.0
 	var hh = map_height / 2.0
@@ -263,6 +272,8 @@ func _setup_map():
 	_add_boundary_wall(Vector2(0, hh + wall_thick / 2.0), Vector2(map_width + wall_thick * 2, wall_thick))
 	_add_boundary_wall(Vector2(-hw - wall_thick / 2.0, 0), Vector2(wall_thick, map_height))
 	_add_boundary_wall(Vector2(hw + wall_thick / 2.0, 0), Vector2(wall_thick, map_height))
+	_map_ready = true
+	print("[perf] _setup_map decor+props+bounds: %d ms" % (Time.get_ticks_msec() - _pm0))
 
 
 func _setup_library_decor(hw: float, hh: float):
@@ -577,6 +588,8 @@ func _setup_eudaimonia_decor(hw: float, hh: float):
 
 
 func _generate_props(density: float, stage_id: int, hw: float, hh: float):
+	var _pg0 = Time.get_ticks_msec()
+	var _pg_placed = 0
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 	var margin = 80.0
@@ -608,6 +621,7 @@ func _generate_props(density: float, stage_id: int, hw: float, hh: float):
 
 		_obstacle_positions.append(pos)
 		placed += 1
+		_pg_placed += 1
 
 		# Pick a prop type based on stage
 		match stage_id:
@@ -643,6 +657,7 @@ func _generate_props(density: float, stage_id: int, hw: float, hh: float):
 				_make_bone_prop(pos, rng)
 			15: # Eudaimonia Machine (no props)
 				pass
+	print("[perf] _generate_props placed=%d attempts=%d density=%.4f: %d ms" % [_pg_placed, attempts, density, Time.get_ticks_msec() - _pg0])
 
 
 func _make_forest_prop(pos: Vector2, rng: RandomNumberGenerator):
@@ -919,7 +934,7 @@ func _clamp_to_map(pos: Vector2, margin: float = 40.0) -> Vector2:
 
 
 func _process(delta):
-	if game_over or stage_complete:
+	if game_over or stage_complete or not _map_ready:
 		return
 	# Hurry mode: 1.5x game speed
 	var speed_mult = 1.0
@@ -1029,7 +1044,7 @@ func _process(delta):
 
 
 func _spawn_wave():
-	if game_over or stage_complete:
+	if game_over or stage_complete or not _map_ready:
 		return
 	var wave_interval = stage_data.get("wave_size_interval", 30.0)
 	var count = 1 + int(game_time / wave_interval)
@@ -1584,4 +1599,4 @@ func _toggle_pause():
 func _on_quit_to_menu():
 	get_tree().paused = false
 	PowerUpManager.end_run(true)
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	SceneManager.change_scene("res://scenes/main_menu.tscn")

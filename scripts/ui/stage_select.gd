@@ -409,12 +409,12 @@ func _get_unlock_text(req: String) -> String:
 func _on_select(stage_data: Dictionary):
 	AudioManager.play_sfx("menu_confirm")
 	Engine.set_meta("selected_stage", stage_data)
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	SceneManager.change_scene("res://scenes/main.tscn")
 
 
 func _on_back():
 	AudioManager.play_sfx("menu_select")
-	get_tree().change_scene_to_file("res://scenes/character_select.tscn")
+	SceneManager.change_scene("res://scenes/character_select.tscn")
 
 
 func _on_hyper_toggled(toggled_on: bool, _stage_id: int):

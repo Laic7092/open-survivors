@@ -1,5 +1,7 @@
 extends Area2D
 
+const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
+
 var value: int = 2
 var player: Node2D
 var attracted: bool = false
@@ -11,8 +13,8 @@ var attract_speed: float = 300.0
 
 
 func _ready():
-	collision_layer = 16
-	collision_mask = 2
+	collision_layer = CollisionLayers.XP_GEM
+	collision_mask = CollisionLayers.MASK_PLAYER
 	body_entered.connect(_on_body_entered)
 	add_to_group("gems")
 

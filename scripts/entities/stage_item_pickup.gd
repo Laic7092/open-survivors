@@ -2,34 +2,31 @@ extends Area2D
 # Stage item pickup — pre-placed weapon/passive on the map.
 # Walk near it to auto-collect (adds weapon or passive to player inventory).
 
-var item_type: int = -1       # UpgradeType from player.gd
+const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
+const ItemDefs = preload("res://scripts/data/item_defs.gd")
+
+var item_type: int = -1
 var is_weapon: bool = true
 var player: Node2D
 var collected: bool = false
-var _hover: bool = false
 
-# Icon generator for drawing
 var _icon_gen = preload("res://scripts/ui/icon_generator.gd")
-
-# Label for floating name above the item (created after add_child)
 var _name_label: Label
 
 
 func _ready():
 	collision_layer = 0
-	collision_mask = 2  # player layer
+	collision_mask = CollisionLayers.MASK_PLAYER
 	area_entered.connect(_on_area_entered)
 	add_to_group("stage_items")
 
-	# Auto-despawn after 5 minutes (shouldn't be needed but safety)
 	var timer = Timer.new()
 	timer.wait_time = 300.0
 	timer.one_shot = true
 	timer.timeout.connect(queue_free)
 	add_child(timer)
 	timer.start()
-	
-	# Create floating name label (added as child, renders on top)
+
 	_name_label = Label.new()
 	_name_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2))
 	_name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
@@ -60,18 +57,14 @@ func _collect():
 	if collected:
 		return
 	collected = true
-	
-	if is_weapon:
-		if player.has_method("add_weapon"):
-			player.add_weapon(item_type)
+
+	if is_instance_valid(player) and player.has_method("apply_upgrade"):
+		player.apply_upgrade(item_type)
 	else:
-		if player.has_method("add_passive"):
-			player.add_passive(item_type)
-	
-	# Show floating text
-	if has_node("/root/AudioManager"):
-		AudioManager.play_sfx("pickup_chicken")
-	
+		push_warning("StageItemPickup: player missing apply_upgrade method — item not collected")
+
+	AudioManager.play_sfx("pickup_chicken")
+
 	var ft_scene = preload("res://scenes/floating_text.tscn")
 	var ft = ft_scene.instantiate()
 	ft.display_text = _name_label.text if _name_label else "?"
@@ -80,7 +73,7 @@ func _collect():
 	ft.global_position = global_position
 	if is_inside_tree():
 		get_parent().add_child(ft)
-	
+
 	queue_free()
 
 

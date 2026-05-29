@@ -432,17 +432,17 @@ func _clear_badges():
 
 func _on_start_pressed():
 	AudioManager.play_sfx("menu_confirm")
-	get_tree().change_scene_to_file("res://scenes/character_select.tscn")
+	SceneManager.change_scene("res://scenes/character_select.tscn")
 
 
 func _on_powerups_pressed():
 	AudioManager.play_sfx("menu_confirm")
-	get_tree().change_scene_to_file("res://scenes/powerup_screen.tscn")
+	SceneManager.change_scene("res://scenes/powerup_screen.tscn")
 
 
 func _on_relics_pressed():
 	AudioManager.play_sfx("menu_confirm")
-	get_tree().change_scene_to_file("res://scenes/relic_screen.tscn")
+	SceneManager.change_scene("res://scenes/relic_screen.tscn")
 
 
 func _on_language_pressed():

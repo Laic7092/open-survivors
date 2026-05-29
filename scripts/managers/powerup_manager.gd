@@ -2,11 +2,9 @@ extends Node
 
 # PowerUpManager — autoload singleton
 # Manages permanent meta-progression: gold + purchasable stat upgrades.
-
-const SAVE_PATH := "user://desire_survivors_save.json"
+# Persistence delegated to SaveManager autoload.
 
 # PowerUp definitions
-# id: { name, desc, per_level (effect string), max_lv, base_cost }
 const POWERUPS := {
 	"might":     {"name": "Might",     "desc": "+5% damage",              "max_lv": 5, "base_cost": 200},
 	"max_hp":    {"name": "Max HP",    "desc": "+10% max health",         "max_lv": 3, "base_cost": 200},
@@ -19,16 +17,11 @@ const POWERUPS := {
 	"armor":     {"name": "Armor",     "desc": "+1 armor (dmg reduction)","max_lv": 3, "base_cost": 600},
 }
 
-# Runtime state
 var gold: int = 0
-var levels: Dictionary = {}  # powerup_id -> current level (0 = not bought)
-
-# Unlock state — bitmasks
-var unlocked_stages: int = 1      # bit 0 = stage 0 (Mad Forest) always unlocked
-var unlocked_hyper: int = 0       # bit N = hyper mode for stage N
-var unlocked_chars: int = 1       # bit 0 = char 0 (Antonio) always unlocked
-
-# Run-local gold accumulator (not saved until game over)
+var levels: Dictionary = {}
+var unlocked_stages: int = 1
+var unlocked_hyper: int = 0
+var unlocked_chars: int = 1
 var run_gold: int = 0
 
 
@@ -37,45 +30,18 @@ func _ready():
 	_load_data()
 
 
-# ── Persistence ────────────────────────────────────────────
+# ── Persistence (delegated to SaveManager) ──
 
 func _save_data():
-	# Read existing save data to preserve relic state written by RelicManager
-	var data = _read_raw_save()
-	data["gold"] = gold
-	data["levels"] = levels.duplicate()
-	data["unlocked_stages"] = unlocked_stages
-	data["unlocked_hyper"] = unlocked_hyper
-	data["unlocked_chars"] = unlocked_chars
-	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if not file:
-		return
-	file.store_string(JSON.stringify(data, "\t"))
-	file.close()
-
-
-# Read raw save data preserving all fields (used by RelicManager too)
-func _read_raw_save() -> Dictionary:
-	if not FileAccess.file_exists(SAVE_PATH):
-		return {}
-	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if not file:
-		return {}
-	var text = file.get_as_text()
-	file.close()
-	var json = JSON.new()
-	var err = json.parse(text)
-	if err != OK:
-		return {}
-	var data = json.data
-	if typeof(data) != TYPE_DICTIONARY:
-		return {}
-	return data
+	SaveManager.set_section("gold", gold)
+	SaveManager.set_section("levels", levels.duplicate())
+	SaveManager.set_section("unlocked_stages", unlocked_stages)
+	SaveManager.set_section("unlocked_hyper", unlocked_hyper)
+	SaveManager.set_section("unlocked_chars", unlocked_chars)
 
 
 func _load_data():
-	if not FileAccess.file_exists(SAVE_PATH):
-		# First launch — initialise defaults
+	if not SaveManager.has_section("gold"):
 		gold = 0
 		levels = {}
 		for id in POWERUPS:
@@ -83,29 +49,17 @@ func _load_data():
 		_save_data()
 		return
 
-	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if not file:
-		return
-	var text = file.get_as_text()
-	file.close()
-
-	var json = JSON.new()
-	var err = json.parse(text)
-	if err != OK:
-		return
-	var data = json.data
-	gold = data.get("gold", 0)
-	levels = data.get("levels", {})
-	unlocked_stages = data.get("unlocked_stages", 1)
-	unlocked_hyper = data.get("unlocked_hyper", 0)
-	unlocked_chars = data.get("unlocked_chars", 1)
-	# Ensure every powerup exists in levels dict
+	gold = SaveManager.get_section("gold", 0)
+	levels = SaveManager.get_section("levels", {})
+	unlocked_stages = SaveManager.get_section("unlocked_stages", 1)
+	unlocked_hyper = SaveManager.get_section("unlocked_hyper", 0)
+	unlocked_chars = SaveManager.get_section("unlocked_chars", 1)
 	for id in POWERUPS:
 		if not levels.has(id):
 			levels[id] = 0
 
 
-# ── Public API ─────────────────────────────────────────────
+# ── Public API ──
 
 func get_level(id: String) -> int:
 	return levels.get(id, 0)
@@ -126,12 +80,10 @@ func buy_powerup(id: String) -> bool:
 	var info = POWERUPS[id]
 	var cur_lv = levels.get(id, 0)
 	if cur_lv >= info["max_lv"]:
-		return false  # already maxed
-	
+		return false
 	var cost = get_cost(id)
 	if gold < cost:
-		return false  # not enough gold
-	
+		return false
 	levels[id] = cur_lv + 1
 	gold -= cost
 	_save_data()
@@ -144,8 +96,7 @@ func get_cost(id: String) -> int:
 	var info = POWERUPS[id]
 	var cur_lv = levels.get(id, 0)
 	if cur_lv >= info["max_lv"]:
-		return -1  # maxed
-	# Base cost increases per level
+		return -1
 	return info["base_cost"] * (1 + cur_lv)
 
 
@@ -156,7 +107,7 @@ func get_total_bought() -> int:
 	return total
 
 
-# ── Unlock system ──────────────────────────────────────────
+# ── Unlock system ──
 
 func unlock_stage(stage_id: int):
 	unlocked_stages |= (1 << stage_id)
@@ -176,10 +127,8 @@ func has_hyper(stage_id: int) -> bool:
 	return (unlocked_hyper & (1 << stage_id)) != 0
 
 
-# Unlock the next stage after current_id (stage id = current_id + 1)
 func unlock_next_stage(current_id: int):
-	var next_id = current_id + 1
-	unlock_stage(next_id)
+	unlock_stage(current_id + 1)
 
 
 func unlock_character(char_id: int):
@@ -199,13 +148,12 @@ func buy_character(char_id: int, cost: int) -> bool:
 	gold -= cost
 	unlock_character(char_id)
 	_save_data()
-	# Notify UnlockManager for notification tracking
 	if UnlockManager:
 		UnlockManager.purchase_unlock("char_" + str(char_id))
 	return true
 
 
-# ── Run gold management ────────────────────────────────────
+# ── Run gold management ──
 
 func add_run_gold(amount: int):
 	run_gold += amount
@@ -226,8 +174,6 @@ func reset_run_gold():
 	run_gold = 0
 
 
-# ── Stats applied to Player ────────────────────────────────
-# Returns a dictionary of bonus stats keys
 func get_stat_bonuses() -> Dictionary:
 	var bonuses = {
 		"damage_mult": 0.0,

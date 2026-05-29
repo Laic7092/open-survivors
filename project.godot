@@ -16,6 +16,7 @@ config/features=PackedStringArray("4.6")
 
 [autoload]
 
+SaveManager="*res://scripts/managers/save_manager.gd"
 AudioManager="*res://scripts/managers/audio_manager.gd"
 PowerUpManager="*res://scripts/managers/powerup_manager.gd"
 I18N="*res://scripts/managers/i18n.gd"
@@ -23,6 +24,8 @@ RelicManager="*res://scripts/managers/relic_manager.gd"
 DebugManager="*res://scripts/managers/debug_manager.gd"
 ArcanaManager="*res://scripts/managers/arcana_manager.gd"
 UnlockManager="*res://scripts/managers/unlock_manager.gd"
+SceneManager="*res://scripts/managers/scene_manager.gd"
+EnemyRegistry="*res://scripts/managers/enemy_registry.gd"
 
 [display]
 

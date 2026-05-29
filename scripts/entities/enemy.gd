@@ -49,10 +49,15 @@ var _ft_scene = preload("res://scenes/floating_text.tscn")
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 
+const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
+
+
 func _ready():
-	collision_layer = 4
+	collision_layer = CollisionLayers.ENEMY
 	collision_mask = 0
 	add_to_group("enemies")
+	if EnemyRegistry:
+		EnemyRegistry.register(self)
 
 
 # Call BEFORE add_child. Loads type data and applies difficulty scaling.
@@ -212,6 +217,8 @@ func take_damage(amount: float, source_pos: Vector2 = Vector2.ZERO):
 
 func die():
 	died.emit()
+	if EnemyRegistry:
+		EnemyRegistry.unregister(self)
 	queue_free()
 
 

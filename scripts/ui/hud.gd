@@ -357,7 +357,7 @@ func _on_restart():
 
 func _on_menu():
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	SceneManager.change_scene("res://scenes/main_menu.tscn")
 
 
 func show_game_over(t: float, kills: int, lv: int):

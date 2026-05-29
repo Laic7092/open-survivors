@@ -211,14 +211,18 @@ var _bible_projectiles: Array[Node2D] = []
 var _bible_angle: float = 0.0
 
 
+const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
+
+
 func _ready():
-	collision_layer = 2
+	var _pt = Time.get_ticks_msec()
+	collision_layer = CollisionLayers.PLAYER
 	collision_mask = 0
 	add_to_group("player")
 
 	hurtbox = Area2D.new()
 	hurtbox.name = "Hurtbox"
-	hurtbox.collision_mask = 4 | 8  # enemy bodies (4) + enemy projectiles (8)
+	hurtbox.collision_mask = CollisionLayers.MASK_ENEMIES
 	var hs = CollisionShape2D.new()
 	var hc = CircleShape2D.new()
 	hc.radius = 18
@@ -230,7 +234,7 @@ func _ready():
 
 	collect_area = Area2D.new()
 	collect_area.name = "CollectArea"
-	collect_area.collision_mask = 16
+	collect_area.collision_mask = CollisionLayers.XP_GEM
 	var cs = CollisionShape2D.new()
 	var cc = CircleShape2D.new()
 	cc.radius = pickup_range
@@ -261,6 +265,7 @@ func _ready():
 			"area": area_mult += bonus_val
 	# Apply permanent PowerUp bonuses
 	_apply_powerup_bonuses()
+	print("[perf] Player._ready() TOTAL: %d ms" % (Time.get_ticks_msec() - _pt))
 
 
 func _process(delta):

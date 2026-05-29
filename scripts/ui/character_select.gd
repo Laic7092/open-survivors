@@ -181,7 +181,7 @@ func _on_select(char_data: Dictionary):
 	AudioManager.play_sfx("menu_confirm")
 	# Store character data in Engine metadata
 	Engine.set_meta("selected_character", char_data)
-	get_tree().change_scene_to_file("res://scenes/stage_select.tscn")
+	SceneManager.change_scene("res://scenes/stage_select.tscn")
 
 
 func _on_buy_character(char_id: int):
@@ -203,7 +203,7 @@ func _on_buy_character(char_id: int):
 
 func _on_back():
 	AudioManager.play_sfx("menu_select")
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	SceneManager.change_scene("res://scenes/main_menu.tscn")
 
 
 static func _wep_name_key(type: int) -> String:

@@ -154,7 +154,7 @@ func _add_relic_card(r: Dictionary, pos: Vector2, w: int, h: int):
 
 func _on_back():
 	AudioManager.play_sfx("menu_select")
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	SceneManager.change_scene("res://scenes/main_menu.tscn")
 
 
 func _clear():

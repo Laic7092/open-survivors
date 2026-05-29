@@ -34,4 +34,4 @@ func _start_quick_game():
 	var default_stage = StageDefs.get_stage(0)
 	Engine.set_meta("selected_stage", default_stage)
 	
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	SceneManager.change_scene("res://scenes/main.tscn")

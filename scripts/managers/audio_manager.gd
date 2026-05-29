@@ -12,6 +12,7 @@ const SAMPLE_RATE = 22050
 
 
 func _ready():
+	var _pa_ready = Time.get_ticks_msec()
 	process_mode = PROCESS_MODE_WHEN_PAUSED
 
 	bgm_player = AudioStreamPlayer.new()
@@ -27,6 +28,7 @@ func _ready():
 		sfx_players.append(p)
 
 	sounds = _generate_sounds()
+	print("[perf] AudioManager._ready() TOTAL: %d ms" % (Time.get_ticks_msec() - _pa_ready))
 
 
 # ── Public API ──────────────────────────────────────────────
@@ -61,6 +63,7 @@ func set_bgm_volume(db: float):
 # ── Sound generation ────────────────────────────────────────
 
 func _generate_sounds() -> Dictionary:
+	var _pa0 = Time.get_ticks_msec()
 	return {
 		"menu_select": _mk_tone(440, 0.08, 0.25),
 		"menu_confirm": _mk_tone(660, 0.12, 0.3),
@@ -101,10 +104,12 @@ func _generate_sounds() -> Dictionary:
 		"bgm_game": _mk_bgm_loop(10.0),
 		"bgm_alt": _mk_bgm_loop_alt(12.0),
 	}
+	print("[perf] AudioManager._generate_sounds TOTAL: %d ms" % (Time.get_ticks_msec() - _pa0))
 
 
 # Build a simple generative BGM loop: ambient pads + subtle pulse
 func _mk_bgm_loop(length_sec: float) -> AudioStreamWAV:
+	var _pmb0 = Time.get_ticks_msec()
 	var frames = int(SAMPLE_RATE * length_sec)
 	var data = PackedByteArray()
 	data.resize(frames * 2)
@@ -142,11 +147,13 @@ func _mk_bgm_loop(length_sec: float) -> AudioStreamWAV:
 	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	wav.loop_begin = 0
 	wav.loop_end = frames
+	print("[perf] _mk_bgm_loop(%.1fs): %d ms" % [length_sec, Time.get_ticks_msec() - _pmb0])
 	return wav
 
 
 # Alternate BGM — minor key, darker mood
 func _mk_bgm_loop_alt(length_sec: float) -> AudioStreamWAV:
+	var _pmb1 = Time.get_ticks_msec()
 	var frames = int(SAMPLE_RATE * length_sec)
 	var data = PackedByteArray()
 	data.resize(frames * 2)
@@ -181,6 +188,7 @@ func _mk_bgm_loop_alt(length_sec: float) -> AudioStreamWAV:
 	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	wav.loop_begin = 0
 	wav.loop_end = frames
+	print("[perf] _mk_bgm_loop_alt(%.1fs): %d ms" % [length_sec, Time.get_ticks_msec() - _pmb1])
 	return wav
 
 

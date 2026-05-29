@@ -10,9 +10,12 @@ var float_offset: float = 0.0
 var _ft_scene = preload("res://scenes/floating_text.tscn")
 
 
+const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
+
+
 func _ready():
-	collision_layer = 32
-	collision_mask = 2
+	collision_layer = CollisionLayers.PICKUP
+	collision_mask = CollisionLayers.MASK_PLAYER
 	body_entered.connect(_on_body_entered)
 	add_to_group("pickups")
 

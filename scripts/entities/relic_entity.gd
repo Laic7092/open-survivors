@@ -15,9 +15,12 @@ var player_ref: Node2D
 var _ft_scene = preload("res://scenes/floating_text.tscn")
 
 
+const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
+
+
 func _ready():
 	collision_layer = 0
-	collision_mask = 2  # player collision layer
+	collision_mask = CollisionLayers.MASK_PLAYER
 	body_entered.connect(_on_body_entered)
 	add_to_group("relics")
 	
