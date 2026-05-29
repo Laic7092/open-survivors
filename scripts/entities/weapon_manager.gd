@@ -1,3 +1,5 @@
+const ItemDefs = preload("res://scripts/data/item_defs.gd")
+
 var _player
 var weapons: Array[WeaponState] = []
 

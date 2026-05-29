@@ -1,5 +1,7 @@
 class_name WeaponState
 
+const ItemDefs = preload("res://scripts/data/item_defs.gd")
+
 var type: int
 var level: int
 var max_level: int
