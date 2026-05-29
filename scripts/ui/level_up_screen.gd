@@ -118,7 +118,7 @@ func _generate_and_show():
 		if chosen.is_empty():
 			var p = player_ref.passive_inventory.get_all()
 			for t in p:
-			if player_ref.get_passive_level(t) < ItemDefs.get_max_level(t):
+				if player_ref.get_passive_level(t) < ItemDefs.get_max_level(t):
 					chosen.append(t)
 					break
 	if chosen.is_empty():

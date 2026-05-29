@@ -63,6 +63,7 @@ var _collect_shape_ref: CollisionShape2D
 var _ft_scene = preload("res://scenes/floating_text.tscn")
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
+const ItemDefs = preload("res://scripts/data/item_defs.gd")
 
 
 func _ready():
