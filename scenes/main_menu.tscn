@@ -1,6 +1,164 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_main_menu"]
+[ext_resource type="Theme" path="res://scripts/ui/theme/theme.tres" id="2_theme"]
 
 [node name="MainMenu" type="Control"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
 script = ExtResource("1_main_menu")
+theme = ExtResource("2_theme")
+
+[node name="Bg" type="ColorRect" parent="."]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.05, 0.1, 1)
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 48.0
+
+[node name="GoldLabel" type="Label" parent="TopBar"]
+unique_name_in_owner = true
+theme_type_variation = &"GoldLabel"
+theme_override_font_sizes/font_size = 16
+text = "Gold 0"
+
+[node name="TopSpacer" type="Control" parent="TopBar"]
+size_flags_horizontal = 3
+
+[node name="SettingsHBox" type="HBoxContainer" parent="TopBar"]
+theme_override_constants/separation = 4
+
+[node name="LangBtn" type="Button" parent="TopBar/SettingsHBox"]
+unique_name_in_owner = true
+theme_type_variation = &"SmallButton"
+theme_override_font_sizes/font_size = 13
+text = "Language"
+custom_minimum_size = Vector2(0, 24)
+
+[node name="FsBtn" type="Button" parent="TopBar/SettingsHBox"]
+unique_name_in_owner = true
+theme_type_variation = &"SmallButton"
+theme_override_font_sizes/font_size = 13
+text = "[ ] FS"
+custom_minimum_size = Vector2(0, 24)
+
+[node name="ResBtn" type="Button" parent="TopBar/SettingsHBox"]
+unique_name_in_owner = true
+theme_type_variation = &"SmallButton"
+theme_override_font_sizes/font_size = 13
+text = "1280x720"
+custom_minimum_size = Vector2(0, 24)
+
+[node name="Center" type="VBoxContainer" parent="."]
+unique_name_in_owner = true
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = 60.0
+offset_right = 220.0
+offset_bottom = -60.0
+
+[node name="TopFill" type="Control" parent="Center"]
+size_flags_vertical = 3
+
+[node name="Title" type="Label" parent="Center"]
+unique_name_in_owner = true
+theme_type_variation = &"TitleLabel"
+text = "Desire Survivors"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 48
+
+[node name="Subtitle" type="Label" parent="Center"]
+unique_name_in_owner = true
+theme_type_variation = &"SubtitleLabel"
+text = "A Vampire Survivors-like game"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
+
+[node name="Sep" type="ColorRect" parent="Center"]
+unique_name_in_owner = true
+color = Color(0.9, 0.8, 0.2, 0.4)
+custom_minimum_size = Vector2(240, 2)
+size_flags_horizontal = 4
+
+[node name="Spacer" type="Control" parent="Center"]
+custom_minimum_size = Vector2(0, 12)
+
+[node name="StartBtn" type="Button" parent="Center"]
+unique_name_in_owner = true
+theme_type_variation = &"PrimaryButton"
+text = "Start Game"
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(260, 48)
+theme_override_font_sizes/font_size = 22
+
+[node name="Spacer2" type="Control" parent="Center"]
+custom_minimum_size = Vector2(0, 12)
+
+[node name="BtnRow" type="HBoxContainer" parent="Center"]
+alignment = 1
+size_flags_horizontal = 4
+theme_override_constants/separation = 16
+
+[node name="PuBtn" type="Button" parent="Center/BtnRow"]
+unique_name_in_owner = true
+theme_type_variation = &"NeutralButton"
+text = "Power Ups"
+custom_minimum_size = Vector2(160, 40)
+theme_override_font_sizes/font_size = 18
+
+[node name="RelicBtn" type="Button" parent="Center/BtnRow"]
+unique_name_in_owner = true
+theme_type_variation = &"NeutralButton"
+text = "Relics"
+custom_minimum_size = Vector2(160, 40)
+theme_override_font_sizes/font_size = 18
+
+[node name="BotFill" type="Control" parent="Center"]
+size_flags_vertical = 3
+
+[node name="DebugHint" type="Label" parent="Center"]
+unique_name_in_owner = true
+theme_type_variation = &"DimLabel"
+text = "[F8] Quick Start"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="BottomBar" type="HBoxContainer" parent="."]
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -40.0
+offset_right = -12.0
+offset_bottom = -8.0
+
+[node name="VersionLabel" type="Label" parent="BottomBar"]
+unique_name_in_owner = true
+theme_type_variation = &"DimLabel"
+text = "v1.0"
+theme_override_font_sizes/font_size = 12
+
+[node name="BottomSpacer" type="Control" parent="BottomBar"]
+size_flags_horizontal = 3
+
+[node name="QuitBtn" type="Button" parent="BottomBar"]
+unique_name_in_owner = true
+theme_type_variation = &"DangerButton"
+text = "Quit"
+custom_minimum_size = Vector2(120, 36)
+theme_override_font_sizes/font_size = 18

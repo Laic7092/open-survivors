@@ -70,10 +70,8 @@ func _create_ui(choices: Array):
 	panel.anchor_top = 0.0
 	panel.anchor_right = 1.0
 	panel.anchor_bottom = 1.0
+	panel.theme_type_variation = &"OverlayPanel"
 	add_child(panel)
-	var bg = StyleBoxFlat.new()
-	bg.bg_color = Color(0, 0, 0, 0.88)
-	panel.add_theme_stylebox_override("panel", bg)
 	
 	# Title
 	var title = Label.new()
@@ -114,7 +112,7 @@ func _create_ui(choices: Array):
 	random_btn.text = I18N.t("arcana.random")
 	random_btn.custom_minimum_size = Vector2(200, 44)
 	random_btn.position = Vector2(vp.x / 2 - 100, start_y + card_h + 20)
-	UiUtils.style_button(random_btn, Color(0.2, 0.2, 0.3), Color(0.5, 0.5, 0.7))
+	random_btn.theme_type_variation = &"NeutralButton"
 	random_btn.pressed.connect(_on_random.bind(choices))
 	panel.add_child(random_btn)
 

@@ -6,6 +6,14 @@ const EnemyDefs = preload("res://scripts/data/enemy_defs.gd")
 const RelicDefs = preload("res://scripts/data/relic_defs.gd")
 const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
 
+# Map interactivity
+const PropManager = preload("res://scripts/map/prop_manager.gd")
+const BreakableWall = preload("res://scripts/map/breakable_wall.gd")
+const TreasureChest = preload("res://scripts/map/treasure_chest.gd")
+const HealingFountain = preload("res://scripts/map/healing_fountain.gd")
+const HazardZone = preload("res://scripts/map/hazard_zone.gd")
+const BoostZone = preload("res://scripts/map/boost_zone.gd")
+
 var player
 var hud
 var level_up_screen
@@ -53,6 +61,10 @@ var _arcana_boss_spawned_11: bool = false
 var _arcana_boss_spawned_21: bool = false
 var _arcana_active_count: int = 0
 var _map_ready: bool = false
+
+# Map interactivity
+var prop_manager: Node = null
+var _interact_prompt: Label = null
 
 
 func _ready():
@@ -112,9 +124,8 @@ func _ready():
 	ui_layer.layer = 1
 	add_child(ui_layer)
 
-	hud = Control.new()
+	hud = preload("res://scenes/hud.tscn").instantiate()
 	hud.name = "HUD"
-	hud.set_script(preload("res://scripts/ui/hud.gd"))
 	ui_layer.add_child(hud)
 	hud.set_time_limit(stage_time_limit)
 
@@ -188,6 +199,17 @@ func _ready():
 	# Auto-check relic-based unlocks at game start
 	if RelicManager.has_relic("randomazzo"):
 		UnlockManager.on_relic_collected("randomazzo")
+
+	# ── Interaction prompt label (below center of screen) ──
+	_interact_prompt = Label.new()
+	_interact_prompt.name = "InteractPrompt"
+	_interact_prompt.visible = false
+	_interact_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_interact_prompt.add_theme_color_override("font_color", Color(1, 1, 1, 0.9))
+	_interact_prompt.add_theme_font_size_override("font_size", 16)
+	_interact_prompt.add_theme_constant_override("outline_size", 4)
+	_interact_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))
+	ui_layer.add_child(_interact_prompt)
 
 	# Defer heavy map generation — _setup_map builds bg + decorations + props + walls
 	call_deferred("_setup_map")
@@ -272,6 +294,19 @@ func _setup_map():
 	_add_boundary_wall(Vector2(0, hh + wall_thick / 2.0), Vector2(map_width + wall_thick * 2, wall_thick))
 	_add_boundary_wall(Vector2(-hw - wall_thick / 2.0, 0), Vector2(wall_thick, map_height))
 	_add_boundary_wall(Vector2(hw + wall_thick / 2.0, 0), Vector2(wall_thick, map_height))
+
+	# ── Interactive map elements ──
+	prop_manager = PropManager.new()
+	prop_manager.name = "PropManager"
+	prop_manager.setup(self)
+	add_child(prop_manager)
+
+	var interactables = stage_data.get("interactables", {})
+	_spawn_interactive_elements(interactables, hw, hh)
+
+	# Scatter initial pickups around the map
+	_spawn_initial_pickups(hw, hh)
+
 	_map_ready = true
 	print("[perf] _setup_map decor+props+bounds: %d ms" % (Time.get_ticks_msec() - _pm0))
 
@@ -596,7 +631,11 @@ func _generate_props(density: float, stage_id: int, hw: float, hh: float):
 	var clear_radius = 180.0  # keep area around player start clear
 	var min_dist = 60.0       # minimum distance between props
 	var target_count = int(map_width * map_height * density)
-	target_count = clampi(target_count, 15, 80)
+	# Scale max props with map area — larger maps get more props
+	var ref_area = 3200.0 * 2400.0
+	var area_ratio = (map_width * map_height) / ref_area
+	var max_props = clampi(int(60 * sqrt(area_ratio)), 15, 200)
+	target_count = clampi(target_count, 15, max_props)
 	var attempts = target_count * 5
 	var placed = 0
 
@@ -909,6 +948,123 @@ func _add_boundary_wall(pos: Vector2, size: Vector2):
 
 
 # ═══════════════════════════════════════════════════════════
+#  INTERACTIVE MAP ELEMENTS
+# ═══════════════════════════════════════════════════════════
+
+func _spawn_interactive_elements(data: Dictionary, hw: float, hh: float):
+	if data.is_empty() or not prop_manager:
+		return
+
+	# ── Treasure chests ──
+	for c in data.get("chests", []):
+		var pos = c.get("pos", Vector2.ZERO)
+		var size_f = c.get("size_f", 1.0)
+		var chest = TreasureChest.new()
+		var sz = Vector2(28, 20) * size_f
+		var col = Color(0.45, 0.3, 0.1)
+		if c.has("color"):
+			col = c["color"]
+		chest.setup(sz, col, player)
+		chest.global_position = _clamp_to_map(pos, 30.0)
+		add_child(chest)
+		prop_manager.register_interactable(chest)
+
+	# ── Healing fountains ──
+	for f in data.get("fountains", []):
+		var pos = f.get("pos", Vector2.ZERO)
+		var heal_pct = f.get("heal_pct", 0.5)
+		var cd = f.get("cooldown", 30.0)
+		var radius = f.get("radius", 24.0)
+		var fountain = HealingFountain.new()
+		fountain.setup(radius, heal_pct, cd, player)
+		fountain.global_position = _clamp_to_map(pos, 30.0)
+		add_child(fountain)
+		prop_manager.register_interactable(fountain)
+
+	# ── Breakable walls ──
+	var bd = data.get("breakable_density", 0.0)
+	var bh = data.get("breakable_hp", 25.0)
+	if bd > 0.0:
+		_spawn_breakable_walls(bd, bh, hw, hh)
+
+	# ── Hazard zones ──
+	for h in data.get("hazards", []):
+		var pos = h.get("pos", Vector2.ZERO)
+		var size = h.get("size", Vector2(100, 100))
+		var dps = h.get("dps", 15.0)
+		var color = h.get("color", Color(0.8, 0.1, 0.05))
+		var hurt_enemies = h.get("hurt_enemies", true)
+		var zone = HazardZone.new()
+		zone.setup(size, dps, color, hurt_enemies)
+		zone.global_position = _clamp_to_map(pos, 20.0)
+		add_child(zone)
+		prop_manager.register_hazard(zone)
+
+	# ── Boost zones ──
+	for b in data.get("boosts", []):
+		var pos = b.get("pos", Vector2.ZERO)
+		var btype = b.get("type", "speed")
+		var amount = b.get("amount", 0.5)
+		var size = b.get("size", Vector2(80, 80))
+		var color = b.get("color", Color.BLACK)
+		var zone = BoostZone.new()
+		zone.setup(btype, amount, size, color)
+		zone.global_position = _clamp_to_map(pos, 20.0)
+		add_child(zone)
+		prop_manager.register_boost(zone)
+
+
+func _spawn_breakable_walls(density: float, hp: float, hw: float, hh: float):
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	var margin = 80.0
+	var clear_radius = 180.0
+	var min_dist = 80.0
+	
+	var target_count = int(map_width * map_height * density)
+	target_count = clampi(target_count, 5, 120)
+	var attempts = target_count * 6
+	var placed = 0
+	
+	for _a in range(attempts):
+		if placed >= target_count:
+			break
+		var x = rng.randf_range(-hw + margin, hw - margin)
+		var y = rng.randf_range(-hh + margin, hh - margin)
+		var pos = Vector2(x, y)
+		
+		if pos.length() < clear_radius:
+			continue
+		
+		var too_close = false
+		for ep in _obstacle_positions:
+			if pos.distance_to(ep) < min_dist:
+				too_close = true
+				break
+		if too_close:
+			continue
+		
+		var wall_sz = Vector2(rng.randf_range(20, 40), rng.randf_range(20, 40))
+		var shade = rng.randf_range(0.2, 0.35)
+		var col = Color(shade, shade * 0.8, shade * 0.6)
+		
+		var bw = BreakableWall.new()
+		bw.setup(wall_sz, col, hp + rng.randf_range(-5, 5), player)
+		bw.global_position = pos
+		bw.wall_destroyed.connect(_on_breakable_destroyed)
+		add_child(bw)
+		prop_manager.register_interactable(bw)
+		_obstacle_positions.append(pos)
+		placed += 1
+
+
+func _on_breakable_destroyed(pos: Vector2):
+	var idx = _obstacle_positions.find(pos)
+	if idx >= 0:
+		_obstacle_positions.remove_at(idx)
+
+
+# ═══════════════════════════════════════════════════════════
 #  SPAWNING
 # ═══════════════════════════════════════════════════════════
 
@@ -1041,13 +1197,24 @@ func _process(delta):
 				hud.set_relic_arrow(null, 0.0)
 		else:
 			hud.set_relic_arrow(null, 0.0)
+	
+	# ── Interaction prompt (nearest interactable element) ──
+	if prop_manager and is_instance_valid(player):
+		prop_manager.update_nearest(player.global_position, 80.0)
+		if prop_manager.highlight_prompt != "":
+			_interact_prompt.text = "[E] " + prop_manager.highlight_prompt
+			var vp = get_viewport_rect().size
+			_interact_prompt.position = Vector2(vp.x / 2.0 - 100, vp.y - 50)
+			_interact_prompt.visible = true
+		else:
+			_interact_prompt.visible = false
 
 
 func _spawn_wave():
 	if game_over or stage_complete or not _map_ready:
 		return
 	var wave_interval = stage_data.get("wave_size_interval", 30.0)
-	var count = 1 + int(game_time / wave_interval)
+	var count = 2 + int(game_time / wave_interval * 1.5)
 	if stage_data.get("id", 0) == 2:
 		count = count * 2 + 1
 	
@@ -1063,11 +1230,27 @@ func _spawn_wave():
 		if type_pool.size() == 1:
 			type_idx = type_pool[0]
 		else:
-			# Weighted: sometimes pick hardest available, sometimes random
-			if randf() < time_bias * 0.4 and type_pool.size() > 1:
-				type_idx = type_pool[randi() % max(type_pool.size() - 1, 1) + 1]
-			else:
-				type_idx = type_pool[randi() % type_pool.size()]
+			# Weighted by spawn_weight (lower = rarer)
+			var weights: Array[float] = []
+			var total_w: float = 0.0
+			for tid in type_pool:
+				var tdata = EnemyDefs.get_type(tid)
+				var w = tdata.spawn_weight
+				# Bias toward harder types as time goes on
+				var pool_mid = type_pool.size() / 2.0
+				var idx = type_pool.find(tid)
+				if idx >= pool_mid and randf() < time_bias * 0.4:
+					w *= 3.0
+				weights.append(w)
+				total_w += w
+			var roll = randf() * total_w
+			var accum: float = 0.0
+			type_idx = type_pool[0]
+			for j in range(type_pool.size()):
+				accum += weights[j]
+				if roll <= accum:
+					type_idx = type_pool[j]
+					break
 		_spawn_enemy(type_idx)
 
 
@@ -1169,6 +1352,24 @@ func _spawn_pickup():
 		randf_range(cam.top + margin, cam.bottom - margin)
 	)
 	_spawn_pickup_at(pos)
+
+
+func _spawn_initial_pickups(hw: float, hh: float):
+	# Scatter a few pickups across the map at game start
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	var clear_radius = 200.0
+	var count = rng.randi_range(3, 6)
+	for i in range(count):
+		var x = rng.randf_range(-hw * 0.7, hw * 0.7)
+		var y = rng.randf_range(-hh * 0.7, hh * 0.7)
+		var pos = Vector2(x, y)
+		if pos.length() < clear_radius:
+			continue
+		var pt = rng.randi_range(0, 1)  # CHICKEN or GOLD mostly
+		if rng.randf() < 0.15:
+			pt = 2  # ROSARY (rare)
+		_spawn_pickup_at(pos, pt)
 
 
 # ── Relic spawning ──────────────────────────────────────────
@@ -1293,13 +1494,16 @@ func _on_enemy_died(enemy: Node2D):
 		# Boss always drops a chicken (type 0 = CHICKEN)
 		_spawn_pickup_at(enemy.global_position, 0)
 	else:
-		var gem = _gem_scene.instantiate()
-		gem.value = enemy.xp_value
-		gem.player = player
-		gem.global_position = enemy.global_position
-		call_deferred("add_child", gem)
-		if randf() < 0.04:
-			_spawn_pickup_at(enemy.global_position)
+		if randf() < 0.55:
+			var gem = _gem_scene.instantiate()
+			gem.value = enemy.xp_value * 2
+			gem.player = player
+			gem.global_position = enemy.global_position
+			call_deferred("add_child", gem)
+		# Very small chance for special pickups from normal enemies
+		if randf() < 0.005:
+			var pt = 2 if randf() < 0.5 else 3  # ROSARY or VACUUM
+			_spawn_pickup_at(enemy.global_position, pt)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -1585,6 +1789,10 @@ func _unhandled_input(event):
 		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("fullscreen"):
 		I18N.toggle_fullscreen()
+		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("interact"):
+		if prop_manager and is_instance_valid(player):
+			prop_manager.try_interact(player)
 		get_viewport().set_input_as_handled()
 
 

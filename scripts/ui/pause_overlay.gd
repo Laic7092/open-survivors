@@ -5,234 +5,200 @@ signal quit_to_menu
 
 const CharacterDefs = preload("res://scripts/data/character_defs.gd")
 const Player = preload("res://scripts/entities/player.gd")
-const Minimap = preload("res://scripts/ui/minimap.gd")
+const MinimapScript = preload("res://scripts/ui/minimap.gd")
 
-# ── Responsive constants ──
-const BASE_HEIGHT = 720.0
-const FONT_TITLE = 32
-const FONT_SECTION = 15
-const FONT_STAT_VAL = 17
-const FONT_STAT = 13
-const FONT_BTN = 17
-const FONT_HINT = 12
+# Scene nodes (Outer is the root container — defined in .tscn)
+@onready var _outer: VBoxContainer = $Outer
 
-# Stat labels
-var _stat_labels: Array[Label] = []
-
-# Minimap node
-var _minimap: Control
-
-# Grim Grimoire
-var _grimoire_header: Label
-var _grimoire_container: VBoxContainer
-
-# Responsive refs
-var _outer: VBoxContainer
+# Dynamically built children
 var _title: Label
 var _sep: ColorRect
 var _hbox: HBoxContainer
 var _col1: VBoxContainer
 var _col2: VBoxContainer
+var _col3: VBoxContainer
+var _minimap: Control
 var _map_text: Label
+var _grimoire_header: Label
+var _grimoire_container: VBoxContainer
 var _resume_btn: Button
 var _quit_btn: Button
-var _section_labels: Array[Label] = []
+var _stat_labels: Array[Label] = []
 
-var _scale: float = 1.0
-
-# Cached map data (filled from main node each frame)
+# Cached map data
 var _map_data_ready: bool = false
 var _cached_map_w: float = 3200.0
 var _cached_map_h: float = 2400.0
 var _cached_obstacles: Array[Vector2] = []
+var _cached_chests: Array[Vector2] = []
+var _cached_fountains: Array[Vector2] = []
+var _cached_hazards: Array[Vector2] = []
+var _cached_boosts: Array[Vector2] = []
 
 
 func _ready():
-	process_mode = PROCESS_MODE_WHEN_PAUSED
-	mouse_filter = MOUSE_FILTER_STOP
-	anchor_right = 1.0
-	anchor_bottom = 1.0
-	visible = false
+	_resize_outer()
+	get_viewport().size_changed.connect(_resize_outer)
+	_build_ui()
+	# Signal connections
+	_resume_btn.pressed.connect(_on_resume_pressed)
+	_quit_btn.pressed.connect(_on_quit_pressed)
+	# Initial i18n text
+	_title.text = I18N.t("pause.title")
+	_resume_btn.text = I18N.t("pause.resume")
+	_quit_btn.text = I18N.t("pause.quit")
 
-	# Dark overlay
-	var bg = ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.82)
-	bg.anchor_right = 1.0
-	bg.anchor_bottom = 1.0
-	add_child(bg)
 
-	# ── Outer container ──
-	_outer = VBoxContainer.new()
-	_outer.anchor_left = 0.5
-	_outer.anchor_top = 0.0
-	_outer.anchor_right = 0.5
-	_outer.anchor_bottom = 1.0
-	add_child(_outer)
+func _resize_outer():
+	var vp_w = get_viewport().get_visible_rect().size.x
+	var target_w = mini(vp_w * 0.75, 1000.0)
+	_outer.offset_left = -target_w * 0.5
+	_outer.offset_right = target_w * 0.5
 
+
+func _build_ui():
 	# Title
 	_title = Label.new()
-	_title.text = I18N.t("pause.title")
+	_title.theme_type_variation = &"TitleLabel"
+	_title.text = "PAUSED"
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_title.add_theme_color_override("font_color", Color.WHITE)
+	_title.add_theme_font_size_override("font_size", 32)
 	_outer.add_child(_title)
 
 	# Separator
 	_sep = ColorRect.new()
 	_sep.color = Color(0.9, 0.8, 0.2, 0.3)
+	_sep.custom_minimum_size = Vector2(200, 2)
 	_sep.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_outer.add_child(_sep)
 
-	_outer.add_spacer(false)
+	# Top spacer
+	var ts = Control.new()
+	ts.custom_minimum_size = Vector2(0, 4)
+	_outer.add_child(ts)
 
-	# ── HBox: stats | minimap ──
+	# HBox: stats | minimap | grimoire
 	_hbox = HBoxContainer.new()
 	_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_hbox.add_theme_constant_override("separation", 16)
 	_outer.add_child(_hbox)
 
-	# ── Column 1: Stats ──
+	# Column 1: stats
 	_col1 = VBoxContainer.new()
-	_col1.add_theme_constant_override("separation", 3)
 	_col1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_col1.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_col1.add_theme_constant_override("separation", 3)
 	_hbox.add_child(_col1)
+	_build_stat_labels()
 
-	_add_section_label(_col1, I18N.t("pause.character"))
-	var char_name_lbl = _stat_label(_col1, "", Color.WHITE)
-	var char_lv_lbl = _stat_label(_col1, "", Color.WHITE)
-	_col1.add_spacer(true)
-	_add_section_label(_col1, I18N.t("pause.run_stats"))
-	var kills_lbl = _stat_label(_col1, "", Color.WHITE)
-	var time_lbl = _stat_label(_col1, "", Color.WHITE)
-	var gold_lbl = _stat_label(_col1, "", Color(0.9, 0.8, 0.1))
-	_col1.add_spacer(true)
-	_add_section_label(_col1, I18N.t("pause.combat_stats"))
-	var hp_lbl = _stat_label(_col1, "", Color.WHITE)
-	var dmg_lbl = _stat_label(_col1, "", Color.WHITE)
-	var spd_lbl = _stat_label(_col1, "", Color.WHITE)
-	var area_lbl = _stat_label(_col1, "", Color.WHITE)
-	var cd_lbl = _stat_label(_col1, "", Color.WHITE)
-	var armor_lbl = _stat_label(_col1, "", Color.WHITE)
-
-	_stat_labels = [char_name_lbl, char_lv_lbl, kills_lbl, time_lbl, gold_lbl,
-					hp_lbl, dmg_lbl, spd_lbl, area_lbl, cd_lbl, armor_lbl]
-
-	# ── Column 2: Minimap ──
+	# Column 2: minimap area
 	_col2 = VBoxContainer.new()
-	_col2.add_theme_constant_override("separation", 4)
 	_col2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_col2.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_col2.add_theme_constant_override("separation", 4)
 	_hbox.add_child(_col2)
+	_build_minimap_area()
 
-	# Minimap node (always created, visibility toggled by relic check)
+	# Column 3: Grim Grimoire
+	_col3 = VBoxContainer.new()
+	_col3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_col3.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_col3.add_theme_constant_override("separation", 4)
+	_hbox.add_child(_col3)
+
+	_grimoire_header = Label.new()
+	_grimoire_header.text = "Grim Grimoire"
+	_grimoire_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_grimoire_header.add_theme_color_override("font_color", Color(0.9, 0.7, 0.1))
+	_grimoire_header.add_theme_font_size_override("font_size", 15)
+	_grimoire_header.visible = false
+	_col3.add_child(_grimoire_header)
+
+	_grimoire_container = VBoxContainer.new()
+	_grimoire_container.add_theme_constant_override("separation", 1)
+	_grimoire_container.visible = false
+	_col3.add_child(_grimoire_container)
+
+	# Bottom spacer
+	var bs = Control.new()
+	bs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_outer.add_child(bs)
+
+	# Buttons
+	_resume_btn = Button.new()
+	_resume_btn.text = "Resume"
+	_resume_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_resume_btn.theme_type_variation = &"PrimaryButton"
+	_resume_btn.custom_minimum_size = Vector2(160, 40)
+	_resume_btn.add_theme_font_size_override("font_size", 18)
+	_outer.add_child(_resume_btn)
+
+	_quit_btn = Button.new()
+	_quit_btn.text = "Quit to Menu"
+	_quit_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_quit_btn.theme_type_variation = &"DangerButton"
+	_quit_btn.custom_minimum_size = Vector2(160, 40)
+	_quit_btn.add_theme_font_size_override("font_size", 18)
+	_outer.add_child(_quit_btn)
+
+
+func _build_stat_labels():
+	var add_section = func(text: String):
+		var lbl = Label.new()
+		lbl.text = text
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.theme_type_variation = &"TitleLabel"
+		lbl.add_theme_font_size_override("font_size", 15)
+		lbl.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2))
+		_col1.add_child(lbl)
+		return lbl
+
+	var add_val = func() -> Label:
+		var lbl = Label.new()
+		_col1.add_child(lbl)
+		return lbl
+
+	var add_spacer = func():
+		var sp = Control.new()
+		sp.custom_minimum_size = Vector2(0, 8)
+		_col1.add_child(sp)
+
+	add_section.call(I18N.t("pause.character"))
+	_stat_labels.append(add_val.call())
+	_stat_labels.append(add_val.call())
+
+	add_spacer.call()
+	add_section.call(I18N.t("pause.run_stats"))
+	_stat_labels.append(add_val.call())
+	_stat_labels.append(add_val.call())
+
+	var gold_lbl = add_val.call()
+	gold_lbl.theme_type_variation = &"GoldLabel"
+	_stat_labels.append(gold_lbl)
+
+	add_spacer.call()
+	add_section.call(I18N.t("pause.combat_stats"))
+	for i in 6:
+		_stat_labels.append(add_val.call())
+
+
+func _build_minimap_area():
 	_minimap = Control.new()
-	_minimap.set_script(Minimap)
+	_minimap.set_script(MinimapScript)
 	_minimap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_minimap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_minimap.visible = false
 	_col2.add_child(_minimap)
 
-	# "Map locked" hint (shown when relic not owned)
 	_map_text = Label.new()
-	_map_text.text = I18N.t("pause.map_available")
 	_map_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_map_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_map_text.add_theme_color_override("font_color", Color(0.4, 0.8, 0.4))
 	_map_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_map_text.theme_type_variation = &"DimLabel"
 	_map_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_map_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_map_text.visible = false
 	_col2.add_child(_map_text)
-
-	# ── Grim Grimoire ──
-	_grimoire_header = _build_section_header(I18N.t("pause.grimoire"), Color(0.9, 0.7, 0.1))
-	_grimoire_header.visible = false
-	_outer.add_child(_grimoire_header)
-	_grimoire_container = VBoxContainer.new()
-	_grimoire_container.add_theme_constant_override("separation", 1)
-	_grimoire_container.visible = false
-	_outer.add_child(_grimoire_container)
-
-	# ── Bottom spacer + buttons ──
-	_outer.add_spacer(true)
-
-	_resume_btn = Button.new()
-	_resume_btn.text = I18N.t("pause.resume")
-	_resume_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_outer.add_child(_resume_btn)
-	_resume_btn.pressed.connect(_on_resume_pressed)
-
-	_quit_btn = Button.new()
-	_quit_btn.text = I18N.t("pause.quit")
-	_quit_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_outer.add_child(_quit_btn)
-	_quit_btn.pressed.connect(_on_quit_pressed)
-
-	# ── Apply responsive + styles ──
-	_apply_responsive()
-	_style_button(_resume_btn, Color(0.15, 0.45, 0.15), Color(0.25, 0.65, 0.25))
-	_style_button(_quit_btn, Color(0.45, 0.15, 0.15), Color(0.65, 0.25, 0.25))
-
-
-func _notification(what):
-	if what == NOTIFICATION_RESIZED and _outer != null:
-		_apply_responsive()
-
-
-# ═══════════════════════════════════════════
-# Responsive layout
-# ═══════════════════════════════════════════
-
-func _apply_responsive():
-	var vp = get_viewport().get_visible_rect().size
-	if vp.x <= 0 or vp.y <= 0:
-		return
-
-	_scale = clamp(vp.y / BASE_HEIGHT, 0.45, 3.0)
-
-	# Panel
-	var panel_w = clamp(vp.x * 0.56, 420.0, 900.0 * _scale)
-	var half = panel_w / 2.0
-	_outer.offset_left = -half
-	_outer.offset_right = half
-	_outer.offset_top = max(6, 18 * _scale)
-	_outer.offset_bottom = -max(4, 10 * _scale)
-
-	# Spacing
-	var sep = max(1, int(3 * _scale))
-	_outer.add_theme_constant_override("separation", sep)
-	_hbox.add_theme_constant_override("separation", max(6, int(16 * _scale)))
-	_col1.add_theme_constant_override("separation", max(1, int(3 * _scale)))
-	_col2.add_theme_constant_override("separation", max(1, int(4 * _scale)))
-
-	# Fonts
-	_title.add_theme_font_size_override("font_size", max(14, int(FONT_TITLE * _scale)))
-	for lbl in _section_labels:
-		if is_instance_valid(lbl):
-			lbl.add_theme_font_size_override("font_size", max(9, int(FONT_SECTION * _scale)))
-
-	if _stat_labels.size() >= 1:
-		_stat_labels[0].add_theme_font_size_override("font_size", max(10, int(FONT_STAT_VAL * _scale)))
-	for i in range(1, _stat_labels.size()):
-		if is_instance_valid(_stat_labels[i]):
-			_stat_labels[i].add_theme_font_size_override("font_size", max(8, int(FONT_STAT * _scale)))
-
-	# Separator
-	_sep.custom_minimum_size = Vector2(clamp(panel_w * 0.5, 80.0, 400.0), max(1, 2 * _scale))
-
-	# Buttons
-	var btn_w = clamp(panel_w * 0.28, 120.0, 220.0)
-	var btn_h = clamp(34 * _scale, 26, 64)
-	for btn in [_resume_btn, _quit_btn]:
-		if is_instance_valid(btn):
-			btn.custom_minimum_size = Vector2(btn_w, btn_h)
-			btn.add_theme_font_size_override("font_size", max(10, int(FONT_BTN * _scale)))
-
-	# Map hint font
-	if is_instance_valid(_map_text):
-		_map_text.add_theme_font_size_override("font_size", max(9, int(FONT_HINT * _scale)))
-
-	# Update minimap draw rect (match its allocated area in column 2)
-	_update_minimap_rect()
 
 
 # ═══════════════════════════════════════════
@@ -242,7 +208,6 @@ func _apply_responsive():
 func _update_minimap_rect():
 	if not is_instance_valid(_minimap) or not _minimap.visible:
 		return
-	# Schedule a deferred update so the container layout is resolved
 	call_deferred("_do_update_minimap_rect")
 
 
@@ -252,49 +217,29 @@ func _do_update_minimap_rect():
 	var mm_size = _minimap.size
 	if mm_size.x <= 0 or mm_size.y <= 0:
 		return
-	# The minimap draws relative to its parent (col2), so pass a rect
-	# with local position (0,0) and the minimap's allocated size
 	_minimap.set_draw_rect(Rect2(Vector2.ZERO, mm_size))
 
 
 func _cache_map_data():
-	# Read map data from main Node2D (parent's parent in scene tree)
 	var main = get_parent().get_parent()
 	if not is_instance_valid(main):
 		return
 	_cached_map_w = main.map_width
 	_cached_map_h = main.map_height
 	_cached_obstacles = main._obstacle_positions.duplicate()
+
+	if main.prop_manager:
+		_cached_chests = main.prop_manager.get_chest_positions()
+		_cached_fountains = main.prop_manager.get_fountain_positions()
+		_cached_hazards = main.prop_manager.get_hazard_positions()
+		_cached_boosts = main.prop_manager.get_boost_positions()
+	else:
+		_cached_chests = []
+		_cached_fountains = []
+		_cached_hazards = []
+		_cached_boosts = []
+
 	_map_data_ready = true
-
-
-# ═══════════════════════════════════════════
-# Helpers
-# ═══════════════════════════════════════════
-
-func _build_section_header(text: String, color: Color) -> Label:
-	var lbl = Label.new()
-	lbl.text = text
-	lbl.add_theme_color_override("font_color", color)
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_section_labels.append(lbl)
-	return lbl
-
-
-func _add_section_label(parent: Node, text: String):
-	var lbl = Label.new()
-	lbl.text = text
-	lbl.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2))
-	_section_labels.append(lbl)
-	parent.add_child(lbl)
-
-
-func _stat_label(parent: Node, text: String, color: Color) -> Label:
-	var lbl = Label.new()
-	lbl.text = text
-	lbl.add_theme_color_override("font_color", color)
-	parent.add_child(lbl)
-	return lbl
 
 
 # ═══════════════════════════════════════════
@@ -341,14 +286,12 @@ func _update_stats():
 	_stat_labels[9].text = I18N.t("pause.cd") % int(player.cooldown_reduction * 100)
 	_stat_labels[10].text = I18N.t("pause.armor") % player.armor
 
-	# ── Minimap ──
 	_update_minimap_state(player, main)
 
 
 func _update_minimap_state(player, main):
 	var has_map_relic = RelicManager and RelicManager.has_relic("milky_way_map")
 
-	# Cache map geometry on first show
 	if not _map_data_ready and has_map_relic and is_instance_valid(main):
 		_cache_map_data()
 
@@ -356,12 +299,14 @@ func _update_minimap_state(player, main):
 		_minimap.visible = true
 		_map_text.visible = false
 
-		# One-time setup
 		if _map_data_ready:
 			_minimap.set_map_size(_cached_map_w, _cached_map_h)
 			_minimap.set_obstacles(_cached_obstacles)
+			_minimap.set_chest_positions(_cached_chests)
+			_minimap.set_fountain_positions(_cached_fountains)
+			_minimap.set_hazard_positions(_cached_hazards)
+			_minimap.set_boost_positions(_cached_boosts)
 
-		# Per-frame position data (main node keeps state even while paused)
 		_minimap.set_player_pos(player.global_position)
 		var vs = get_viewport().get_visible_rect().size
 		if is_instance_valid(main):
@@ -372,9 +317,7 @@ func _update_minimap_state(player, main):
 					poses.append(r.global_position)
 			_minimap.set_relic_positions(poses)
 
-		# Keep draw rect in sync (in case of resize)
 		_update_minimap_rect()
-
 	else:
 		_minimap.visible = false
 		_map_text.visible = true
@@ -383,7 +326,7 @@ func _update_minimap_state(player, main):
 		else:
 			_map_text.text = I18N.t("pause.map_available") + "\n🔒 " + (I18N.t("menu.relics") if I18N.current_lang == "zh" else "Find Milky Way Map")
 
-	# ── Grim Grimoire ──
+	# Grim Grimoire
 	if RelicManager and RelicManager.has_relic("grim_grimoire"):
 		_grimoire_header.visible = true
 		_grimoire_container.visible = true
@@ -400,7 +343,7 @@ func _update_minimap_state(player, main):
 			row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			var lbl = Label.new()
 			lbl.text = wpn_nm + " + " + pass_nm + " (Lv." + str(recipe["passive_level"]) + ") → " + evo_name
-			lbl.add_theme_font_size_override("font_size", max(8, int(11 * _scale)))
+			lbl.add_theme_font_size_override("font_size", 12)
 			lbl.add_theme_color_override("font_color", Color(0.8, 0.7, 0.3))
 			row.add_child(lbl)
 			_grimoire_container.add_child(row)
@@ -410,7 +353,7 @@ func _update_minimap_state(player, main):
 
 
 # ═══════════════════════════════════════════
-# Static helpers (weapon / passive names for Grimoire)
+# Static helpers
 # ═══════════════════════════════════════════
 
 static func _weapon_name(t: int) -> String:
@@ -495,31 +438,6 @@ static func _pass_i18n_key(t: int) -> String:
 		30: return "pas.metaglio_left"
 		31: return "pas.metaglio_right"
 	return "pas.wings"
-
-
-# ═══════════════════════════════════════════
-# Button style
-# ═══════════════════════════════════════════
-
-func _style_button(btn: Button, bg_color: Color, hover_color: Color):
-	var normal = StyleBoxFlat.new()
-	normal.bg_color = bg_color
-	normal.border_width_left = 2; normal.border_width_right = 2
-	normal.border_width_top = 2; normal.border_width_bottom = 2
-	normal.border_color = bg_color * 1.5
-	normal.corner_radius_top_left = 6; normal.corner_radius_top_right = 6
-	normal.corner_radius_bottom_left = 6; normal.corner_radius_bottom_right = 6
-	btn.add_theme_stylebox_override("normal", normal)
-	var hover = StyleBoxFlat.new()
-	hover.bg_color = hover_color
-	hover.border_width_left = 2; hover.border_width_right = 2
-	hover.border_width_top = 2; hover.border_width_bottom = 2
-	hover.border_color = hover_color * 1.5
-	hover.corner_radius_top_left = 6; hover.corner_radius_top_right = 6
-	hover.corner_radius_bottom_left = 6; hover.corner_radius_bottom_right = 6
-	btn.add_theme_stylebox_override("hover", hover)
-	btn.add_theme_color_override("font_color", Color.WHITE)
-	btn.add_theme_font_size_override("font_size", 18)
 
 
 func show_pause():

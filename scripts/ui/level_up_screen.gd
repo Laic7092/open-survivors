@@ -29,21 +29,13 @@ func show_choices(p):
 
 
 func _create_ui():
-	# Full-screen dark backdrop
 	panel = Panel.new()
 	panel.anchor_left = 0.0
 	panel.anchor_top = 0.0
 	panel.anchor_right = 1.0
 	panel.anchor_bottom = 1.0
-	panel.offset_left = 0
-	panel.offset_top = 0
-	panel.offset_right = 0
-	panel.offset_bottom = 0
+	panel.theme_type_variation = &"OverlayPanel"
 	add_child(panel)
-
-	var bg = StyleBoxFlat.new()
-	bg.bg_color = Color(0, 0, 0, 0.85)
-	panel.add_theme_stylebox_override("panel", bg)
 
 	# Center the choice panel using anchors
 	var vp = get_viewport().get_visible_rect().size
@@ -186,7 +178,7 @@ func _add_evolution_choice(weapon_type: int):
 	# Golden border button
 	var btn = Button.new()
 	btn.custom_minimum_size = Vector2(0, 140)
-	UiUtils.style_button(btn, Color(0.3, 0.2, 0.0), Color(0.9, 0.7, 0.1))
+	btn.theme_type_variation = &"GoldButton"
 
 	# EVOLVE badge
 	var badge = Label.new()

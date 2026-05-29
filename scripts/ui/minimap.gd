@@ -10,6 +10,10 @@ var camera_pos: Vector2 = Vector2.ZERO
 var camera_size: Vector2 = Vector2(1280, 720)
 var obstacle_positions: Array[Vector2] = []
 var relic_positions: Array[Vector2] = []
+var chest_positions: Array[Vector2] = []
+var fountain_positions: Array[Vector2] = []
+var hazard_positions: Array[Vector2] = []
+var boost_positions: Array[Vector2] = []
 
 # When set, draws within this rect instead of the viewport corner.
 var _draw_rect: Rect2
@@ -44,6 +48,26 @@ func set_camera_view(pos: Vector2, size: Vector2):
 
 func set_obstacles(positions: Array[Vector2]):
 	obstacle_positions = positions
+	queue_redraw()
+
+
+func set_chest_positions(positions: Array[Vector2]):
+	chest_positions = positions
+	queue_redraw()
+
+
+func set_fountain_positions(positions: Array[Vector2]):
+	fountain_positions = positions
+	queue_redraw()
+
+
+func set_hazard_positions(positions: Array[Vector2]):
+	hazard_positions = positions
+	queue_redraw()
+
+
+func set_boost_positions(positions: Array[Vector2]):
+	boost_positions = positions
 	queue_redraw()
 
 
@@ -85,6 +109,42 @@ func _draw():
 	for p in obstacle_positions:
 		var dot = center + p * scale
 		draw_circle(dot, 1.5, Color(0.35, 0.35, 0.35))
+
+	# Chests as golden squares
+	for p in chest_positions:
+		var dot = center + p * scale
+		var sz = 3.0
+		draw_rect(Rect2(dot - Vector2(sz, sz), Vector2(sz * 2, sz * 2)), Color(0.9, 0.7, 0.1))
+
+	# Fountains as blue crosses
+	for p in fountain_positions:
+		var dot = center + p * scale
+		var sz = 3.0
+		draw_circle(dot, sz, Color(0.2, 0.6, 1.0, 0.7))
+		draw_circle(dot, sz, Color(0.5, 0.8, 1.0, 0.5), false, 1.0)
+
+	# Hazard zones as red diamonds
+	for p in hazard_positions:
+		var dot = center + p * scale
+		var sz = 3.0
+		var diamond = PackedVector2Array([
+			dot + Vector2(0, -sz),
+			dot + Vector2(sz, 0),
+			dot + Vector2(0, sz),
+			dot + Vector2(-sz, 0),
+		])
+		draw_colored_polygon(diamond, Color(0.9, 0.2, 0.1, 0.6))
+
+	# Boost zones as green triangles
+	for p in boost_positions:
+		var dot = center + p * scale
+		var sz = 3.0
+		var tri = PackedVector2Array([
+			dot + Vector2(0, -sz),
+			dot + Vector2(sz * 0.866, sz * 0.5),
+			dot + Vector2(-sz * 0.866, sz * 0.5),
+		])
+		draw_colored_polygon(tri, Color(0.2, 0.9, 0.3, 0.6))
 
 	# Relics as green pulsing dots
 	var pulse = sin(Time.get_ticks_msec() * 0.004) * 0.3 + 0.7

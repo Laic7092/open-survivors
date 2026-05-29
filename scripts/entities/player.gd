@@ -59,16 +59,16 @@ class WeaponState:
 		level += 1
 		# Diminishing returns for limit break (levels 9+)
 		if level <= 8:
-			cooldown = max(cooldown * 0.88, 0.1)
-			damage *= 1.15
-			area *= 1.1
-			speed *= 1.1
+			cooldown = max(cooldown * 0.90, 0.1)
+			damage *= 1.12
+			area *= 1.08
+			speed *= 1.08
 		else:
 			# Limit break: smaller gains past level 8
-			cooldown = max(cooldown * 0.96, 0.05)
-			damage *= 1.06
-			area *= 1.04
-			speed *= 1.04
+			cooldown = max(cooldown * 0.97, 0.05)
+			damage *= 1.05
+			area *= 1.03
+			speed *= 1.03
 
 	func evolve():
 		evolved = true
@@ -199,6 +199,7 @@ var collect_area: Area2D
 
 var _proj_vis_script = preload("res://scripts/entities/proj_vis.gd")
 var whip_vis_time: float = 0.0
+var whip_hit_window: float = 0.0
 
 var whip_vis_area: float = 60.0
 var _whip_hit_this_swing: Dictionary = {}
@@ -282,6 +283,8 @@ func _process(delta):
 		_knife_sfx_cooldown -= delta
 	if whip_vis_time > 0:
 		whip_vis_time -= delta
+	if whip_hit_window > 0:
+		whip_hit_window -= delta
 		for w in weapons:
 			if w.type == UpgradeType.WHIP:
 				_check_whip_hits(w)
@@ -335,6 +338,7 @@ func fire_weapon(w: WeaponState):
 func _fire_whip(w: WeaponState):
 	AudioManager.play_sfx("wpn_whip" if not w.evolved else "wpn_evo")
 	whip_vis_time = 0.1
+	whip_hit_window = 0.15
 	whip_vis_area = w.area * area_mult
 	_whip_hit_this_swing.clear()
 	_check_whip_hits(w)
@@ -343,10 +347,9 @@ func _fire_whip(w: WeaponState):
 func _check_whip_hits(w: WeaponState):
 	var enemies = get_tree().get_nodes_in_group("enemies")
 	var effective_area = w.area * area_mult
-	var arc_r = effective_area * 1.2  # matches visual outer_r
-	var dir_angle = direction.angle()
-	var arc_span = PI * 0.65  # matches visual arc_span
-	var half_span = arc_span * 0.5
+	var arc_r = effective_area * 2.0  # matches visual
+	var half_w = arc_r * 0.65
+	var half_h = arc_r * 0.35
 	var src_pos = global_position
 	for e in enemies:
 		if not is_instance_valid(e):
@@ -355,17 +358,15 @@ func _check_whip_hits(w: WeaponState):
 		if _whip_hit_this_swing.has(id):
 			continue
 		var offset = e.global_position - global_position
-		var dist = offset.length()
-		if dist > arc_r:
+		# Account for enemy collision radius so partial overlap counts
+		var enemy_r = 14.0
+		if is_instance_valid(e.collision_shape) and e.collision_shape.shape is CircleShape2D:
+			enemy_r = e.collision_shape.shape.radius * max(e.scale.x, e.scale.y)
+		# Rectangle check expanded by enemy radius
+		if abs(offset.x) > half_w + enemy_r or abs(offset.y) > half_h + enemy_r:
 			continue
-		# Enemies very close to the player always count (center of the fan)
-		if dist > 10.0:
-			var angle = offset.angle()
-			var rel = wrapf(angle - dir_angle, -PI, PI)
-			if rel < -half_span or rel > half_span:
-				continue
 		var dmg = w.damage * damage_mult
-		e.take_damage(dmg, src_pos)
+		e.take_damage(dmg, Vector2.ZERO)
 		if w.evolved:
 			health = min(health + dmg * 0.2, max_health)
 		_whip_hit_this_swing[id] = true
@@ -415,7 +416,7 @@ func _fire_garlic(w: WeaponState):
 		if not is_instance_valid(e): continue
 		if global_position.distance_to(e.global_position) < effective_area:
 			if e.has_method("take_damage"):
-				e.take_damage(w.damage * damage_mult, src_pos)
+				e.take_damage(w.damage * damage_mult, Vector2.ZERO)
 				if w.evolved:
 					health = min(health + 1.0, max_health)
 
@@ -428,12 +429,11 @@ func _fire_knife(w: WeaponState):
 	var area = w.area * area_mult
 	var count = get_projectile_count(UpgradeType.KNIFE)
 	var base_dir = direction if direction.length() > 0 else Vector2.DOWN
-	var spread_angle = deg_to_rad(10.0)  # 10° between each blade
-	var start_angle = -spread_angle * (count - 1) / 2.0
+	var perp = Vector2(-base_dir.y, base_dir.x)  # perpendicular for offset
 	
 	for i in range(count):
-		var angle = start_angle + spread_angle * i
-		var dir = base_dir.rotated(angle)
+		var dir = base_dir
+		var side_offset = perp * (i - (count - 1) / 2.0) * 10.0
 		
 		var p = Area2D.new()
 		p.collision_mask = 4
@@ -453,15 +453,15 @@ func _fire_knife(w: WeaponState):
 		handle.size = Vector2(3, 5)
 		handle.position = Vector2(-1.5, 10)
 		p.add_child(handle)
-		# Position & rotation
-		p.global_position = global_position + dir * 20
+		# Position & rotation (with side offset)
+		p.global_position = global_position + dir * 20 + side_offset
 		p.rotation = dir.angle()
 		get_parent().add_child(p)
 		# Single-use: first hit kills the projectile
 		p.body_entered.connect(_on_proj_hit_and_free.bind(p, dmg))
-		var target = global_position + dir * 400.0
+		var target = global_position + dir * 500.0 + side_offset
 		var tw = create_tween()
-		tw.tween_property(p, "global_position", target, 0.25)
+		tw.tween_property(p, "global_position", target, 0.12)
 		tw.finished.connect(_on_tween_done.bind(p))
 
 
@@ -479,12 +479,10 @@ func _fire_axe(w: WeaponState):
 func _fire_axe_normal(w: WeaponState, dmg: float, area: float):
 	var count = get_projectile_count(UpgradeType.AXE)
 	var spawn_dir = direction if direction.length() > 0 else Vector2.DOWN
-	var spread_angle = deg_to_rad(8.0)
-	var start_angle = -spread_angle * (count - 1) / 2.0
+	var perp = Vector2(-spawn_dir.y, spawn_dir.x)
 	
 	for i in range(count):
-		var angle = start_angle + spread_angle * i
-		var dir = spawn_dir.rotated(angle)
+		var side = perp * (i - (count - 1) / 2.0) * 12.0
 		
 		var p = Area2D.new()
 		p.collision_mask = 4
@@ -493,28 +491,43 @@ func _fire_axe_normal(w: WeaponState, dmg: float, area: float):
 		c.radius = area
 		s.shape = c
 		p.add_child(s)
-		# Visual — dark axe head
-		var vis = ColorRect.new()
-		vis.color = Color(0.35, 0.25, 0.15)
-		vis.size = Vector2(area * 2.0, area * 1.2)
-		vis.position = Vector2(-area, -area * 0.6)
-		p.add_child(vis)
-		var edge = ColorRect.new()
-		edge.color = Color(0.5, 0.35, 0.2)
-		edge.size = Vector2(area * 2.2, 4)
-		edge.position = Vector2(-area * 1.1, -2)
-		p.add_child(edge)
+		# Visual — proper axe shape
+		var axe_gfx = Node2D.new()
+		var axe_sz = max(area * 0.4, 8.0)
+		var draw_axe = func():
+			# Handle (brown wood)
+			axe_gfx.draw_rect(Rect2(-3, -axe_sz * 1.5, 6, axe_sz * 3.0), Color(0.4, 0.25, 0.1))
+			# Blade (silver trapezoid)
+			var blade = PackedVector2Array([
+				Vector2(-2, -axe_sz * 1.2),
+				Vector2(axe_sz * 1.4, -axe_sz * 0.7),
+				Vector2(axe_sz * 1.4, axe_sz * 0.7),
+				Vector2(-2, axe_sz * 1.2),
+			])
+			axe_gfx.draw_polygon(blade, [Color(0.6, 0.6, 0.65)])
+			# Cutting edge (brighter)
+			var edge_poly = PackedVector2Array([
+				Vector2(axe_sz * 1.4, -axe_sz * 0.7),
+				Vector2(axe_sz * 1.7, 0),
+				Vector2(axe_sz * 1.4, axe_sz * 0.7),
+			])
+			axe_gfx.draw_polygon(edge_poly, [Color(0.8, 0.8, 0.85)])
+			# Outline
+			axe_gfx.draw_polyline(blade, Color(0.3, 0.3, 0.35), 1.5, true)
+		axe_gfx.draw.connect(draw_axe)
+		p.add_child(axe_gfx)
 		# Spawn in front of player
-		p.global_position = global_position + dir * 30
+		p.global_position = global_position + spawn_dir * 20 + side
+		p.rotation = spawn_dir.angle()
 		get_parent().add_child(p)
 		p.body_entered.connect(_on_proj_hit.bind(p, dmg))
-		# Arc trajectory
-		var mid = global_position + dir * 120 + Vector2(0, -80)
-		var end = global_position + dir * 250
+		# Parabolic arc: throw upward, then fall forward
+		var mid = global_position + spawn_dir * 100 + Vector2(0, -130) + side
+		var end = global_position + spawn_dir * 280 + side
 		var tw = create_tween()
 		tw.set_parallel(true)
-		tw.tween_property(p, "global_position", mid, 0.3)
-		tw.tween_property(p, "scale", Vector2(1.5, 1.5), 0.3)
+		tw.tween_property(p, "global_position", mid, 0.45)
+		tw.tween_property(p, "rotation", p.rotation - TAU * 1.5, 0.45)
 		tw.finished.connect(_on_axe_arc_done.bind(p, end))
 
 
@@ -564,39 +577,56 @@ func _fire_death_spiral(w: WeaponState, dmg: float, area: float):
 
 func _fire_fire_wand(w: WeaponState):
 	AudioManager.play_sfx("wpn_fire")
-	# Explosive projectile at a random enemy
 	var enemies = get_tree().get_nodes_in_group("enemies")
 	if enemies.is_empty():
 		return
-	var target = enemies[randi() % enemies.size()]
-	if not is_instance_valid(target):
-		return
 	var dmg = w.damage * damage_mult
 	var area = w.area * area_mult
-	var explosion_radius = area * 1.5
+	var explosion_radius = area * 3.0
+	var count = get_projectile_count(UpgradeType.FIRE_WAND)
+	# Pick unique targets (or fewer if not enough enemies)
+	var targets: Array = enemies.duplicate()
+	targets.shuffle()
+	var n = mini(count, targets.size())
+	for i in range(n):
+		var target = targets[i]
+		if not is_instance_valid(target):
+			continue
+		_fire_one_fireball(target, dmg, area, explosion_radius, w)
+
+
+# Fire a single fireball toward a target
+func _fire_one_fireball(target: Node2D, dmg: float, area: float, explosion_radius: float, w: WeaponState):
 	var p = Area2D.new()
 	p.collision_mask = 4
 	var s = CollisionShape2D.new()
 	var c = CircleShape2D.new()
-	c.radius = area
+	c.radius = area * 0.8
 	s.shape = c
 	p.add_child(s)
-	# Visual — fire orb
-	var vis = ColorRect.new()
-	vis.color = Color(0.9, 0.4, 0.1, 0.9)
-	vis.size = Vector2(area * 1.8, area * 1.8)
-	vis.position = Vector2(-area * 0.9, -area * 0.9)
-	p.add_child(vis)
-	var glow = ColorRect.new()
-	glow.color = Color(1.0, 0.7, 0.2, 0.4)
-	glow.size = Vector2(area * 2.6, area * 2.6)
-	glow.position = Vector2(-area * 1.3, -area * 1.3)
-	p.add_child(glow)
+	# Visual — fireball
+	var fire_gfx = Node2D.new()
+	var fb_sz = max(area * 0.4, 6.0)
+	var seed_offset = randi() % 1000
+	var draw_fire = func():
+		var flicker = 0.85 + sin(Time.get_ticks_msec() * 0.015 + seed_offset) * 0.15
+		var r = fb_sz * flicker
+		# Outer glow (red-orange, faint)
+		fire_gfx.draw_circle(Vector2.ZERO, r * 2.2, Color(0.9, 0.3, 0.05, 0.12))
+		# Mid glow (orange)
+		fire_gfx.draw_circle(Vector2.ZERO, r * 1.5, Color(0.95, 0.5, 0.1, 0.25))
+		# Inner fire (bright orange-yellow)
+		fire_gfx.draw_circle(Vector2.ZERO, r * 0.9, Color(0.95, 0.7, 0.15, 0.8))
+		# Core (white-yellow)
+		fire_gfx.draw_circle(Vector2.ZERO, r * 0.4, Color(1.0, 0.9, 0.5, 1.0))
+	fire_gfx.draw.connect(draw_fire)
+	p.add_child(fire_gfx)
 	p.global_position = global_position
 	get_parent().add_child(p)
-	p.body_entered.connect(_on_proj_hit.bind(p, dmg))
+	p.body_entered.connect(_on_firewand_hit.bind(p, explosion_radius, dmg, w))
 	var tw = create_tween()
 	tw.tween_property(p, "global_position", target.global_position, 0.5)
+	p.set_meta("_wand_tween", tw)
 	tw.finished.connect(_on_firewand_explode.bind(p, explosion_radius, dmg, w))
 
 
@@ -976,14 +1006,14 @@ func _on_proj_hit(body, proj, dmg: float):
 	if not is_instance_valid(body) or not is_instance_valid(proj):
 		return
 	if body.has_method("take_damage"):
-		body.take_damage(dmg, proj.global_position)
+		body.take_damage(dmg, Vector2.ZERO)
 
 
 func _on_proj_hit_and_free(body, proj, dmg: float):
 	if not is_instance_valid(body) or not is_instance_valid(proj):
 		return
 	if body.has_method("take_damage"):
-		body.take_damage(dmg, proj.global_position)
+		body.take_damage(dmg, Vector2.ZERO)
 	if is_instance_valid(proj):
 		proj.queue_free()
 
@@ -998,8 +1028,8 @@ func _on_axe_arc_done(proj, end_pos: Vector2):
 		return
 	var tw2 = create_tween()
 	tw2.set_parallel(true)
-	tw2.tween_property(proj, "global_position", end_pos, 0.4)
-	tw2.tween_property(proj, "scale", Vector2(0.5, 0.5), 0.4)
+	tw2.tween_property(proj, "global_position", end_pos, 0.55)
+	tw2.tween_property(proj, "rotation", proj.rotation - TAU * 2, 0.55)
 	tw2.finished.connect(_on_tween_done.bind(proj))
 
 
@@ -1013,25 +1043,68 @@ func _on_axe_return(proj, return_pos: Vector2):
 	tw2.finished.connect(_on_tween_done.bind(proj))
 
 
+func _on_firewand_hit(body, proj, explosion_radius: float, dmg: float, w: WeaponState):
+	if not is_instance_valid(body) or not is_instance_valid(proj):
+		return
+	var pos = proj.global_position
+	# Full direct damage to the hit enemy
+	if body.has_method("take_damage"):
+		body.take_damage(dmg, Vector2.ZERO)
+	# Explode at impact point
+	_explode_at(pos, explosion_radius, dmg, w)
+	# Clean up projectile
+	var tw = proj.get_meta("_wand_tween", null)
+	if tw and is_instance_valid(tw):
+		tw.kill()
+	if is_instance_valid(proj):
+		proj.queue_free()
+
+
 func _on_firewand_explode(proj, explosion_radius: float, dmg: float, w: WeaponState = null):
+	# Fallback: fireball reached destination without hitting anything — explode there
 	if not is_instance_valid(proj):
 		return
-	var src_pos = proj.global_position
-	# First explosion
+	_explode_at(proj.global_position, explosion_radius, dmg, w)
+	if is_instance_valid(proj):
+		proj.queue_free()
+
+
+func _explode_at(pos: Vector2, explosion_radius: float, dmg: float, w: WeaponState):
+	# Visual
+	_spawn_explosion_fx(pos, explosion_radius, Color(0.9, 0.4, 0.1))
+	# First explosion — full damage
 	for e in get_tree().get_nodes_in_group("enemies"):
-		if is_instance_valid(e) and src_pos.distance_to(e.global_position) < explosion_radius:
+		if is_instance_valid(e) and pos.distance_to(e.global_position) < explosion_radius:
 			if e.has_method("take_damage"):
-				e.take_damage(dmg * 0.5, src_pos)
+				e.take_damage(dmg, Vector2.ZERO)
 	# Evolved (Hellfire): second bigger explosion
 	var evolved = w and w.evolved
 	if evolved:
 		var dbl_radius = explosion_radius * 1.6
+		_spawn_explosion_fx(pos, dbl_radius, Color(1.0, 0.3, 0.0))
 		for e in get_tree().get_nodes_in_group("enemies"):
-			if is_instance_valid(e) and src_pos.distance_to(e.global_position) < dbl_radius:
+			if is_instance_valid(e) and pos.distance_to(e.global_position) < dbl_radius:
 				if e.has_method("take_damage"):
-					e.take_damage(dmg * 0.35, src_pos)
-	if is_instance_valid(proj):
-		proj.queue_free()
+					e.take_damage(dmg, Vector2.ZERO)
+
+
+func _spawn_explosion_fx(pos: Vector2, radius: float, color: Color):
+	var node = Node2D.new()
+	node.global_position = pos
+	node.name = "FireWandExplosion"
+	var lifetime = 0.3
+	var draw_fn = func():
+		var a = node.modulate.a
+		node.draw_circle(Vector2.ZERO, radius, Color(color.r, color.g, color.b, a * 0.25))
+		node.draw_arc(Vector2.ZERO, radius, 0, TAU, 32, Color(color.r, color.g, color.b, a * 0.8), max(2.0, radius * 0.08))
+		# Inner bright core
+		node.draw_circle(Vector2.ZERO, radius * 0.35, Color(1.0, 0.8, 0.4, a * 0.6))
+	node.draw.connect(draw_fn)
+	get_parent().add_child(node)
+	var tw = create_tween()
+	tw.tween_property(node, "modulate:a", 0.0, lifetime).from(1.0)
+	tw.parallel().tween_property(node, "scale", Vector2(1.6, 1.6), lifetime).from(Vector2(0.4, 0.4))
+	tw.finished.connect(node.queue_free)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1045,7 +1118,7 @@ func _on_boomerang_return(proj, dmg: float):
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if is_instance_valid(e) and proj.global_position.distance_to(e.global_position) < 50:
 			if e.has_method("take_damage"):
-				e.take_damage(dmg * 0.5, proj.global_position)
+				e.take_damage(dmg * 0.5, Vector2.ZERO)
 	if is_instance_valid(proj):
 		proj.queue_free()
 
@@ -1065,7 +1138,7 @@ func _on_water_tick(zone: Area2D, area: float, dmg: float, evolved: bool):
 			continue
 		if src_pos.distance_to(e.global_position) <= area:
 			if e.has_method("take_damage"):
-				e.take_damage(dmg * 0.25, src_pos)
+				e.take_damage(dmg * 0.25, Vector2.ZERO)
 	# Evolved (La Borra): move zone toward nearest enemy
 	if evolved:
 		var nearest: Node2D = null
@@ -1315,7 +1388,7 @@ func _damage_nearby_enemies(amount: float):
 			continue
 		if pos.distance_to(e.global_position) < 100.0:
 			if e.has_method("take_damage"):
-				e.take_damage(amount, pos)
+				e.take_damage(amount, Vector2.ZERO)
 
 
 func _on_collect_area(area: Area2D):
@@ -1338,7 +1411,7 @@ func add_xp(value: int):
 
 
 func update_xp_requirements():
-	xp_to_next = level * 10 + 5
+	xp_to_next = 10 + level * 15 + int(level * level * 0.2)
 
 
 # Pull nearby XP gems toward the player (magnet passive).
@@ -1575,9 +1648,6 @@ func _recalculate_passives():
 		var circle = _collect_shape_ref.shape as CircleShape2D
 		if circle:
 			circle.radius = pickup_range
-	# Scale health proportionally with max HP changes
-	if max_health != old_max and old_max > 0:
-		health = health * (max_health / old_max)
 	# Re-apply character starting bonus (preserved across passive recalculations)
 	if Engine.has_meta("selected_character"):
 		var char_data = Engine.get_meta("selected_character")
@@ -1604,6 +1674,9 @@ func _recalculate_passives():
 				"area": area_mult += bonus_val
 	# Re-apply permanent PowerUp stats (additive to passives)
 	_apply_powerup_stats()
+	# Scale health proportionally with max HP changes (after all overrides)
+	if max_health != old_max and old_max > 0:
+		health = health * (max_health / old_max)
 
 
 func _draw():
@@ -1632,25 +1705,22 @@ func _draw():
 				whip_evolved = true
 				break
 		var base_color = Color(1.0, 0.2, 0.2) if whip_evolved else Color(1, 1, 1)
-		# Direction-based sweeping arc
-		var dir_angle = direction.angle()
-		var arc_span = PI * 0.65  # ~117° swing arc
-		var a_start = dir_angle - arc_span * 0.5
-		var a_end = dir_angle + arc_span * 0.5
-		var outer_r = w_area * 1.2
-		# 1. Filled fan (translucent)
-		var fan_pts = 16
-		var fan = PackedVector2Array()
-		fan.append(Vector2.ZERO)
-		for i in range(fan_pts + 1):
-			var a = lerp(a_start, a_end, float(i) / fan_pts)
-			fan.append(Vector2(cos(a), sin(a)) * outer_r)
-		draw_polygon(fan, [Color(base_color.r, base_color.g, base_color.b, alpha * 0.12)])
-		# 2. Bright outer arc edge
-		draw_arc(Vector2.ZERO, outer_r, a_start, a_end, 16, base_color, 3.0, true)
-		# 3. Sweep highlight — moves across the arc as the whip swings
-		var sweep_a = lerp(a_start + 0.05, a_end - 0.05, progress)
-		draw_arc(Vector2.ZERO, outer_r * 0.85, sweep_a - 0.2, sweep_a + 0.2, 8, Color(1, 1, 1, alpha * 0.6), 4.0, true)
+		var outer_r = w_area * 2.0
+		# Simple rectangle centered on player
+		var half_w = outer_r * 0.65
+		var half_h = outer_r * 0.35
+		var rect = Rect2(-half_w, -half_h, half_w * 2, half_h * 2)
+		# 1. Filled rectangle (translucent)
+		draw_rect(rect, Color(base_color.r, base_color.g, base_color.b, alpha * 0.12), true)
+		# 2. Bright border
+		draw_rect(rect, base_color, false, 2.5)
+		# 3. Pulse highlight — shrinks from edge as swing progresses
+		var pulse_inset = progress * 8.0
+		var pulse_rect = Rect2(
+			-half_w + pulse_inset, -half_h + pulse_inset,
+			(half_w - pulse_inset) * 2, (half_h - pulse_inset) * 2
+		)
+		draw_rect(pulse_rect, Color(base_color.r, base_color.g, base_color.b, alpha * 0.5), false, 1.5)
 	for w in weapons:
 		if w.type == UpgradeType.GARLIC:
 			var pulse = 0.4 + sin(Time.get_ticks_msec() * 0.004) * 0.15

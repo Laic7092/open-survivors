@@ -77,6 +77,7 @@ func _generate_sounds() -> Dictionary:
 
 		"pickup_chicken": _mk_tone(880, 0.1, 0.2),
 		"pickup_gold": _mk_tone(660, 0.08, 0.15),
+		"pickup_xp": _mk_sweep(900, 1400, 0.06, 0.12),
 		"pickup_rosary": _mk_sweep(600, 1400, 0.35, 0.35),
 		"pickup_vacuum": _mk_sweep(300, 900, 0.3, 0.25),
 

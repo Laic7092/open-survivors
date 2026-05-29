@@ -35,6 +35,7 @@ func collect() -> int:
 	if collected:
 		return 0
 	collected = true
+	AudioManager.play_sfx("pickup_xp")
 	var v = value
 	queue_free()
 	return v
@@ -46,7 +47,16 @@ func _on_body_entered(body: Node):
 
 
 func _draw():
-	var sz = 5
-	var c = Color(0.9, 0.85, 0.1)
 	var off = Vector2(0, sin(float_offset) * 4)
-	draw_circle(off, sz, c)
+	if value <= 4:
+		# Blue — small
+		draw_circle(off, 5, Color(0.3, 0.6, 1.0))
+	elif value <= 10:
+		# Green — medium
+		draw_circle(off, 8, Color(0.2, 0.85, 0.3))
+		draw_circle(off, 10, Color(0.2, 0.85, 0.3, 0.25))
+	else:
+		# Red — large, with glow
+		draw_circle(off, 12, Color(0.95, 0.25, 0.2))
+		draw_circle(off, 14, Color(0.95, 0.25, 0.2, 0.3))
+		draw_circle(off, 18, Color(0.95, 0.3, 0.25, 0.12))

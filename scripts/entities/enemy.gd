@@ -89,14 +89,17 @@ func _copy_type_data():
 func _scale_difficulty(diff: float):
 	var t = EnemyDefs.get_type(enemy_type_id)
 	# Base stats from type
-	health = t.base_health * (1.0 + (diff - 1.0) * 0.3)
+	# Quadratic scaling: late game gets noticeably harder
+	var diff_factor = (diff - 1.0)
+	var diff_sq = diff_factor * diff_factor
+	health = t.base_health * (1.0 + diff_factor * 0.3 + diff_sq * 0.015)
 	max_health = health
-	contact_damage = t.base_damage * (1.0 + (diff - 1.0) * 0.2)
-	move_speed = t.base_speed * (1.0 + (diff - 1.0) * 0.05)
+	contact_damage = t.base_damage * (1.0 + diff_factor * 0.2 + diff_sq * 0.01)
+	move_speed = t.base_speed * (1.0 + diff_factor * 0.05)
 	# Size scaling
 	var s = t.base_size * (1.0 + (diff - 1.0) * 0.08)
 	scale = Vector2(s, s)
-	xp_value = t.base_xp + int((diff - 1.0) * 2 * t.drop_xp_mult)
+	xp_value = t.base_xp + int((diff - 1.0) * 4 * t.drop_xp_mult)
 	
 	# Bosses get extra HP multiplier
 	if _is_boss:

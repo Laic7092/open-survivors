@@ -2,72 +2,33 @@ extends Control
 
 const UiUtils = preload("res://scripts/ui/ui_utils.gd")
 
+@onready var _title: Label = %Title
+@onready var _gold_lbl: Label = %GoldLabel
+@onready var _grid: GridContainer = %Grid
+@onready var _back_btn: Button = %BackBtn
+
 
 func _ready():
-	anchor_right = 1.0
-	anchor_bottom = 1.0
-	_show()
-	get_viewport().size_changed.connect(_show)
+	_title.text = I18N.t("powerup.title")
+	_back_btn.text = I18N.t("powerup.back")
+
+	_back_btn.pressed.connect(_on_back)
+	_rebuild()
+	get_viewport().size_changed.connect(_rebuild)
 
 
-func _show():
-	_clear()
+func _rebuild():
+	_clear_grid()
 
-	# Background
-	var bg = ColorRect.new()
-	bg.color = Color(0.05, 0.05, 0.1)
-	bg.anchor_right = 1.0
-	bg.anchor_bottom = 1.0
-	add_child(bg)
-
-	var vp = get_viewport().get_visible_rect().size
-
-	# Title
-	var title = Label.new()
-	title.text = I18N.t("powerup.title")
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 36)
-	title.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2))
-	title.position = Vector2(vp.x / 2 - 120, 20)
-	title.size = Vector2(240, 50)
-	add_child(title)
-
-	# Gold display
-	var gold_lbl = Label.new()
-	gold_lbl.text = I18N.t("menu.gold") + str(PowerUpManager.gold)
-	gold_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	gold_lbl.add_theme_font_size_override("font_size", 22)
-	gold_lbl.add_theme_color_override("font_color", Color(0.9, 0.8, 0.1))
-	gold_lbl.position = Vector2(vp.x / 2 - 100, 70)
-	gold_lbl.size = Vector2(200, 30)
-	add_child(gold_lbl)
-
-	# PowerUp grid
-	var grid = GridContainer.new()
-	grid.columns = 3
-	grid.position = Vector2(40, 110)
-	grid.size = Vector2(vp.x - 80, vp.y - 180)
-	grid.add_theme_constant_override("h_separation", 16)
-	grid.add_theme_constant_override("v_separation", 12)
-	add_child(grid)
+	_gold_lbl.text = I18N.t("menu.gold") + str(PowerUpManager.gold)
 
 	var ids = PowerUpManager.POWERUPS.keys()
 	ids.sort()
 	for id in ids:
-		_add_powerup_card(grid, id)
-
-	# Back button
-	var back_btn = Button.new()
-	back_btn.text = I18N.t("powerup.back")
-	back_btn.custom_minimum_size = Vector2(160, 44)
-	back_btn.position = Vector2(vp.x / 2 - 80, vp.y - 60)
-	back_btn.pressed.connect(_on_back)
-	# Style the back button
-	UiUtils.style_button(back_btn, Color(0.2, 0.2, 0.3), Color(0.4, 0.4, 0.6))
-	add_child(back_btn)
+		_add_powerup_card(id)
 
 
-func _add_powerup_card(grid: GridContainer, id: String):
+func _add_powerup_card(id: String):
 	var info = PowerUpManager.POWERUPS[id]
 	var lv = PowerUpManager.get_level(id)
 	var max_lv = info["max_lv"]
@@ -75,7 +36,7 @@ func _add_powerup_card(grid: GridContainer, id: String):
 
 	var card = VBoxContainer.new()
 	card.custom_minimum_size = Vector2(360, 130)
-	grid.add_child(card)
+	_grid.add_child(card)
 
 	# Name + level
 	var header = HBoxContainer.new()
@@ -127,10 +88,7 @@ func _add_powerup_card(grid: GridContainer, id: String):
 		buy_btn.text = I18N.t("powerup.buy")
 		buy_btn.custom_minimum_size = Vector2(80, 32)
 		var can_afford = PowerUpManager.gold >= cost
-		if can_afford:
-			UiUtils.style_button(buy_btn, Color(0.15, 0.5, 0.15), Color(0.3, 0.8, 0.3))
-		else:
-			UiUtils.style_button(buy_btn, Color(0.3, 0.15, 0.15), Color(0.5, 0.2, 0.2))
+		buy_btn.theme_type_variation = &"PrimaryButton" if can_afford else &"DangerButton"
 		buy_btn.disabled = not can_afford
 		buy_btn.pressed.connect(_on_buy.bind(id))
 		buy_row.add_child(buy_btn)
@@ -138,13 +96,13 @@ func _add_powerup_card(grid: GridContainer, id: String):
 
 func _on_buy(id: String):
 	if PowerUpManager.buy_powerup(id):
-		_show()  # refresh
+		_rebuild()
 
 
 func _on_back():
 	SceneManager.change_scene("res://scenes/main_menu.tscn")
 
 
-func _clear():
-	for c in get_children():
+func _clear_grid():
+	for c in _grid.get_children():
 		c.queue_free()
