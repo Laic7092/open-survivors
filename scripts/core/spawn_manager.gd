@@ -3,9 +3,9 @@ extends Node
 # 从 main.gd 拆分：所有敌人/拾取物/遗物/Boss 生成 + 敌人死亡掉落
 # main.gd 持有引用并驱动
 
-const EnemyDefs = preload("res://scripts/data/enemy_defs.gd")
-const RelicDefs = preload("res://scripts/data/relic_defs.gd")
-const ItemDefs = preload("res://scripts/data/item_defs.gd")
+# Enemy data loaded lazily via DataRegistry
+# Relic data loaded lazily via DataRegistry
+# Item data loaded lazily via DataRegistry
 
 signal enemy_spawned(enemy: Node2D)
 signal boss_spawned(boss_type: int)
@@ -62,7 +62,7 @@ func spawn_boss():
 	game_state.boss_spawned = true
 	game_state.boss_spawned_event.emit()
 	
-	var boss_type = EnemyDefs.get_boss_type(game_state._stage_id, game_state.game_time)
+	var boss_type = DataRegistry.enemies().get_boss_type(game_state._stage_id, game_state.game_time)
 	if boss_type < 0:
 		return
 	
@@ -89,7 +89,7 @@ func spawn_boss():
 func spawn_arcana_boss():
 	if ArcanaManager.get_active_count() >= 3:
 		return
-	var boss_type = EnemyDefs.get_boss_type(game_state._stage_id, game_state.game_time)
+	var boss_type = DataRegistry.enemies().get_boss_type(game_state._stage_id, game_state.game_time)
 	if boss_type < 0:
 		boss_type = 0
 	
@@ -219,7 +219,7 @@ func spawn_stage_relics():
 	relic_arrow_target = Vector2.ZERO
 	
 	var stage_id = game_state._stage_id
-	var relics = RelicDefs.get_relics_for_stage(stage_id)
+	var relics = DataRegistry.relics().get_relics_for_stage(stage_id)
 	for r in relics:
 		var rid = r["id"]
 		if RelicManager.has_relic(rid):
@@ -268,7 +268,7 @@ func spawn_stage_items():
 			circle.radius = 20.0
 			shape.shape = circle
 			pickup.add_child(shape)
-			var nm = I18N.t(ItemDefs.item_name_key(t), ItemDefs.item_name(t))
+			var nm = I18N.t(DataRegistry.items().item_name_key(t), DataRegistry.items().item_name(t))
 			pickup.setup(t, is_wpn, nm)
 			main_node.add_child(pickup)
 

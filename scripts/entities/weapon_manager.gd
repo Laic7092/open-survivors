@@ -2,7 +2,7 @@
 # 每种武器的 fire 逻辑在独立的 weapon_behaviors/ 脚本中
 # 通过 _behaviors 字典 {type: script} 查表分发
 
-const ItemDefs = preload("res://scripts/data/item_defs.gd")
+const ItemTypes = preload("res://scripts/data/item_types.gd")
 
 var _player
 var weapons: Array[WeaponState] = []
@@ -33,17 +33,17 @@ var _behaviors: Dictionary = {}
 
 func _register_behaviors():
 	var dir = "res://scripts/entities/weapon_behaviors/"
-	_behaviors[ItemDefs.Type.WHIP] = load(dir + "whip.gd")
-	_behaviors[ItemDefs.Type.MAGIC_WAND] = load(dir + "magic_wand.gd")
-	_behaviors[ItemDefs.Type.GARLIC] = load(dir + "garlic.gd")
-	_behaviors[ItemDefs.Type.KNIFE] = load(dir + "knife.gd")
-	_behaviors[ItemDefs.Type.AXE] = load(dir + "axe.gd")
-	_behaviors[ItemDefs.Type.FIRE_WAND] = load(dir + "fire_wand.gd")
-	_behaviors[ItemDefs.Type.CROSS] = load(dir + "cross.gd")
-	_behaviors[ItemDefs.Type.KING_BIBLE] = load(dir + "king_bible.gd")
-	_behaviors[ItemDefs.Type.SANTA_WATER] = load(dir + "santa_water.gd")
-	_behaviors[ItemDefs.Type.RUNETRACER] = load(dir + "runetracer.gd")
-	_behaviors[ItemDefs.Type.LIGHTNING_RING] = load(dir + "lightning_ring.gd")
+	_behaviors[ItemTypes.Type.WHIP] = load(dir + "whip.gd")
+	_behaviors[ItemTypes.Type.MAGIC_WAND] = load(dir + "magic_wand.gd")
+	_behaviors[ItemTypes.Type.GARLIC] = load(dir + "garlic.gd")
+	_behaviors[ItemTypes.Type.KNIFE] = load(dir + "knife.gd")
+	_behaviors[ItemTypes.Type.AXE] = load(dir + "axe.gd")
+	_behaviors[ItemTypes.Type.FIRE_WAND] = load(dir + "fire_wand.gd")
+	_behaviors[ItemTypes.Type.CROSS] = load(dir + "cross.gd")
+	_behaviors[ItemTypes.Type.KING_BIBLE] = load(dir + "king_bible.gd")
+	_behaviors[ItemTypes.Type.SANTA_WATER] = load(dir + "santa_water.gd")
+	_behaviors[ItemTypes.Type.RUNETRACER] = load(dir + "runetracer.gd")
+	_behaviors[ItemTypes.Type.LIGHTNING_RING] = load(dir + "lightning_ring.gd")
 
 
 func _get_enemies() -> Array:
@@ -70,68 +70,68 @@ func _make_emoji_node(emoji: String, sz: float) -> Node2D:
 # ── 进化配方 ──
 
 const EVOLUTION_RECIPES = {
-	ItemDefs.Type.WHIP: {
-		"passive": ItemDefs.Type.SPINACH,
+	ItemTypes.Type.WHIP: {
+		"passive": ItemTypes.Type.SPINACH,
 		"passive_level": 5,
 		"name": "Bloody Tear",
 		"desc": "Whip evolves into Bloody Tear\nHeals 20% of damage dealt"
 	},
-	ItemDefs.Type.MAGIC_WAND: {
-		"passive": ItemDefs.Type.WINGS,
+	ItemTypes.Type.MAGIC_WAND: {
+		"passive": ItemTypes.Type.WINGS,
 		"passive_level": 5,
 		"name": "Holy Wand",
 		"desc": "Magic Wand evolves into Holy Wand\nFires at super speed"
 	},
-	ItemDefs.Type.GARLIC: {
-		"passive": ItemDefs.Type.TOME,
+	ItemTypes.Type.GARLIC: {
+		"passive": ItemTypes.Type.TOME,
 		"passive_level": 5,
 		"name": "Soul Eater",
 		"desc": "Garlic evolves into Soul Eater\nHeals 1 HP per kill"
 	},
-	ItemDefs.Type.KNIFE: {
-		"passive": ItemDefs.Type.CANDELABRADOR,
+	ItemTypes.Type.KNIFE: {
+		"passive": ItemTypes.Type.CANDELABRADOR,
 		"passive_level": 5,
 		"name": "Thousand Edge",
 		"desc": "Knife evolves into Thousand Edge\nFires a spread of 3 blades"
 	},
-	ItemDefs.Type.AXE: {
-		"passive": ItemDefs.Type.HOLLOW_HEART,
+	ItemTypes.Type.AXE: {
+		"passive": ItemTypes.Type.HOLLOW_HEART,
 		"passive_level": 5,
 		"name": "Death Spiral",
 		"desc": "Axe evolves into Death Spiral\nAxes orbit and return to you"
 	},
-	ItemDefs.Type.FIRE_WAND: {
-		"passive": ItemDefs.Type.SPINACH,
+	ItemTypes.Type.FIRE_WAND: {
+		"passive": ItemTypes.Type.SPINACH,
 		"passive_level": 5,
 		"name": "Hellfire",
 		"desc": "Fire Wand evolves into Hellfire\nDouble explosions"
 	},
-	ItemDefs.Type.CROSS: {
-		"passive": ItemDefs.Type.CLOVER,
+	ItemTypes.Type.CROSS: {
+		"passive": ItemTypes.Type.CLOVER,
 		"passive_level": 5,
 		"name": "Heaven Sword",
 		"desc": "Cross evolves into Heaven Sword\nSword rains from above"
 	},
-	ItemDefs.Type.KING_BIBLE: {
-		"passive": ItemDefs.Type.SPELLBINDER,
+	ItemTypes.Type.KING_BIBLE: {
+		"passive": ItemTypes.Type.SPELLBINDER,
 		"passive_level": 5,
 		"name": "Unholy Vespers",
 		"desc": "King Bible evolves into Unholy Vespers\nDual orbiting shields"
 	},
-	ItemDefs.Type.SANTA_WATER: {
-		"passive": ItemDefs.Type.MAGNET,
+	ItemTypes.Type.SANTA_WATER: {
+		"passive": ItemTypes.Type.MAGNET,
 		"passive_level": 5,
 		"name": "La Borra",
 		"desc": "Santa Water evolves into La Borra\nTracking damaging puddles"
 	},
-	ItemDefs.Type.RUNETRACER: {
-		"passive": ItemDefs.Type.ARMOR,
+	ItemTypes.Type.RUNETRACER: {
+		"passive": ItemTypes.Type.ARMOR,
 		"passive_level": 5,
 		"name": "NO FUTURE",
 		"desc": "Runetracer evolves into NO FUTURE\nWalls of piercing lasers"
 	},
-	ItemDefs.Type.LIGHTNING_RING: {
-		"passive": ItemDefs.Type.SPINACH,
+	ItemTypes.Type.LIGHTNING_RING: {
+		"passive": ItemTypes.Type.SPINACH,
 		"passive_level": 5,
 		"name": "Thunder Loop",
 		"desc": "Lightning Ring evolves into Thunder Loop\nChain lightning"
@@ -162,16 +162,16 @@ func _can_fire(w: WeaponState) -> bool:
 		return false
 	var ppos = _player.global_position
 
-	if w.type == ItemDefs.Type.GARLIC:
+	if w.type == ItemTypes.Type.GARLIC:
 		return true
 
 	var range_limit: float
 	match w.type:
-		ItemDefs.Type.KING_BIBLE:
+		ItemTypes.Type.KING_BIBLE:
 			range_limit = 80.0 + w.area * _player.area_mult
-		ItemDefs.Type.WHIP:
+		ItemTypes.Type.WHIP:
 			range_limit = w.area * _player.area_mult * 3.0
-		ItemDefs.Type.SANTA_WATER:
+		ItemTypes.Type.SANTA_WATER:
 			range_limit = w.area * _player.area_mult * 2.5
 		_:
 			range_limit = 350.0 + w.area * _player.area_mult * 3.0
@@ -193,9 +193,9 @@ func process(delta: float):
 	if whip_hit_window > 0:
 		whip_hit_window -= delta
 		for w in weapons:
-			if w.type == ItemDefs.Type.WHIP:
+			if w.type == ItemTypes.Type.WHIP:
 				_whip_hit_this_swing.clear()
-				var b = _behaviors.get(ItemDefs.Type.WHIP)
+				var b = _behaviors.get(ItemTypes.Type.WHIP)
 				if b:
 					b._check_hits(w, self, _player, _get_enemies)
 	for w in weapons:
@@ -232,12 +232,12 @@ func get_projectile_count(weapon_type: int) -> int:
 	if ArcanaManager and ArcanaManager.has_effect("main_weapon_amount_plus_3"):
 		if weapons.size() > 0 and weapons[0].type == weapon_type:
 			count += 3
-	if weapon_type == ItemDefs.Type.KNIFE:
-		var w = _find_weapon(ItemDefs.Type.KNIFE)
+	if weapon_type == ItemTypes.Type.KNIFE:
+		var w = _find_weapon(ItemTypes.Type.KNIFE)
 		if w and w.evolved:
 			count += 2
-	elif weapon_type == ItemDefs.Type.MAGIC_WAND:
-		var w = _find_weapon(ItemDefs.Type.MAGIC_WAND)
+	elif weapon_type == ItemTypes.Type.MAGIC_WAND:
+		var w = _find_weapon(ItemTypes.Type.MAGIC_WAND)
 		if w and w.evolved:
 			count += 1
 	return max(count, 1)
@@ -271,17 +271,17 @@ func evolve_weapon(weapon_type: int):
 
 static func _evo_name_key(weapon_type: int) -> String:
 	match weapon_type:
-		ItemDefs.Type.WHIP: return "whip"
-		ItemDefs.Type.MAGIC_WAND: return "wand"
-		ItemDefs.Type.GARLIC: return "garlic"
-		ItemDefs.Type.KNIFE: return "knife"
-		ItemDefs.Type.AXE: return "axe"
-		ItemDefs.Type.FIRE_WAND: return "firewand"
-		ItemDefs.Type.CROSS: return "cross"
-		ItemDefs.Type.KING_BIBLE: return "king_bible"
-		ItemDefs.Type.SANTA_WATER: return "santa_water"
-		ItemDefs.Type.RUNETRACER: return "runetracer"
-		ItemDefs.Type.LIGHTNING_RING: return "lightning_ring"
+		ItemTypes.Type.WHIP: return "whip"
+		ItemTypes.Type.MAGIC_WAND: return "wand"
+		ItemTypes.Type.GARLIC: return "garlic"
+		ItemTypes.Type.KNIFE: return "knife"
+		ItemTypes.Type.AXE: return "axe"
+		ItemTypes.Type.FIRE_WAND: return "firewand"
+		ItemTypes.Type.CROSS: return "cross"
+		ItemTypes.Type.KING_BIBLE: return "king_bible"
+		ItemTypes.Type.SANTA_WATER: return "santa_water"
+		ItemTypes.Type.RUNETRACER: return "runetracer"
+		ItemTypes.Type.LIGHTNING_RING: return "lightning_ring"
 	return "whip"
 
 
@@ -300,7 +300,7 @@ func get_level(t: int) -> int:
 
 func get_max_level(t: int) -> int:
 	var w = _find_weapon(t)
-	return w.max_level if w else ItemDefs.item_max_level(t)
+	return w.max_level if w else DataRegistry.items().item_max_level(t)
 
 
 func get_count() -> int:

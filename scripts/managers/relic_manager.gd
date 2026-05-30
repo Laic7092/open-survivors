@@ -2,7 +2,7 @@ extends Node
 # RelicManager — autoload singleton
 # Manages permanent relic collection state. Persistence delegated to SaveManager.
 
-const RelicDefs = preload("res://scripts/data/relic_defs.gd")
+# Relic data loaded lazily via DataRegistry
 
 var _collected: Dictionary = {}
 
@@ -48,7 +48,7 @@ func get_unlocked_count() -> int:
 
 
 func get_total_count() -> int:
-	return RelicDefs.get_relic_count()
+	return DataRegistry.relics().get_relic_count()
 
 
 # ── Persistence (delegated to SaveManager) ──
@@ -69,7 +69,7 @@ func _load_data():
 
 
 func _relic_exists(id: String) -> bool:
-	for r in RelicDefs.RELICS:
+	for r in DataRegistry.relics().RELICS:
 		if r["id"] == id:
 			return true
 	return false

@@ -1,7 +1,8 @@
 extends Control
 # Unlock notification popup — modal overlay on main menu when new content is unlocked.
 
-const UnlockDefs = preload("res://scripts/data/unlock_defs.gd")
+const UnlockTypes = preload("res://scripts/data/unlock_types.gd")
+# Unlock data loaded lazily via DataRegistry
 
 signal dismissed
 
@@ -23,7 +24,7 @@ func check_and_show():
 
 	_pending_data = []
 	for uid in new_unlocks:
-		var defn = UnlockDefs.get_def(uid)
+		var defn = DataRegistry.unlocks().get_def(uid)
 		if defn:
 			_pending_data.append({"def": defn})
 
@@ -153,22 +154,22 @@ func _on_dismiss():
 
 func _type_color(ut: int) -> Color:
 	match ut:
-		UnlockDefs.UnlockableType.STAGE:
+		UnlockTypes.UnlockableType.STAGE:
 			return Color(0.3, 0.8, 0.4)
-		UnlockDefs.UnlockableType.ARCANA:
+		UnlockTypes.UnlockableType.ARCANA:
 			return Color(0.9, 0.7, 0.2)
-		UnlockDefs.UnlockableType.CHARACTER:
+		UnlockTypes.UnlockableType.CHARACTER:
 			return Color(0.3, 0.5, 0.9)
 	return Color.WHITE
 
 
 func _type_name(ut: int) -> String:
 	match ut:
-		UnlockDefs.UnlockableType.STAGE:
+		UnlockTypes.UnlockableType.STAGE:
 			return I18N.t("unlock.type_stage")
-		UnlockDefs.UnlockableType.ARCANA:
+		UnlockTypes.UnlockableType.ARCANA:
 			return I18N.t("unlock.type_arcana")
-		UnlockDefs.UnlockableType.CHARACTER:
+		UnlockTypes.UnlockableType.CHARACTER:
 			return I18N.t("unlock.type_character")
 	return ""
 

@@ -63,8 +63,8 @@ var _collect_shape_ref: CollisionShape2D
 var _ft_scene = preload("res://scenes/floating_text.tscn")
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
-const ItemDefs = preload("res://scripts/data/item_defs.gd")
-const UpgradeType = ItemDefs.Type
+const ItemTypes = preload("res://scripts/data/item_types.gd")
+const UpgradeType = ItemTypes.Type
 
 
 func _ready():
@@ -349,7 +349,7 @@ func get_passive_level(t: int) -> int:
 
 
 func get_passive_max_level(t: int) -> int:
-	return ItemDefs.item_max_level(t)
+	return DataRegistry.items().item_max_level(t)
 
 
 func can_evolve(weapon_type: int) -> bool:

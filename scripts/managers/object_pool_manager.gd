@@ -29,14 +29,7 @@ var _borrowed_count: Dictionary = {}
 
 func _ready():
 	process_mode = PROCESS_MODE_WHEN_PAUSED
-	_setup_default_pools()
-
-
-func _setup_default_pools():
-	_prefill_pool(_SCENE_GEM, POOL_SIZE_PER_TYPE)
-	_prefill_pool(_SCENE_FT, POOL_SIZE_PER_TYPE)
-	_prefill_pool(_SCENE_PROJ, POOL_SIZE_PER_TYPE)
-
+	# 池不再预填充 —— 改为懒填充，首次 borrow() 时创建
 	_pool_sizes[_SCENE_GEM] = POOL_SIZE_PER_TYPE
 	_pool_sizes[_SCENE_FT] = POOL_SIZE_PER_TYPE
 	_pool_sizes[_SCENE_PROJ] = POOL_SIZE_PER_TYPE
@@ -64,8 +57,8 @@ func _prefill_pool(scene_path: String, count: int):
 func borrow(scene_path: String) -> Node:
 	var pool = _pools.get(scene_path)
 	if pool == null:
-		# 首次使用此类型:创建池
-		_prefill_pool(scene_path, _pool_sizes.get(scene_path, 16))
+		# 懒填充：首次访问时创建池
+		_prefill_pool(scene_path, _pool_sizes.get(scene_path, 8))
 		pool = _pools[scene_path]
 
 	var obj: Node = null

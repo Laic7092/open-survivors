@@ -1,6 +1,6 @@
 extends Control
 
-const CharacterDefs = preload("res://scripts/data/character_defs.gd")
+# Character data loaded lazily via DataRegistry
 const UiUtils = preload("res://scripts/ui/ui_utils.gd")
 
 @onready var _title: Label = %Title
@@ -25,7 +25,7 @@ func _rebuild_cards():
 	_gold_lbl.text = I18N.t("char_select.gold") + str(PowerUpManager.gold)
 	var vp = get_viewport().get_visible_rect().size
 
-	var chars = CharacterDefs.CHARACTERS
+	var chars = DataRegistry.characters().CHARACTERS
 	var cols = UiUtils.calc_columns(vp.x, 180, 16, 40, 6)
 	cols = mini(cols, chars.size())
 	var card_w = mini(180, max(140, int((vp.x - 80) / cols - 16)))
@@ -144,7 +144,7 @@ func _on_select(char_data: Dictionary):
 
 func _on_buy_character(char_id: int):
 	var char_data = null
-	for c in CharacterDefs.CHARACTERS:
+	for c in DataRegistry.characters().CHARACTERS:
 		if c["id"] == char_id:
 			char_data = c
 			break

@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 signal died
 
-const EnemyDefs = preload("res://scripts/data/enemy_defs.gd")
+# Enemy data loaded lazily via DataRegistry
 
 # ── Type data (copied from EnemyDefs on init) ──
 var enemy_type_id: int = 0
@@ -86,7 +86,7 @@ func set_enemy_type(type_id: int, diff: float):
 
 
 func _copy_type_data():
-	var t = EnemyDefs.get_type(enemy_type_id)
+	var t = DataRegistry.enemies().get_type(enemy_type_id)
 	_type_name = t.name
 	_color = t.color
 	_outline_color = t.outline_color
@@ -105,7 +105,7 @@ func _copy_type_data():
 
 
 func _scale_difficulty(diff: float):
-	var t = EnemyDefs.get_type(enemy_type_id)
+	var t = DataRegistry.enemies().get_type(enemy_type_id)
 	var diff_factor = (diff - 1.0)
 	var curse_level = _get_curse_level()
 	

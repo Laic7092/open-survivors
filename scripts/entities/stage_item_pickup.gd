@@ -3,7 +3,7 @@ extends Area2D
 # Walk near it to auto-collect (adds weapon or passive to player inventory).
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
-const ItemDefs = preload("res://scripts/data/item_defs.gd")
+# Item data loaded lazily via DataRegistry (autoload)
 const _ICON_GEN = preload("res://scripts/ui/icon_generator.gd")
 
 var item_type: int = -1

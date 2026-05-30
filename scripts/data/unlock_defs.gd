@@ -13,8 +13,10 @@ extends RefCounted
 #   PLAYER_LEVEL   → params: {min_level}
 #   RELIC_OWNED    → params: {relic_id}
 
-enum UnlockableType { STAGE, ARCANA, CHARACTER }
-enum ConditionType { STAGE_CLEARED, PLAYER_LEVEL, RELIC_OWNED }
+# Enums imported from shared tiny file so match patterns work everywhere
+const UnlockTypes = preload("res://scripts/data/unlock_types.gd")
+const UnlockableType = UnlockTypes.UnlockableType
+const ConditionType = UnlockTypes.ConditionType
 
 class UnlockCondition:
 	var type: ConditionType

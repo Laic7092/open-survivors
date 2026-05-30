@@ -13,11 +13,7 @@ const SpawnManager = preload("res://scripts/core/spawn_manager.gd")
 const PickupTimer = preload("res://scripts/core/pickup_timer.gd")
 
 # ── 外部依赖 ──
-const StageDefs = preload("res://scripts/data/stage_defs.gd")
-const EnemyDefs = preload("res://scripts/data/enemy_defs.gd")
-const RelicDefs = preload("res://scripts/data/relic_defs.gd")
-const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
-const ItemDefs = preload("res://scripts/data/item_defs.gd")
+# Data defs loaded lazily via DataRegistry (autoload)
 
 # ── 核心组件 ──
 var game_state
@@ -31,10 +27,12 @@ var pickup_timer
 # ── 节点引用 ──
 var player: Node2D
 var hud: Node
-var level_up_screen: Node
-var pause_overlay: Node
+var _ui_layer: CanvasLayer
+# 延迟创建：首次使用时实例化
+var _level_up_screen: Node = null
+var _pause_overlay: Node = null
+var _arcana_choice_screen: Node = null
 var _interact_prompt: Label
-var _arcana_choice_screen: Node
 var prop_manager: Node = null
 
 # ── 状态 ──
@@ -55,7 +53,7 @@ func _ready():
 	if stage_data != null:
 		game_state.set_stage_data(stage_data)
 	else:
-		game_state.set_stage_data(StageDefs.get_stage(0))
+		game_state.set_stage_data(DataRegistry.stages().get_stage(0))
 	
 	if EventBus.get_config("endless_mode", false):
 		game_state.stage_time_limit = INF
@@ -63,30 +61,14 @@ func _ready():
 	_apply_stage_mods()
 	
 	# ── UI 层 ──
-	var ui_layer = CanvasLayer.new()
-	ui_layer.layer = 1
-	add_child(ui_layer)
+	_ui_layer = CanvasLayer.new()
+	_ui_layer.layer = 1
+	add_child(_ui_layer)
 	
 	hud = preload("res://scenes/hud.tscn").instantiate()
 	hud.name = "HUD"
-	ui_layer.add_child(hud)
+	_ui_layer.add_child(hud)
 	hud.set_time_limit(game_state.stage_time_limit)
-	
-	level_up_screen = Control.new()
-	level_up_screen.name = "LevelUpScreen"
-	level_up_screen.set_script(preload("res://scripts/ui/level_up_screen.gd"))
-	ui_layer.add_child(level_up_screen)
-	
-	_arcana_choice_screen = Control.new()
-	_arcana_choice_screen.name = "ArcanaChoiceScreen"
-	_arcana_choice_screen.set_script(preload("res://scripts/ui/arcana_choice_screen.gd"))
-	ui_layer.add_child(_arcana_choice_screen)
-	_arcana_choice_screen.arcana_selected.connect(_on_arcana_selected)
-	
-	pause_overlay = preload("res://scenes/pause_overlay.tscn").instantiate()
-	ui_layer.add_child(pause_overlay)
-	pause_overlay.toggle_pause.connect(_toggle_pause)
-	pause_overlay.quit_to_menu.connect(_on_quit_to_menu)
 	
 	_interact_prompt = Label.new()
 	_interact_prompt.name = "InteractPrompt"
@@ -96,7 +78,16 @@ func _ready():
 	_interact_prompt.add_theme_font_size_override("font_size", 16)
 	_interact_prompt.add_theme_constant_override("outline_size", 4)
 	_interact_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))
-	ui_layer.add_child(_interact_prompt)
+	_ui_layer.add_child(_interact_prompt)
+	
+	_level_up_screen = Control.new()
+	_level_up_screen.name = "LevelUpScreen"
+	_level_up_screen.set_script(preload("res://scripts/ui/level_up_screen.gd"))
+	_ui_layer.add_child(_level_up_screen)
+	_level_up_screen.upgrade_selected.connect(_on_upgrade_selected)
+	_level_up_screen.evolution_selected.connect(_on_evolution_selected)
+	_level_up_screen.gold_selected.connect(_on_gold_selected)
+	# _arcana_choice_screen、pause_overlay 延迟创建
 	
 	# ── 玩家 ──
 	player = preload("res://scenes/player.tscn").instantiate()
@@ -142,11 +133,6 @@ func _ready():
 	# ── 遗物 / 道具生成 ──
 	spawn_manager.spawn_stage_relics()
 	spawn_manager.spawn_stage_items()
-	
-	# ── 连接 ──
-	level_up_screen.upgrade_selected.connect(_on_upgrade_selected)
-	level_up_screen.evolution_selected.connect(_on_evolution_selected)
-	level_up_screen.gold_selected.connect(_on_gold_selected)
 	
 	# ── 重置运行时状态 ──
 	PowerUpManager.reset_run_gold()
@@ -208,9 +194,9 @@ func _on_map_ready():
 	spawn_manager.spawn_initial_pickups(hw, hh)
 	
 	var starting = game_state.starting_spawns
-	var pool = EnemyDefs.get_types_for_stage(game_state._stage_id, 0.0)
+	var pool = DataRegistry.enemies().get_types_for_stage(game_state._stage_id, 0.0)
 	for i in range(starting):
-		var t = EnemyDefs.pick_weighted(pool) if not pool.is_empty() else 11
+		var t = DataRegistry.enemies().pick_weighted(pool) if not pool.is_empty() else 11
 		var e = spawn_manager.spawn_enemy(t)
 		if e:
 			e.is_wave_enemy = false
@@ -252,7 +238,7 @@ func _process(delta):
 	# 数据驱动关卡（wave_defs）由波次系统管理 Boss，跳过此处
 	var _has_wave_defs = game_state.stage_data.has("wave_defs") and not game_state.stage_data["wave_defs"].is_empty()
 	if not _has_wave_defs and not game_state.boss_spawned and game_state.game_time >= 900.0:
-		var boss_t = EnemyDefs.get_boss_type(game_state._stage_id, game_state.game_time)
+		var boss_t = DataRegistry.enemies().get_boss_type(game_state._stage_id, game_state.game_time)
 		if boss_t >= 0:
 			spawn_manager.spawn_boss()
 	
@@ -353,12 +339,12 @@ func _on_weapons_changed():
 	var wep_data: Array = []
 	for w in player.weapon_manager.weapons:
 		wep_data.append({
-			"name": ItemDefs.item_name(w.type),
-			"name_key": ItemDefs.item_name_key(w.type),
+			"name": DataRegistry.items().item_name(w.type),
+			"name_key": DataRegistry.items().item_name_key(w.type),
 			"type": w.type,
 			"level": w.level,
 			"evolved": w.evolved,
-			"color": ItemDefs.item_color(w.type),
+			"color": DataRegistry.items().item_color(w.type),
 		})
 	hud.set_weapons(wep_data)
 
@@ -367,7 +353,7 @@ func _on_passives_changed():
 	var pas_data: Array = []
 	for t in player.passive_inventory.get_all():
 		var lv = player.passive_inventory.get_level(t)
-		pas_data.append({"type": t, "level": lv, "color": ItemDefs.item_color(t)})
+		pas_data.append({"type": t, "level": lv, "color": DataRegistry.items().item_color(t)})
 	hud.set_passives(pas_data)
 
 
@@ -432,7 +418,7 @@ func _on_player_leveled_up():
 	_lazy_unlock_manager().on_player_leveled_up(player.level)
 	ArcanaManager.on_player_level_up(player, player.level)
 	get_tree().paused = true
-	level_up_screen.show_choices(player)
+	_level_up_screen.show_choices(player)
 
 
 func _on_player_hurt():
@@ -448,8 +434,8 @@ func _on_player_died():
 	AudioManager.stop_bgm()
 	AudioManager.play_sfx("game_over")
 	PowerUpManager.end_run(true)
-	level_up_screen.hide_screen()
-	pause_overlay.visible = false
+	_level_up_screen.hide_screen()
+	_get_pause_overlay().visible = false
 	hud.show_game_over(game_state.game_time, game_state.total_kills, player.level)
 
 
@@ -466,27 +452,27 @@ func _on_stage_complete():
 	PowerUpManager.end_run(true)
 	PowerUpManager.set_run_gold(total_gold)
 	get_tree().paused = true
-	level_up_screen.hide_screen()
-	pause_overlay.visible = false
+	_level_up_screen.hide_screen()
+	_get_pause_overlay().visible = false
 	hud.show_stage_complete(game_state.game_time, game_state.total_kills, player.level, game_state.stage_data.get("name", "Stage"))
 
 
 func _on_upgrade_selected(upgrade_type: int):
 	get_tree().paused = false
 	player.apply_upgrade(upgrade_type)
-	level_up_screen.hide_screen()
+	_level_up_screen.hide_screen()
 
 
 func _on_evolution_selected(weapon_type: int):
 	get_tree().paused = false
 	player.evolve_weapon(weapon_type)
-	level_up_screen.hide_screen()
+	_level_up_screen.hide_screen()
 
 
 func _on_gold_selected(amount: int):
 	get_tree().paused = false
 	PowerUpManager.add_run_gold(amount)
-	level_up_screen.hide_screen()
+	_level_up_screen.hide_screen()
 
 
 # ═══════════════════════════════════════════════════════════
@@ -497,7 +483,7 @@ func _show_arcana_first_pick():
 	if ArcanaManager.get_unlocked_count() <= 0:
 		return
 	get_tree().paused = true
-	_arcana_choice_screen.show_choices(true)
+	_get_arcana_choice_screen().show_choices(true)
 
 
 func _show_arcana_chest_pick():
@@ -512,12 +498,12 @@ func _show_arcana_chest_pick():
 	if available.is_empty():
 		return
 	get_tree().paused = true
-	_arcana_choice_screen.show_choices(false, available)
+	_get_arcana_choice_screen().show_choices(false, available)
 
 
 func _on_arcana_selected(arcana_id: int):
 	get_tree().paused = false
-	_show_boss_announcement(I18N.t("arcana.equipped") % I18N.t("arcana." + str(arcana_id) + "_name", ArcanaDefs.get_arcana(arcana_id)["name"]))
+	_show_boss_announcement(I18N.t("arcana.equipped") % I18N.t("arcana." + str(arcana_id) + "_name", DataRegistry.arcanas().get_arcana(arcana_id)["name"]))
 	player.recalculate_stats()
 
 
@@ -589,11 +575,11 @@ func _set_speed(level: int):
 
 
 func _toggle_pause():
-	if game_state.game_over or game_state.stage_complete or level_up_screen.visible:
+	if game_state.game_over or game_state.stage_complete or _level_up_screen.visible:
 		return
 	var new_paused = not get_tree().paused
 	get_tree().paused = new_paused
-	pause_overlay.visible = new_paused
+	_get_pause_overlay().visible = new_paused
 
 
 func _on_quit_to_menu():
@@ -609,6 +595,25 @@ func _on_quit_to_menu():
 
 func get_game_state():
 	return game_state
+
+func _get_pause_overlay():
+	if not _pause_overlay:
+		_pause_overlay = preload("res://scenes/pause_overlay.tscn").instantiate()
+		_ui_layer.add_child(_pause_overlay)
+		_pause_overlay.toggle_pause.connect(_toggle_pause)
+		_pause_overlay.quit_to_menu.connect(_on_quit_to_menu)
+	return _pause_overlay
+
+
+func _get_arcana_choice_screen():
+	if not _arcana_choice_screen:
+		_arcana_choice_screen = Control.new()
+		_arcana_choice_screen.name = "ArcanaChoiceScreen"
+		_arcana_choice_screen.set_script(preload("res://scripts/ui/arcana_choice_screen.gd"))
+		_ui_layer.add_child(_arcana_choice_screen)
+		_arcana_choice_screen.arcana_selected.connect(_on_arcana_selected)
+	return _arcana_choice_screen
+
 
 func get_prop_manager():
 	if prop_manager == null:

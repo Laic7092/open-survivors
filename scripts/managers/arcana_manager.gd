@@ -3,7 +3,7 @@ extends Node
 # Manages Arcana unlock state + run-time active Arcanas.
 # Persistence delegated to SaveManager.
 
-const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
+# Arcana data loaded lazily via DataRegistry
 
 var _unlocked: Dictionary = {}
 var _active: Array = []
@@ -96,14 +96,14 @@ func deactivate_all():
 
 func has_effect(effect_id: String) -> bool:
 	for id in _active:
-		if ArcanaDefs.arcana_has_effect(id, effect_id):
+		if DataRegistry.arcanas().arcana_has_effect(id, effect_id):
 			return true
 	return false
 
 
 func has_any_effect(effects: Array) -> bool:
 	for id in _active:
-		var a = ArcanaDefs.get_arcana(id)
+		var a = DataRegistry.arcanas().get_arcana(id)
 		for eff in effects:
 			if eff in a["effects"]:
 				return true
@@ -113,14 +113,14 @@ func has_any_effect(effects: Array) -> bool:
 func active_arcana_lists_weapon(weapon_type: int) -> Array:
 	var result: Array = []
 	for id in _active:
-		if ArcanaDefs.arcana_lists_weapon(id, weapon_type):
+		if DataRegistry.arcanas().arcana_lists_weapon(id, weapon_type):
 			result.append(id)
 	return result
 
 
 func active_arcanas_have_weapon_effect(weapon_type: int, effect_id: String) -> bool:
 	for id in _active:
-		if ArcanaDefs.arcana_lists_weapon(id, weapon_type) and ArcanaDefs.arcana_has_effect(id, effect_id):
+		if DataRegistry.arcanas().arcana_lists_weapon(id, weapon_type) and DataRegistry.arcanas().arcana_has_effect(id, effect_id):
 			return true
 	return false
 
@@ -134,7 +134,7 @@ func is_system_enabled() -> bool:
 func apply_stat_modifiers(stats: Dictionary, player) -> Dictionary:
 	var result = stats.duplicate()
 	for id in _active:
-		var a = ArcanaDefs.get_arcana(id)
+		var a = DataRegistry.arcanas().get_arcana(id)
 		for effect in a["effects"]:
 			match effect:
 				"revival_plus_3":
@@ -162,7 +162,7 @@ func apply_stat_modifiers(stats: Dictionary, player) -> Dictionary:
 func process_time_effects(delta: float, player, game_time: float):
 	_cycle_time += delta
 	for id in _active:
-		var a = ArcanaDefs.get_arcana(id)
+		var a = DataRegistry.arcanas().get_arcana(id)
 		for effect in a["effects"]:
 			match effect:
 				"attract_items_120s":
@@ -238,7 +238,7 @@ func on_player_level_up(player, new_level: int):
 		return
 	_last_processed_level = new_level
 	for id in _active:
-		var a = ArcanaDefs.get_arcana(id)
+		var a = DataRegistry.arcanas().get_arcana(id)
 		for effect in a["effects"]:
 			match effect:
 				"level_speed_pct":
@@ -281,4 +281,4 @@ func load_unlock_data():
 
 
 func _arcana_exists(id: int) -> bool:
-	return id >= 0 and id < ArcanaDefs.get_arcana_count()
+	return id >= 0 and id < DataRegistry.arcanas().get_arcana_count()

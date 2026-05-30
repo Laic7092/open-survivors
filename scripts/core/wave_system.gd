@@ -8,7 +8,7 @@ extends Node
 #
 # 如关卡未定义 wave_defs，系统静默跳过（不做任何事）
 
-const EnemyDefs = preload("res://scripts/data/enemy_defs.gd")
+# Enemy data loaded lazily via DataRegistry
 const GameState = preload("res://scripts/core/game_state.gd")
 
 # 外部依赖：由 main.gd 注入
@@ -253,10 +253,10 @@ func _end_data_wave():
 # 自由刷怪模式（所有波次已耗尽）
 func _spawn_free_mode_enemy():
 	var gs = game_state
-	var pool = EnemyDefs.get_types_for_stage(gs._stage_id, gs.game_time)
+	var pool = DataRegistry.enemies().get_types_for_stage(gs._stage_id, gs.game_time)
 	if pool.is_empty():
 		pool = [0]
-	var type_idx = EnemyDefs.pick_weighted(pool)
+	var type_idx = DataRegistry.enemies().pick_weighted(pool)
 	var enemy = spawn_enemy_func.call(type_idx)
 	if is_instance_valid(enemy):
 		enemy.is_wave_enemy = true
@@ -272,11 +272,11 @@ func _maintain_minimum_enemies():
 	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
 	var needed = gs.enemy_minimum
 	if alive < needed:
-		var pool = EnemyDefs.get_types_for_stage(gs._stage_id, gs.game_time)
+		var pool = DataRegistry.enemies().get_types_for_stage(gs._stage_id, gs.game_time)
 		if pool.is_empty():
 			pool = [0]
 		for _i in range(needed - alive):
-			var type_idx = EnemyDefs.pick_weighted(pool)
+			var type_idx = DataRegistry.enemies().pick_weighted(pool)
 			spawn_enemy_func.call(type_idx)
 
 
@@ -294,10 +294,10 @@ func _spawn_elite_if_due():
 
 func _spawn_elite_enemy():
 	var gs = game_state
-	var pool = EnemyDefs.get_types_for_stage(gs._stage_id, gs.game_time)
+	var pool = DataRegistry.enemies().get_types_for_stage(gs._stage_id, gs.game_time)
 	if pool.is_empty():
 		pool = [0]
-	var type_idx = EnemyDefs.pick_weighted(pool)
+	var type_idx = DataRegistry.enemies().pick_weighted(pool)
 	var curse_bonus = 1.0 + gs.curse_level * 0.15
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
 	var elite_bonus = 1.0 + gs.wave_number * 0.15 * curse_bonus

@@ -7,7 +7,7 @@ signal gold_selected(amount: int)
 const WeaponManager = preload("res://scripts/entities/weapon_manager.gd")
 const IconGenerator = preload("res://scripts/ui/icon_generator.gd")
 const UiUtils = preload("res://scripts/ui/ui_utils.gd")
-const ItemDefs = preload("res://scripts/data/item_defs.gd")
+# Bulk item data loaded lazily via DataRegistry (autoload)
 
 const MAX_WEAPONS = 6
 const MAX_PASSIVES = 6
@@ -75,7 +75,7 @@ func _create_ui():
 
 
 func _generate_and_show():
-	var possible = ItemDefs.DATA.keys()
+	var possible = DataRegistry.items().DATA.keys()
 	possible.shuffle()
 
 	# Gather evolution candidates from owned weapons
@@ -99,7 +99,7 @@ func _generate_and_show():
 		if _is_weapon(p) and evolutions.has(p):
 			continue
 		var lv = player_ref.get_weapon_level(p) if _is_weapon(p) else player_ref.get_passive_level(p)
-		var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else ItemDefs.item_max_level(p)
+		var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else DataRegistry.items().item_max_level(p)
 		# Skip new items beyond the slot limit
 		if lv == 0:
 			if _is_weapon(p) and player_ref.weapon_manager.weapons.size() >= MAX_WEAPONS:
@@ -118,7 +118,7 @@ func _generate_and_show():
 		if chosen.is_empty():
 			var p = player_ref.passive_inventory.get_all()
 			for t in p:
-				if player_ref.get_passive_level(t) < ItemDefs.item_max_level(t):
+				if player_ref.get_passive_level(t) < DataRegistry.items().item_max_level(t):
 					chosen.append(t)
 					break
 	if chosen.is_empty():
@@ -175,11 +175,11 @@ func _add_choice_button(t: int):
 		container.add_child(vb2)
 		return
 
-	var nm = I18N.t(ItemDefs.item_name_key(t), ItemDefs.item_name(t))
-	var lv = player_ref.get_weapon_level(t) if ItemDefs.is_weapon(t) else player_ref.get_passive_level(t)
+	var nm = I18N.t(DataRegistry.items().item_name_key(t), DataRegistry.items().item_name(t))
+	var lv = player_ref.get_weapon_level(t) if DataRegistry.items().is_weapon(t) else player_ref.get_passive_level(t)
 	var lv_txt = I18N.t("levelup.new") if lv == 0 else I18N.t("levelup.level") % [lv, lv + 1]
-	var desc = I18N.t(ItemDefs.item_desc_key(t), ItemDefs.item_desc(t))
-	var col = ItemDefs.item_color(t)
+	var desc = I18N.t(DataRegistry.items().item_desc_key(t), DataRegistry.items().item_desc(t))
+	var col = DataRegistry.items().item_color(t)
 
 	# Icon at top (colored circle + emoji, single node from factory)
 	var icon_node = IconGenerator.make_icon_node(t, 40)
@@ -258,7 +258,7 @@ func _add_evolution_choice(weapon_type: int):
 	vb2.add_child(l1)
 
 	# Source arrow
-	var src_i18n = I18N.t(ItemDefs.item_name_key(weapon_type), ItemDefs.item_name(weapon_type))
+	var src_i18n = I18N.t(DataRegistry.items().item_name_key(weapon_type), DataRegistry.items().item_name(weapon_type))
 	var l2 = Label.new()
 	l2.text = src_i18n + I18N.t("levelup.evo_arrow") + evo_i18n_name
 	l2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -307,26 +307,26 @@ func _clear():
 
 # ── 统一委托到 ItemDefs 数据源，消除重复 ──
 static func _is_weapon(t: int) -> bool:
-	return ItemDefs.is_weapon(t)
+	return DataRegistry.items().is_weapon(t)
 
 static func _is_passive(t: int) -> bool:
-	return not ItemDefs.is_weapon(t)
+	return not DataRegistry.items().is_weapon(t)
 
 static func _name(t: int) -> String:
-	return ItemDefs.item_name(t)
+	return DataRegistry.items().item_name(t)
 
 static func _desc(t: int) -> String:
-	return ItemDefs.item_desc(t)
+	return DataRegistry.items().item_desc(t)
 
 static func _item_name_key(t: int) -> String:
-	return ItemDefs.item_name_key(t)
+	return DataRegistry.items().item_name_key(t)
 
 static func _item_desc_key(t: int) -> String:
-	return ItemDefs.item_desc_key(t)
+	return DataRegistry.items().item_desc_key(t)
 
 # 委托到 ItemDefs 统一数据源
 static func _evo_i18n_key(weapon_type: int) -> String:
-	return ItemDefs.item_evo_key(weapon_type)
+	return DataRegistry.items().item_evo_key(weapon_type)
 
 static func _color(t: int) -> Color:
-	return ItemDefs.item_color(t)
+	return DataRegistry.items().item_color(t)

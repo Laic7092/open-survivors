@@ -1,7 +1,6 @@
 extends Control
 
-const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
-const ItemDefs = preload("res://scripts/data/item_defs.gd")
+# Arcana/item data loaded lazily via DataRegistry (autoload)
 const HudCell = preload("res://scripts/ui/hud_cell.gd")
 
 # ── Scene node references ──
@@ -181,7 +180,7 @@ func set_weapons(weapons: Array):
 	for i in range(min(weapons.size(), 6)):
 		var w = weapons[i]
 		var cell = _cells[i]
-		var max_lv = ItemDefs.item_max_level(w.get("type", -1))
+		var max_lv = DataRegistry.items().item_max_level(w.get("type", -1))
 		cell.set_data(
 			w.get("type", -1),
 			w.get("level", 1),
@@ -200,7 +199,7 @@ func set_passives(passives: Array):
 		cell.set_data(
 			p.get("type", -1),
 			p.get("level", 1),
-			ItemDefs.item_max_level(p.get("type", -1)),
+			DataRegistry.items().item_max_level(p.get("type", -1)),
 			false,
 			p.get("color", Color(0.5, 0.5, 0.5))
 		)
@@ -234,7 +233,7 @@ func set_arcanas(arcana_ids: Array):
 	# Update visible badges
 	for i in range(arcana_ids.size()):
 		var id = arcana_ids[i]
-		var a = ArcanaDefs.get_arcana(id)
+		var a = DataRegistry.arcanas().get_arcana(id)
 		var col = a.get("color", Color(0.5, 0.5, 0.5))
 		var roman = a.get("roman", "?")
 

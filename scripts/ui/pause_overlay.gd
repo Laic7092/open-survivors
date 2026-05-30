@@ -4,7 +4,7 @@ signal toggle_pause
 signal quit_to_menu
 
 const WeaponManager = preload("res://scripts/entities/weapon_manager.gd")
-const CharacterDefs = preload("res://scripts/data/character_defs.gd")
+# Character data loaded lazily via DataRegistry
 const Player = preload("res://scripts/entities/player.gd")
 const MinimapScript = preload("res://scripts/ui/minimap.gd")
 
@@ -279,7 +279,7 @@ func _update_stats():
 
 	var char_data = EventBus.get_config("selected_character", {})
 	var char_name = char_data.get("name", "?")
-	var char_weapon = CharacterDefs.get_weapon_name(char_data.get("weapon", 0)) if char_data else "?"
+	var char_weapon = DataRegistry.characters().get_weapon_name(char_data.get("weapon", 0)) if char_data else "?"
 	var char_id = char_data.get("id", 0) if char_data else 0
 	var char_i18n = I18N.t("char." + str(char_id) + "_name", char_name)
 

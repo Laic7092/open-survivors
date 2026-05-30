@@ -2,7 +2,7 @@ extends Control
 # Arcana choice screen — shown at run start and when Arcana chests are collected.
 # Displays 4 random uncollected Arcanas (or all unlocked if first pick).
 
-const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
+# Arcana data loaded lazily via DataRegistry (autoload)
 const UiUtils = preload("res://scripts/ui/ui_utils.gd")
 
 signal arcana_selected(arcana_id: int)
@@ -104,7 +104,7 @@ func _create_ui(choices: Array):
 	
 	for i in range(choices.size()):
 		var arc_id = choices[i]
-		var a = ArcanaDefs.get_arcana(arc_id)
+		var a = DataRegistry.arcanas().get_arcana(arc_id)
 		_add_card(panel, a, Vector2(start_x + i * (card_w + gap), start_y), card_w, card_h)
 	
 	# Random button (bottom center)

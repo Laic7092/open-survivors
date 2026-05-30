@@ -1,6 +1,6 @@
 extends Control
 
-const RelicDefs = preload("res://scripts/data/relic_defs.gd")
+# Relic data loaded lazily via DataRegistry
 
 @onready var _title: Label = %Title
 @onready var _progress_lbl: Label = %ProgressLabel
@@ -35,8 +35,8 @@ func _rebuild():
 	var start_x = (vp.x - (cols * card_w + (cols - 1) * gap_x)) / 2
 	var start_y = 0.0
 
-	for i in range(RelicDefs.RELICS.size()):
-		var r = RelicDefs.RELICS[i]
+	for i in range(DataRegistry.relics().RELICS.size()):
+		var r = DataRegistry.relics().RELICS[i]
 		var col_idx = i % cols
 		var row_idx = i / cols
 		var x = start_x + col_idx * (card_w + gap_x)

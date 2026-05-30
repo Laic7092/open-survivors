@@ -1,7 +1,7 @@
 extends Control
 
-const UnlockDefs = preload("res://scripts/data/unlock_defs.gd")
-const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
+# Unlock data loaded lazily via DataRegistry
+# Arcana data loaded lazily via DataRegistry
 
 # ── Scene node references ──
 @onready var _gold_lbl: Label = %GoldLabel

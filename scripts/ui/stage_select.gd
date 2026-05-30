@@ -1,6 +1,6 @@
 extends Control
 
-const StageDefs = preload("res://scripts/data/stage_defs.gd")
+# Stage data loaded lazily via DataRegistry
 const UiUtils = preload("res://scripts/ui/ui_utils.gd")
 
 @onready var _title: Label = %Title
@@ -52,7 +52,7 @@ func _rebuild_cards():
 		c.queue_free()
 
 	var vp = get_viewport().get_visible_rect().size
-	var stages = StageDefs.get_all_stages()
+	var stages = DataRegistry.stages().get_all_stage_meta()
 	var avail_w = vp.x - 32.0  # scroll margins
 	var card_min_w = 200.0
 	var gap = 14.0
@@ -69,6 +69,7 @@ func _rebuild_cards():
 			row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			_card_container.add_child(row)
 
+		# 使用元数据（轻量，不加载完整关卡文件）
 		var stage = stages[i]
 		_add_card(stage, card_w, card_h, row)
 
@@ -212,7 +213,9 @@ func _get_unlock_text(req: String) -> String:
 
 func _on_select(stage_data: Dictionary):
 	AudioManager.play_sfx("menu_confirm")
-	EventBus.set_config("selected_stage", stage_data)
+	# 加载完整关卡数据（元数据只用于展示，选关时需要完整配置）
+	var full_data = DataRegistry.stages().get_stage(stage_data.get("id", 0))
+	EventBus.set_config("selected_stage", full_data)
 	SceneManager.change_scene("res://scenes/main.tscn")
 
 

@@ -65,8 +65,7 @@ func _collect():
 	# Mark as permanently collected
 	if RelicManager.collect_relic(relic_id):
 		# Show collection text
-		var defs = preload("res://scripts/data/relic_defs.gd")
-		var r = defs.get_relic(relic_id)
+		var r = DataRegistry.relics().get_relic(relic_id)
 		var relic_name = r.get("name", "Relic")
 		
 		if is_inside_tree() and ObjectPoolManager:

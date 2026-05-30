@@ -6,7 +6,8 @@ extends Node
 signal unlock_occurred(unlock_id: String, unlock_type: int)
 signal unlocks_cleared
 
-const UnlockDefs = preload("res://scripts/data/unlock_defs.gd")
+const UnlockTypes = preload("res://scripts/data/unlock_types.gd")
+# Unlock data loaded lazily via DataRegistry
 
 var _completed: Dictionary = {}
 var _newly_unlocked: Array = []
@@ -23,11 +24,11 @@ func _ready():
 
 func on_stage_cleared(stage_id: int):
 	_cleared_stages[stage_id] = true
-	_run_check(UnlockDefs.ConditionType.STAGE_CLEARED)
+	_run_check(UnlockTypes.ConditionType.STAGE_CLEARED)
 
 
 func on_relic_collected(relic_id: String):
-	_run_check(UnlockDefs.ConditionType.RELIC_OWNED)
+	_run_check(UnlockTypes.ConditionType.RELIC_OWNED)
 
 
 func on_boss_defeated(stage_id: int):
@@ -38,19 +39,19 @@ func on_boss_defeated(stage_id: int):
 func on_player_leveled_up(new_level: int):
 	if new_level > _run_level:
 		_run_level = new_level
-		_run_check(UnlockDefs.ConditionType.PLAYER_LEVEL)
+		_run_check(UnlockTypes.ConditionType.PLAYER_LEVEL)
 
 
 func on_run_ended(level: int):
 	if level > _run_level:
 		_run_level = level
-		_run_check(UnlockDefs.ConditionType.PLAYER_LEVEL)
+		_run_check(UnlockTypes.ConditionType.PLAYER_LEVEL)
 
 
 func purchase_unlock(unlock_id: String) -> bool:
 	if _completed.has(unlock_id):
 		return false
-	var def = UnlockDefs.get_def(unlock_id)
+	var def = DataRegistry.unlocks().get_def(unlock_id)
 	if def == null:
 		return false
 	return _execute_unlock(def)
@@ -65,7 +66,7 @@ func reset_run_state():
 
 func _run_check(cond_type: int):
 	var changed = false
-	for def in UnlockDefs.get_defs():
+	for def in DataRegistry.unlocks().get_defs():
 		if _completed.has(def.id):
 			continue
 		if _conditions_met(def):
@@ -86,18 +87,18 @@ func _conditions_met(def) -> bool:
 
 func _condition_met(cond) -> bool:
 	match cond.type:
-		UnlockDefs.ConditionType.STAGE_CLEARED:
+		UnlockTypes.ConditionType.STAGE_CLEARED:
 			var sid = cond.params.get("stage_id", -1)
 			if _cleared_stages.has(sid):
 				return true
 			var next_stage_id = sid + 1
-			var next_key = UnlockDefs.get_unlock_id_for_stage(next_stage_id)
+			var next_key = DataRegistry.unlocks().get_unlock_id_for_stage(next_stage_id)
 			if next_key != "" and _completed.has(next_key):
 				return true
 			return false
-		UnlockDefs.ConditionType.PLAYER_LEVEL:
+		UnlockTypes.ConditionType.PLAYER_LEVEL:
 			return _run_level >= cond.params.get("min_level", 30)
-		UnlockDefs.ConditionType.RELIC_OWNED:
+		UnlockTypes.ConditionType.RELIC_OWNED:
 			var rid = cond.params.get("relic_id", "")
 			return rid != "" and RelicManager.has_relic(rid)
 	return false
@@ -109,11 +110,11 @@ func _execute_unlock(defn) -> bool:
 		return false
 	_completed[uid] = true
 	match defn.unlock_type:
-		UnlockDefs.UnlockableType.STAGE:
+		UnlockTypes.UnlockableType.STAGE:
 			PowerUpManager.unlock_stage(defn.target_id)
-		UnlockDefs.UnlockableType.ARCANA:
+		UnlockTypes.UnlockableType.ARCANA:
 			ArcanaManager.unlock(defn.target_id)
-		UnlockDefs.UnlockableType.CHARACTER:
+		UnlockTypes.UnlockableType.CHARACTER:
 			pass
 	if not _newly_unlocked.has(uid):
 		_newly_unlocked.append(uid)
@@ -128,7 +129,7 @@ func is_unlocked(unlock_id: String) -> bool:
 
 
 func is_stage_unlocked(stage_id: int) -> bool:
-	var key = UnlockDefs.get_unlock_id_for_stage(stage_id)
+	var key = DataRegistry.unlocks().get_unlock_id_for_stage(stage_id)
 	return key != "" and _completed.has(key)
 
 
@@ -171,7 +172,7 @@ func _save_data():
 	SaveManager.set_section("completed_unlocks", completed_ids)
 
 	var all_ids = []
-	for d in UnlockDefs.get_defs():
+	for d in DataRegistry.unlocks().get_defs():
 		all_ids.append(d.id)
 	var seen = []
 	for uid in all_ids:
