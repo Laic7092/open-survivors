@@ -393,6 +393,12 @@ static func _weapon_name(t: int) -> String:
 		18: return "Santa Water"
 		19: return "Runetracer"
 		20: return "Lightning Ring"
+		32: return "Pentagram"
+		33: return "Song of Mana"
+		34: return "Gatti Amari"
+		35: return "Phiera Der Tuphello"
+		36: return "Eight The Sparrow"
+		37: return "Victory Sword"
 	return "?"
 
 
@@ -407,7 +413,7 @@ static func _passive_name(t: int) -> String:
 		9: return "Pummarola"
 		13: return "Duplicator"
 		14: return "Stone Mask"
-		15: return "Magnet"
+		15: return "Attractorb"
 		21: return "Clover"
 		22: return "Spellbinder"
 		23: return "Armor"
@@ -435,6 +441,12 @@ static func _wpn_i18n_key(t: int) -> String:
 		18: return "wpn.santa_water"
 		19: return "wpn.runetracer"
 		20: return "wpn.lightning"
+		32: return "wpn.pentagram"
+		33: return "wpn.song_of_mana"
+		34: return "wpn.gatti_amari"
+		35: return "wpn.phiera"
+		36: return "wpn.eight"
+		37: return "wpn.victory_sword"
 	return "wpn.whip"
 
 
@@ -477,6 +489,12 @@ static func _evo_i18n_key(weapon_type: int) -> String:
 		18: return "evo.santa_water"
 		19: return "evo.runetracer"
 		20: return "evo.lightning_ring"
+		32: return "evo.pentagram"
+		33: return "evo.song_of_mana"
+		34: return "evo.gatti_amari"
+		35: return "evo.phiera"
+		36: return "evo.eight"
+		37: return "evo.victory_sword"
 	return "evo.whip"
 
 

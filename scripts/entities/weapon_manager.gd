@@ -111,7 +111,44 @@ const EVOLUTION_RECIPES = {
 		"passive_level": 5,
 		"name": "Thunder Loop",
 		"desc": "Lightning Ring evolves into Thunder Loop\nChain lightning"
-	}
+	},
+	# ── New Weapon Evolutions ──
+	Player.UpgradeType.PENTAGRAM: {
+		"passive": Player.UpgradeType.CROWN,
+		"passive_level": 5,
+		"name": "Gorgeous Moon",
+		"desc": "Pentagram evolves into Gorgeous Moon\nLarger range, lower cooldown"
+	},
+	Player.UpgradeType.SONG_OF_MANA: {
+		"passive": Player.UpgradeType.SKULL,
+		"passive_level": 5,
+		"name": "Mannajja",
+		"desc": "Song of Mana evolves into Mannajja\nTracking vines, full screen attack"
+	},
+	Player.UpgradeType.GATTI_AMARI: {
+		"passive": Player.UpgradeType.STONE_MASK,
+		"passive_level": 5,
+		"name": "Vicious Hunger",
+		"desc": "Gatti Amari evolves into Vicious Hunger\nCats pick up gold and items"
+	},
+	Player.UpgradeType.PHIERA_DER_TUPHELLO: {
+		"passive": Player.UpgradeType.TIRAGISU,
+		"passive_level": 2,
+		"name": "Phieraggi",
+		"desc": "Phiera + Eight evolve into Phieraggi\nUltra piercing attack"
+	},
+	Player.UpgradeType.EIGHT_THE_SPARROW: {
+		"passive": Player.UpgradeType.TIRAGISU,
+		"passive_level": 2,
+		"name": "Phieraggi",
+		"desc": "Phiera + Eight evolve into Phieraggi\nUltra piercing attack"
+	},
+	Player.UpgradeType.VICTORY_SWORD: {
+		"passive": Player.UpgradeType.TORRONA,
+		"passive_level": 9,
+		"name": "Sole Solution",
+		"desc": "Victory Sword evolves into Sole Solution\nCharges up then unleashes a massive slash"
+	},
 }
 
 
@@ -233,6 +270,11 @@ func fire_weapon(w: WeaponState):
 		Player.UpgradeType.SANTA_WATER: _fire_santa_water(w)
 		Player.UpgradeType.RUNETRACER: _fire_runetracer(w)
 		Player.UpgradeType.LIGHTNING_RING: _fire_lightning_ring(w)
+		# New weapons — fire logic not yet implemented; silently skip
+		Player.UpgradeType.PENTAGRAM, Player.UpgradeType.SONG_OF_MANA, \
+		Player.UpgradeType.GATTI_AMARI, Player.UpgradeType.PHIERA_DER_TUPHELLO, \
+		Player.UpgradeType.EIGHT_THE_SPARROW, Player.UpgradeType.VICTORY_SWORD:
+			push_warning("Weapon %d fire logic not yet implemented" % w.type)
 
 
 func get_projectile_count(weapon_type: int) -> int:

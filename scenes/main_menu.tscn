@@ -1,69 +1,73 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bcolnekflouth"]
 
-[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_main_menu"]
+[ext_resource type="Script" uid="uid://c78going47pm2" path="res://scripts/ui/main_menu.gd" id="1_main_menu"]
 [ext_resource type="Theme" path="res://scripts/ui/theme/theme.tres" id="2_theme"]
 
-[node name="MainMenu" type="Control"]
-anchor_left = 0.0
-anchor_top = 0.0
+[node name="MainMenu" type="Control" unique_id=348950465]
+layout_mode = 3
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-script = ExtResource("1_main_menu")
 theme = ExtResource("2_theme")
+script = ExtResource("1_main_menu")
 
-[node name="Bg" type="ColorRect" parent="."]
-anchor_left = 0.0
-anchor_top = 0.0
+[node name="Bg" type="ColorRect" parent="." unique_id=1358147241]
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.05, 0.05, 0.1, 1)
 
-[node name="TopBar" type="HBoxContainer" parent="."]
-anchor_left = 0.0
-anchor_top = 0.0
+[node name="TopBar" type="HBoxContainer" parent="." unique_id=1483806959]
+layout_mode = 0
 anchor_right = 1.0
 offset_left = 12.0
 offset_top = 12.0
 offset_right = -12.0
 offset_bottom = 48.0
 
-[node name="GoldLabel" type="Label" parent="TopBar"]
+[node name="GoldLabel" type="Label" parent="TopBar" unique_id=52267344]
 unique_name_in_owner = true
+layout_mode = 2
 theme_type_variation = &"GoldLabel"
 theme_override_font_sizes/font_size = 16
 text = "Gold 0"
 
-[node name="TopSpacer" type="Control" parent="TopBar"]
+[node name="TopSpacer" type="Control" parent="TopBar" unique_id=977807345]
+layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SettingsHBox" type="HBoxContainer" parent="TopBar"]
+[node name="SettingsHBox" type="HBoxContainer" parent="TopBar" unique_id=149788051]
+layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="LangBtn" type="Button" parent="TopBar/SettingsHBox"]
+[node name="LangBtn" type="Button" parent="TopBar/SettingsHBox" unique_id=1049633237]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
 theme_type_variation = &"SmallButton"
 theme_override_font_sizes/font_size = 13
 text = "Language"
-custom_minimum_size = Vector2(0, 24)
 
-[node name="FsBtn" type="Button" parent="TopBar/SettingsHBox"]
+[node name="FsBtn" type="Button" parent="TopBar/SettingsHBox" unique_id=289814238]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
 theme_type_variation = &"SmallButton"
 theme_override_font_sizes/font_size = 13
 text = "[ ] FS"
-custom_minimum_size = Vector2(0, 24)
 
-[node name="ResBtn" type="Button" parent="TopBar/SettingsHBox"]
+[node name="ResBtn" type="Button" parent="TopBar/SettingsHBox" unique_id=1717160830]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
 theme_type_variation = &"SmallButton"
 theme_override_font_sizes/font_size = 13
 text = "1280x720"
-custom_minimum_size = Vector2(0, 24)
 
-[node name="Center" type="VBoxContainer" parent="."]
+[node name="Center" type="VBoxContainer" parent="." unique_id=772816797]
 unique_name_in_owner = true
+layout_mode = 0
 anchor_left = 0.5
-anchor_top = 0.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -220.0
@@ -71,75 +75,91 @@ offset_top = 60.0
 offset_right = 220.0
 offset_bottom = -60.0
 
-[node name="TopFill" type="Control" parent="Center"]
+[node name="TopFill" type="Control" parent="Center" unique_id=729956412]
+layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Title" type="Label" parent="Center"]
+[node name="Title" type="Label" parent="Center" unique_id=1338881608]
 unique_name_in_owner = true
+layout_mode = 2
 theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 48
 text = "Desire Survivors"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 48
 
-[node name="Subtitle" type="Label" parent="Center"]
+[node name="Subtitle" type="Label" parent="Center" unique_id=561092450]
 unique_name_in_owner = true
+layout_mode = 2
 theme_type_variation = &"SubtitleLabel"
+theme_override_font_sizes/font_size = 18
 text = "A Vampire Survivors-like game"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 18
 
-[node name="Sep" type="ColorRect" parent="Center"]
+[node name="Sep" type="ColorRect" parent="Center" unique_id=1187517681]
 unique_name_in_owner = true
-color = Color(0.9, 0.8, 0.2, 0.4)
 custom_minimum_size = Vector2(240, 2)
+layout_mode = 2
 size_flags_horizontal = 4
+color = Color(0.9, 0.8, 0.2, 0.4)
 
-[node name="Spacer" type="Control" parent="Center"]
+[node name="Spacer" type="Control" parent="Center" unique_id=128619761]
 custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
 
-[node name="StartBtn" type="Button" parent="Center"]
+[node name="StartBtn" type="Button" parent="Center" unique_id=414243665]
 unique_name_in_owner = true
-theme_type_variation = &"PrimaryButton"
-text = "Start Game"
-size_flags_horizontal = 4
 custom_minimum_size = Vector2(260, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"PrimaryButton"
 theme_override_font_sizes/font_size = 22
+text = "Start Game"
 
-[node name="Spacer2" type="Control" parent="Center"]
+[node name="Spacer2" type="Control" parent="Center" unique_id=135516070]
 custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
 
-[node name="BtnRow" type="HBoxContainer" parent="Center"]
-alignment = 1
+[node name="LoadBtn" type="Button" parent="Center" unique_id=352568626]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"NeutralButton"
+theme_override_font_sizes/font_size = 20
+text = "📂 Load Game"
+
+[node name="Spacer3" type="Control" parent="Center" unique_id=1106061729]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+
+[node name="BtnRow" type="HBoxContainer" parent="Center" unique_id=1086849998]
+layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/separation = 16
+alignment = 1
 
-[node name="PuBtn" type="Button" parent="Center/BtnRow"]
+[node name="PuBtn" type="Button" parent="Center/BtnRow" unique_id=767261637]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
 theme_type_variation = &"NeutralButton"
+theme_override_font_sizes/font_size = 18
 text = "Power Ups"
-custom_minimum_size = Vector2(160, 40)
-theme_override_font_sizes/font_size = 18
 
-[node name="RelicBtn" type="Button" parent="Center/BtnRow"]
+[node name="RelicBtn" type="Button" parent="Center/BtnRow" unique_id=810193084]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
 theme_type_variation = &"NeutralButton"
+theme_override_font_sizes/font_size = 18
 text = "Relics"
-custom_minimum_size = Vector2(160, 40)
-theme_override_font_sizes/font_size = 18
 
-[node name="LoadBtn" type="Button" parent="Center"]
-unique_name_in_owner = true
-theme_type_variation = &"NeutralButton"
-text = "📂 Load Game"
-size_flags_horizontal = 4
-custom_minimum_size = Vector2(260, 40)
-theme_override_font_sizes/font_size = 20
-
-[node name="BotFill" type="Control" parent="Center"]
+[node name="BotFill" type="Control" parent="Center" unique_id=969679115]
+layout_mode = 2
 size_flags_vertical = 3
 
-[node name="BottomBar" type="HBoxContainer" parent="."]
-anchor_left = 0.0
+[node name="BottomBar" type="HBoxContainer" parent="." unique_id=1416924217]
+layout_mode = 0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -148,18 +168,21 @@ offset_top = -40.0
 offset_right = -12.0
 offset_bottom = -8.0
 
-[node name="VersionLabel" type="Label" parent="BottomBar"]
+[node name="VersionLabel" type="Label" parent="BottomBar" unique_id=1862739726]
 unique_name_in_owner = true
+layout_mode = 2
 theme_type_variation = &"DimLabel"
-text = "v1.0"
 theme_override_font_sizes/font_size = 12
+text = "v1.0"
 
-[node name="BottomSpacer" type="Control" parent="BottomBar"]
+[node name="BottomSpacer" type="Control" parent="BottomBar" unique_id=1813824222]
+layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="QuitBtn" type="Button" parent="BottomBar"]
+[node name="QuitBtn" type="Button" parent="BottomBar" unique_id=507865164]
 unique_name_in_owner = true
-theme_type_variation = &"DangerButton"
-text = "Quit"
 custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+theme_type_variation = &"DangerButton"
 theme_override_font_sizes/font_size = 18
+text = "Quit"

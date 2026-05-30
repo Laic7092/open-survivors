@@ -8,16 +8,21 @@ enum Type {
 	HOLLOW_HEART = 6, CANDELABRADOR = 7, CROWN = 8, PUMMAROLA = 9,
 	KNIFE = 10, AXE = 11, FIRE_WAND = 12,
 	DUPLICATOR = 13, STONE_MASK = 14,
-	MAGNET = 15,
+	MAGNET = 15,  # Internal enum; display name is "Attractorb"
 	CROSS = 16, KING_BIBLE = 17, SANTA_WATER = 18,
 	RUNETRACER = 19, LIGHTNING_RING = 20,
 	CLOVER = 21, SPELLBINDER = 22, ARMOR = 23,
 	BRACER = 24, SKULL = 25, TIRAGISU = 26,
 	TORRONA = 27, SILVER_RING = 28, GOLD_RING = 29,
-	METAGLIO_LEFT = 30, METAGLIO_RIGHT = 31
+	METAGLIO_LEFT = 30, METAGLIO_RIGHT = 31,
+	PENTAGRAM = 32, SONG_OF_MANA = 33, GATTI_AMARI = 34,
+	PHIERA_DER_TUPHELLO = 35, EIGHT_THE_SPARROW = 36, VICTORY_SWORD = 37,
 }
 
-const WEAPON_TYPES: Array[int] = [0, 1, 2, 10, 11, 12, 16, 17, 18, 19, 20]
+const WEAPON_TYPES: Array[int] = [
+	0, 1, 2, 10, 11, 12, 16, 17, 18, 19, 20,
+	32, 33, 34, 35, 36, 37,
+]
 
 # { type: { name, name_key, desc, desc_key, color, evo_key } }
 const DATA := {
@@ -124,8 +129,8 @@ const DATA := {
 		"color": Color(0.7, 0.7, 0.8), "is_weapon": false, "max_level": 5,
 	},
 	15: {
-		"name": "Magnet", "name_key": "item.magnet_name",
-		"desc": "Increase pickup range", "desc_key": "item.magnet_desc",
+		"name": "Attractorb", "name_key": "item.attractorb_name",
+		"desc": "Character picks up items from further away", "desc_key": "item.attractorb_desc",
 		"color": Color(0.1, 0.7, 0.8), "is_weapon": false, "max_level": 5,
 	},
 	21: {
@@ -156,12 +161,12 @@ const DATA := {
 	26: {
 		"name": "Tiragisú", "name_key": "item.tiragisu_name",
 		"desc": "Revive on death", "desc_key": "item.tiragisu_desc",
-		"color": Color(0.9, 0.7, 0.9), "is_weapon": false, "max_level": 1,
+		"color": Color(0.9, 0.7, 0.9), "is_weapon": false, "max_level": 2,
 	},
 	27: {
 		"name": "Torrona's Box", "name_key": "item.torrona_name",
 		"desc": "Boost all stats slightly", "desc_key": "item.torrona_desc",
-		"color": Color(0.4, 0.2, 0.6), "is_weapon": false, "max_level": 5,
+		"color": Color(0.4, 0.2, 0.6), "is_weapon": false, "max_level": 9,
 	},
 	28: {
 		"name": "Silver Ring", "name_key": "item.silver_ring_name",
@@ -182,6 +187,37 @@ const DATA := {
 		"name": "Metaglio Right", "name_key": "item.metaglio_right_name",
 		"desc": "Curse enemies", "desc_key": "item.metaglio_right_desc",
 		"color": Color(0.8, 0.3, 0.5), "is_weapon": false, "max_level": 5,
+	},
+	# ── New Weapons ──
+	32: {
+		"name": "Pentagram", "name_key": "item.pentagram_name",
+		"desc": "Removes all enemies and items from the screen at a fixed interval", "desc_key": "item.pentagram_desc",
+		"color": Color(0.6, 0.1, 0.9), "evo_key": "pentagram", "is_weapon": true, "max_level": 9,
+	},
+	33: {
+		"name": "Song of Mana", "name_key": "item.song_of_mana_name",
+		"desc": "Summon damaging vines along the vertical axis", "desc_key": "item.song_of_mana_desc",
+		"color": Color(0.2, 0.8, 0.3), "evo_key": "song_of_mana", "is_weapon": true, "max_level": 9,
+	},
+	34: {
+		"name": "Gatti Amari", "name_key": "item.gatti_amari_name",
+		"desc": "Cats scurry around, attacking and collecting", "desc_key": "item.gatti_amari_desc",
+		"color": Color(0.9, 0.5, 0.2), "evo_key": "gatti_amari", "is_weapon": true, "max_level": 9,
+	},
+	35: {
+		"name": "Phiera Der Tuphello", "name_key": "item.phiera_name",
+		"desc": "Fires piercing projectiles in facing direction", "desc_key": "item.phiera_desc",
+		"color": Color(0.3, 0.3, 0.7), "evo_key": "phiera", "is_weapon": true, "max_level": 9,
+	},
+	36: {
+		"name": "Eight The Sparrow", "name_key": "item.eight_name",
+		"desc": "Fires three-way spread shots", "desc_key": "item.eight_desc",
+		"color": Color(0.7, 0.3, 0.4), "evo_key": "eight", "is_weapon": true, "max_level": 9,
+	},
+	37: {
+		"name": "Victory Sword", "name_key": "item.victory_sword_name",
+		"desc": "Swings a mighty sword that grows with each swing", "desc_key": "item.victory_sword_desc",
+		"color": Color(0.9, 0.8, 0.6), "evo_key": "victory_sword", "is_weapon": true, "max_level": 9,
 	},
 }
 

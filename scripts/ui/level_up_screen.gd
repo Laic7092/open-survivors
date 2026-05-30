@@ -75,7 +75,7 @@ func _create_ui():
 
 
 func _generate_and_show():
-	var possible = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+	var possible = ItemDefs.DATA.keys()
 	possible.shuffle()
 
 	# Gather evolution candidates from owned weapons

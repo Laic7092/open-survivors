@@ -17,7 +17,9 @@ enum UpgradeType {
 	CLOVER = 21, SPELLBINDER = 22, ARMOR = 23,
 	BRACER = 24, SKULL = 25, TIRAGISU = 26,
 	TORRONA = 27, SILVER_RING = 28, GOLD_RING = 29,
-	METAGLIO_LEFT = 30, METAGLIO_RIGHT = 31
+	METAGLIO_LEFT = 30, METAGLIO_RIGHT = 31,
+	PENTAGRAM = 32, SONG_OF_MANA = 33, GATTI_AMARI = 34,
+	PHIERA_DER_TUPHELLO = 35, EIGHT_THE_SPARROW = 36, VICTORY_SWORD = 37
 }
 
 var move_speed: float = 200.0
@@ -325,7 +327,9 @@ func apply_upgrade(t: int):
 		UpgradeType.WHIP, UpgradeType.MAGIC_WAND, UpgradeType.GARLIC, \
 		UpgradeType.KNIFE, UpgradeType.AXE, UpgradeType.FIRE_WAND, \
 		UpgradeType.CROSS, UpgradeType.KING_BIBLE, UpgradeType.SANTA_WATER, \
-		UpgradeType.RUNETRACER, UpgradeType.LIGHTNING_RING:
+		UpgradeType.RUNETRACER, UpgradeType.LIGHTNING_RING, \
+		UpgradeType.PENTAGRAM, UpgradeType.SONG_OF_MANA, UpgradeType.GATTI_AMARI, \
+		UpgradeType.PHIERA_DER_TUPHELLO, UpgradeType.EIGHT_THE_SPARROW, UpgradeType.VICTORY_SWORD:
 			weapon_manager.add_or_upgrade(t)
 		UpgradeType.WINGS, UpgradeType.SPINACH, UpgradeType.TOME, \
 		UpgradeType.HOLLOW_HEART, UpgradeType.CANDELABRADOR, \

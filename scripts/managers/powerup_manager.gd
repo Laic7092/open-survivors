@@ -4,17 +4,40 @@ extends Node
 # Manages permanent meta-progression: gold + purchasable stat upgrades.
 # Persistence delegated to SaveManager autoload.
 
-# PowerUp definitions
+# PowerUp definitions — 28 total (base game, no DLC)
+# Values match https://vampire.survivors.wiki/w/PowerUps
 const POWERUPS := {
+	# ── Core stats ──
 	"might":     {"name": "Might",     "desc": "+5% damage",              "max_lv": 5, "base_cost": 200},
 	"max_hp":    {"name": "Max HP",    "desc": "+10% max health",         "max_lv": 3, "base_cost": 200},
 	"recovery":  {"name": "Recovery",  "desc": "+0.1 HP/s regen",        "max_lv": 5, "base_cost": 200},
 	"cooldown":  {"name": "Cooldown",  "desc": "-2.5% weapon cooldown",  "max_lv": 2, "base_cost": 900},
 	"area":      {"name": "Area",      "desc": "+5% attack area",         "max_lv": 2, "base_cost": 300},
+	"speed":     {"name": "Speed",     "desc": "+10% projectile speed",  "max_lv": 2, "base_cost": 300},
+	"duration":  {"name": "Duration",  "desc": "+15% effect duration",    "max_lv": 2, "base_cost": 300},
+	"amount":    {"name": "Amount",    "desc": "+1 projectile (all weapons)", "max_lv": 1, "base_cost": 5000},
 	"movespeed": {"name": "Move Spd",  "desc": "+5% move speed",         "max_lv": 2, "base_cost": 600},
+	"magnet":    {"name": "Magnet",    "desc": "+25% pickup range",       "max_lv": 2, "base_cost": 300},
+	"luck":      {"name": "Luck",      "desc": "+10% luck",               "max_lv": 3, "base_cost": 600},
 	"growth":    {"name": "Growth",    "desc": "+3% XP gain",             "max_lv": 5, "base_cost": 900},
 	"greed":     {"name": "Greed",     "desc": "+10% gold earned",       "max_lv": 5, "base_cost": 200},
-	"armor":     {"name": "Armor",     "desc": "+1 armor (dmg reduction)","max_lv": 3, "base_cost": 600},
+	"armor":     {"name": "Armor",     "desc": "+1 damage reduction",     "max_lv": 3, "base_cost": 600},
+	"curse":     {"name": "Curse",     "desc": "+10% enemy difficulty",   "max_lv": 5, "base_cost": 1666},
+	"revival":   {"name": "Revival",   "desc": "+1 revive (50% HP)",     "max_lv": 1, "base_cost": 10000},
+	# ── Special stat boosts ──
+	"omni":      {"name": "Omni",      "desc": "+2% Might/Speed/Dur/Area", "max_lv": 5, "base_cost": 1000},
+	"charm":     {"name": "Charm",     "desc": "+20 enemy spawn count",   "max_lv": 5, "base_cost": 10000},
+	"defang":    {"name": "Defang",    "desc": "+3% harmless enemies",    "max_lv": 5, "base_cost": 10},
+	# ── Utility ──
+	"reroll":    {"name": "Reroll",    "desc": "+2 reroll uses",          "max_lv": 5, "base_cost": 1000},
+	"skip":      {"name": "Skip",      "desc": "+2 skip uses",            "max_lv": 5, "base_cost": 100},
+	"banish":    {"name": "Banish",    "desc": "+2 banish uses",          "max_lv": 5, "base_cost": 100},
+	"preserve":  {"name": "Preserve",  "desc": "+10% preserve chance",    "max_lv": 5, "base_cost": 500},
+	# ── Seal ──
+	"seal_i":    {"name": "Seal I",    "desc": "+1 seal slot",            "max_lv": 10, "base_cost": 10000},
+	"seal_ii":   {"name": "Seal II",   "desc": "+2 seal slots",           "max_lv": 10, "base_cost": 10000},
+	"seal_iii":  {"name": "Seal III",  "desc": "+3 seal slots",           "max_lv": 10, "base_cost": 10000},
+	"seal_all":  {"name": "Seal All",  "desc": "+4 seal slots",           "max_lv": 10, "base_cost": 10000},
 }
 
 var gold: int = 0
@@ -182,10 +205,24 @@ func get_stat_bonuses() -> Dictionary:
 		"recovery": 0.0,
 		"cooldown_reduction": 0.0,
 		"area_mult": 0.0,
+		"projectile_speed_pct": 0.0,
+		"duration_pct": 0.0,
+		"amount": 0,
 		"move_speed_pct": 0.0,
+		"magnet_pct": 0.0,
+		"luck_pct": 0.0,
 		"growth_pct": 0.0,
 		"greed_pct": 0.0,
 		"armor": 0,
+		"curse_pct": 0.0,
+		"revivals": 0,
+		"charm": 0,
+		"defang_pct": 0.0,
+		"reroll_uses": 0,
+		"skip_uses": 0,
+		"banish_uses": 0,
+		"preserve_pct": 0.0,
+		"seal_slots": 0,
 	}
 	for id in POWERUPS:
 		var lv = levels.get(id, 0)
@@ -202,12 +239,51 @@ func get_stat_bonuses() -> Dictionary:
 				bonuses["cooldown_reduction"] = 0.025 * lv
 			"area":
 				bonuses["area_mult"] = 0.05 * lv
+			"speed":
+				bonuses["projectile_speed_pct"] = 0.10 * lv
+			"duration":
+				bonuses["duration_pct"] = 0.15 * lv
+			"amount":
+				bonuses["amount"] = 1 * lv
 			"movespeed":
 				bonuses["move_speed_pct"] = 0.05 * lv
+			"magnet":
+				bonuses["magnet_pct"] = 0.25 * lv
+			"luck":
+				bonuses["luck_pct"] = 0.10 * lv
 			"growth":
 				bonuses["growth_pct"] = 0.03 * lv
 			"greed":
 				bonuses["greed_pct"] = 0.10 * lv
 			"armor":
 				bonuses["armor"] = 1 * lv
+			"curse":
+				bonuses["curse_pct"] = 0.10 * lv
+			"revival":
+				bonuses["revivals"] = 1 * lv
+			"omni":
+				bonuses["damage_mult"] += 0.02 * lv
+				bonuses["projectile_speed_pct"] += 0.02 * lv
+				bonuses["duration_pct"] += 0.02 * lv
+				bonuses["area_mult"] += 0.02 * lv
+			"charm":
+				bonuses["charm"] = 20 * lv
+			"defang":
+				bonuses["defang_pct"] = 0.03 * lv
+			"reroll":
+				bonuses["reroll_uses"] = 2 * lv
+			"skip":
+				bonuses["skip_uses"] = 2 * lv
+			"banish":
+				bonuses["banish_uses"] = 2 * lv
+			"preserve":
+				bonuses["preserve_pct"] = 0.10 * lv
+			"seal_i":
+				bonuses["seal_slots"] += 1 * lv
+			"seal_ii":
+				bonuses["seal_slots"] += 2 * lv
+			"seal_iii":
+				bonuses["seal_slots"] += 3 * lv
+			"seal_all":
+				bonuses["seal_slots"] += 4 * lv
 	return bonuses

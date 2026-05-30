@@ -29,7 +29,7 @@ const EMOJI := {
 	9: "🍅",   # Pummarola
 	13: "🪞",  # Duplicator
 	14: "🗿",  # Stone Mask
-	15: "🧲",  # Magnet
+	15: "🧲",  # Attractorb
 	21: "🍀",  # Clover
 	22: "📿",  # Spellbinder
 	23: "🛡️", # Armor
@@ -41,6 +41,12 @@ const EMOJI := {
 	29: "💍",  # Gold Ring
 	30: "🔮",  # Metaglio Left
 	31: "⚗️", # Metaglio Right
+	32: "⭐",  # Pentagram
+	33: "🎵",  # Song of Mana
+	34: "🐱",  # Gatti Amari
+	35: "🔫",  # Phiera Der Tuphello
+	36: "🔫",  # Eight The Sparrow
+	37: "🗡️", # Victory Sword
 }
 
 # Item type → color (mirrors level_up_screen.gd _color())
@@ -78,6 +84,12 @@ static func get_color(t: int) -> Color:
 		29: return Color(0.9, 0.8, 0.2)   # Gold Ring
 		30: return Color(0.5, 0.3, 0.8)   # Metaglio Left
 		31: return Color(0.8, 0.3, 0.5)   # Metaglio Right
+		32: return Color(0.6, 0.1, 0.9)   # Pentagram
+		33: return Color(0.2, 0.8, 0.3)   # Song of Mana
+		34: return Color(0.9, 0.5, 0.2)   # Gatti Amari
+		35: return Color(0.3, 0.3, 0.7)   # Phiera Der Tuphello
+		36: return Color(0.7, 0.3, 0.4)   # Eight The Sparrow
+		37: return Color(0.9, 0.8, 0.6)   # Victory Sword
 	return Color.WHITE
 
 
