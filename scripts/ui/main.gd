@@ -249,7 +249,9 @@ func _process(delta):
 	pickup_timer.process(delta)
 	
 	# ── Boss 检测 ──
-	if not game_state.boss_spawned and game_state.game_time >= 900.0:
+	# 数据驱动关卡（wave_defs）由波次系统管理 Boss，跳过此处
+	var _has_wave_defs = game_state.stage_data.has("wave_defs") and not game_state.stage_data["wave_defs"].is_empty()
+	if not _has_wave_defs and not game_state.boss_spawned and game_state.game_time >= 900.0:
 		var boss_t = EnemyDefs.get_boss_type(game_state._stage_id, game_state.game_time)
 		if boss_t >= 0:
 			spawn_manager.spawn_boss()

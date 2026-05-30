@@ -60,12 +60,12 @@ func _on_area_entered(area: Area2D):
 		_recycle()
 
 
-# Called by EnemyProjectilePool to reset for reuse
-func reset(new_target: Node2D, new_speed: float, new_damage: float, new_lifetime: float):
-	target = new_target
-	speed = new_speed
-	damage = new_damage
-	lifetime = new_lifetime
+# Called by ObjectPoolManager when borrowing from pool
+func _pool_borrow(config: Dictionary = {}):
+	target = config.get("target", null)
+	speed = config.get("speed", 250.0)
+	damage = config.get("damage", 10.0)
+	lifetime = config.get("lifetime", 4.0)
 	_age = 0.0
 	_direction = Vector2.ZERO
 	_in_use = true
@@ -85,6 +85,6 @@ func _recycle():
 	collision_mask = 0
 	target = null
 	if ObjectPoolManager:
-		ObjectPoolManager.return_enemy_proj(self)
+		ObjectPoolManager.return_obj(self)
 	else:
 		queue_free()

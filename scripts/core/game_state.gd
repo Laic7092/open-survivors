@@ -114,6 +114,36 @@ func update_difficulty(delta: float):
 	difficulty_changed.emit(difficulty)
 
 
+# ═══════════════════════════════════════════════
+#  统一难度计算（集中敌人属性缩放公式）
+# ═══════════════════════════════════════════════
+
+# 给定基础值和 diff factor，计算缩放后的敌人属性
+# diff_factor = difficulty - 1.0（由 spawn 侧传入，已包含 curse_mod + wave_bonus）
+# curse_level 由 Cursed Time 系统提供
+
+static func calc_enemy_hp(base_hp: float, diff_factor: float, curse_level: int) -> float:
+	var diff_sq = diff_factor * diff_factor
+	var hp = base_hp * (1.0 + diff_factor * 0.2 + diff_sq * 0.015)
+	if curse_level > 0:
+		hp *= (1.0 + curse_level * 0.15)
+	return hp
+
+
+static func calc_enemy_damage(base_dmg: float, diff_factor: float, curse_level: int) -> float:
+	var dmg = base_dmg * (1.0 + diff_factor * 0.08)
+	if curse_level > 0:
+		dmg *= (1.0 + curse_level * 0.15 * 0.75)
+	return dmg
+
+
+static func calc_enemy_speed(base_speed: float, diff_factor: float, curse_level: int) -> float:
+	var speed = base_speed * (1.0 + diff_factor * 0.08)
+	if curse_level > 0:
+		speed *= (1.0 + curse_level * 0.5 * 0.5)
+	return speed
+
+
 func add_kill(count: int = 1):
 	total_kills += count
 	kills_changed.emit(total_kills)

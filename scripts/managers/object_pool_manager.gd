@@ -154,19 +154,14 @@ func _get_scene_path(obj: Node) -> String:
 	return ""
 
 
-# ── 向后兼容方法 ──
+# ── 向后兼容方法（委托给 _pool_borrow） ──
 
-# GemPool 兼容
 var _gem_throttle_counter: int = 0
 
 func borrow_gem() -> Node:
 	var gem = borrow(_SCENE_GEM)
-	gem.collected = false
-	gem.collision_layer = 16  # CollisionLayers.XP_GEM
-	gem.collision_mask = 2    # CollisionLayers.MASK_PLAYER
-	gem.visible = true
-	gem.process_mode = PROCESS_MODE_INHERIT
-	gem.add_to_group("gems")
+	if gem.has_method("_pool_borrow"):
+		gem._pool_borrow()
 	gem._throttle_offset = _gem_throttle_counter
 	_gem_throttle_counter = (_gem_throttle_counter + 1) % 4
 	return gem
@@ -183,24 +178,21 @@ func return_gem(gem: Node):
 	return_obj(gem)
 
 
-# FloatingTextPool 兼容
-func borrow_ft() -> Node2D:
-	var ft = borrow(_SCENE_FT)
-	return ft
-
-
 func spawn_ft(parent: Node, world_pos: Vector2, text: String, color: Color = Color.WHITE, size: int = 18) -> Node2D:
-	var ft = borrow_ft()
-	ft.display_text = text
-	ft.text_color = color
-	ft.font_size = size
-	ft.global_position = world_pos
-	ft.velocity = Vector2(randf_range(-15, 15), -50)
-	ft.lifetime = 0.5
-	ft.age = 0.0
-	ft.visible = true
-	ft.set_process(true)
-	ft.modulate = Color(1, 1, 1, 1)
+	var ft = borrow(_SCENE_FT)
+	if ft.has_method("_pool_borrow"):
+		ft._pool_borrow({"text": text, "color": color, "size": size, "position": world_pos})
+	else:
+		ft.display_text = text
+		ft.text_color = color
+		ft.font_size = size
+		ft.global_position = world_pos
+		ft.velocity = Vector2(randf_range(-15, 15), -50)
+		ft.lifetime = 0.5
+		ft.age = 0.0
+		ft.visible = true
+		ft.set_process(true)
+		ft.modulate = Color(1, 1, 1, 1)
 	parent.add_child(ft)
 	return ft
 
@@ -211,10 +203,12 @@ func return_ft(ft: Node2D):
 	return_obj(ft)
 
 
-# EnemyProjectilePool 兼容
 func borrow_enemy_proj(target: Node2D, speed: float, damage: float, lifetime: float) -> Node2D:
 	var proj = borrow(_SCENE_PROJ)
-	proj.reset(target, speed, damage, lifetime)
+	if proj.has_method("_pool_borrow"):
+		proj._pool_borrow({"target": target, "speed": speed, "damage": damage, "lifetime": lifetime})
+	else:
+		proj.reset(target, speed, damage, lifetime)
 	return proj
 
 

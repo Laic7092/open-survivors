@@ -106,30 +106,19 @@ func _copy_type_data():
 
 func _scale_difficulty(diff: float):
 	var t = EnemyDefs.get_type(enemy_type_id)
-	# Base stats from type
-	# Quadratic scaling: steeper curve to challenge maxed-out players
-	# At 7min (diff=8):  HP = base * (1 + 7*0.2 + 49*0.015) = base * (1 + 1.4 + 0.74) ≈ 3.1x
-	# At 15min (diff=16): HP = base * (1 + 15*0.2 + 225*0.015) = base * (1 + 3.0 + 3.38) ≈ 7.4x
-	# At 30min (diff=31): HP = base * (1 + 30*0.2 + 900*0.015) = base * (1 + 6.0 + 13.5) ≈ 20.5x
 	var diff_factor = (diff - 1.0)
-	var diff_sq = diff_factor * diff_factor
-	health = t.base_health * (1.0 + diff_factor * 0.2 + diff_sq * 0.015)
-	max_health = health
-	contact_damage = t.base_damage * (1.0 + diff_factor * 0.08)
-	move_speed = t.base_speed * (1.0 + diff_factor * 0.08)
-	# Size scaling — fixed to base size, no difficulty growth
-	var s = t.base_size
-	scale = Vector2(s, s)
-	# Reduced XP per kill to slow leveling
-	xp_value = t.base_xp + int((diff - 1.0) * 3 * t.drop_xp_mult)
-	
-	# ── Cursed Time: additional stacking penalty ──
 	var curse_level = _get_curse_level()
-	if curse_level > 0:
-		var curse_factor = curse_level * 0.15  # 15% per curse level
-		health *= (1.0 + curse_factor)
-		contact_damage *= (1.0 + curse_factor * 0.75)
-		move_speed *= (1.0 + curse_factor * 0.5)
+	
+	# 使用 GameState 的集中公式计算
+	health = GameState.calc_enemy_hp(t.base_health, diff_factor, curse_level)
+	max_health = health
+	contact_damage = GameState.calc_enemy_damage(t.base_damage, diff_factor, curse_level)
+	move_speed = GameState.calc_enemy_speed(t.base_speed, diff_factor, curse_level)
+	
+	# Size scaling — fixed to base size, no difficulty growth
+	scale = Vector2(t.base_size, t.base_size)
+	# Reduced XP per kill to slow leveling
+	xp_value = t.base_xp + int(diff_factor * 3 * t.drop_xp_mult)
 	
 	# Bosses get extra HP multiplier
 	if _is_boss:

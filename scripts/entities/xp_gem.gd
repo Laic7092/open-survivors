@@ -32,6 +32,20 @@ func _ready():
 	queue_redraw()
 
 
+# Called by ObjectPoolManager when borrowing from pool
+func _pool_borrow(config: Dictionary = {}):
+	collision_layer = CollisionLayers.XP_GEM
+	collision_mask = CollisionLayers.MASK_PLAYER
+	add_to_group("gems")
+	visible = true
+	process_mode = PROCESS_MODE_INHERIT
+	collected = false
+	attracted = false
+	player = config.get("player", null)
+	value = config.get("value", 2)
+	tier = config.get("tier", Tier.BLUE)
+
+
 var _throttle_offset: int = 0
 
 func _process(delta):
@@ -72,7 +86,7 @@ func _on_body_entered(body: Node):
 
 
 func _return_to_pool():
-	ObjectPoolManager.return_gem(self)
+	ObjectPoolManager.return_obj(self)
 
 
 func _draw():
