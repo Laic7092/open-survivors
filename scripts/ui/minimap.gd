@@ -1,7 +1,7 @@
 extends Control
-# Minimap — draws a small overview of the map in the corner.
-# main.gd calls setter methods each frame to update positions.
-# Pause overlay can call set_draw_rect() to render within a custom area.
+# Minimap — draws a small overview of the map in the pause overlay.
+# Since the game is paused when the minimap is visible, there's no per-frame
+# update needed. Setters trigger a single redraw when data is first set.
 
 var map_w: float = 3200.0
 var map_h: float = 2400.0
@@ -30,6 +30,8 @@ func set_relic_positions(positions: Array[Vector2]):
 
 
 func set_map_size(w: float, h: float):
+	if map_w == w and map_h == h:
+		return
 	map_w = w
 	map_h = h
 	queue_redraw()
@@ -116,7 +118,7 @@ func _draw():
 		var sz = 3.0
 		draw_rect(Rect2(dot - Vector2(sz, sz), Vector2(sz * 2, sz * 2)), Color(0.9, 0.7, 0.1))
 
-	# Fountains as blue crosses
+	# Fountains as blue circles
 	for p in fountain_positions:
 		var dot = center + p * scale
 		var sz = 3.0
@@ -146,11 +148,10 @@ func _draw():
 		])
 		draw_colored_polygon(tri, Color(0.2, 0.9, 0.3, 0.6))
 
-	# Relics as green pulsing dots
-	var pulse = sin(Time.get_ticks_msec() * 0.004) * 0.3 + 0.7
+	# Relics as green dots
 	for p in relic_positions:
 		var dot = center + p * scale
-		draw_circle(dot, 4.0, Color(0.2, 0.9, 0.3, pulse))
+		draw_circle(dot, 4.0, Color(0.2, 0.9, 0.3, 0.8))
 		draw_circle(dot, 4.0, Color(0.5, 1.0, 0.5, 0.6), false, 1.5)
 
 	# Camera visible area

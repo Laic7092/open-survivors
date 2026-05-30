@@ -25,6 +25,7 @@ var _grimoire_container: VBoxContainer
 var _resume_btn: Button
 var _quit_btn: Button
 var _stat_labels: Array[Label] = []
+var _minimap_initialized := false
 
 # Cached map data
 var _map_data_ready: bool = false
@@ -262,7 +263,12 @@ func _cache_map_data():
 
 func _process(_delta):
 	if not visible:
+		_minimap_initialized = false
 		return
+	# 首次可见时一次性初始化 minimap（此时布局已计算，_minimap.size 有效）
+	if not _minimap_initialized:
+		_minimap_initialized = true
+		_setup_minimap()
 	_update_stats()
 
 
@@ -308,13 +314,16 @@ func _update_stats():
 	_stat_labels[9].text = I18N.t("pause.cd") % int(player.cooldown_reduction * 100)
 	_stat_labels[10].text = I18N.t("pause.armor") % player.armor
 
-	_update_minimap_state(player, main)
 
+func _setup_minimap():
+	var player = get_tree().get_first_node_in_group("player")
+	var main = get_parent().get_parent()
+	if not player or not is_instance_valid(main):
+		return
 
-func _update_minimap_state(player, main):
 	var has_map_relic = RelicManager and RelicManager.has_relic("milky_way_map")
 
-	if not _map_data_ready and has_map_relic and is_instance_valid(main):
+	if not _map_data_ready and has_map_relic:
 		_cache_map_data()
 
 	if has_map_relic and is_instance_valid(_minimap):
@@ -331,15 +340,14 @@ func _update_minimap_state(player, main):
 
 		_minimap.set_player_pos(player.global_position)
 		var vs = get_viewport().get_visible_rect().size
-		if is_instance_valid(main):
-			var cam = main.get_camera() if main.has_method("get_camera") else null
-			var cam_pos = cam.global_position if cam else Vector2.ZERO
-			_minimap.set_camera_view(cam_pos, vs)
-			var poses: Array[Vector2] = []
-			for r in (main._stage_relics if "_stage_relics" in main else []):
-				if is_instance_valid(r):
-					poses.append(r.global_position)
-			_minimap.set_relic_positions(poses)
+		var cam = main.get_camera() if main.has_method("get_camera") else null
+		var cam_pos = cam.global_position if cam else Vector2.ZERO
+		_minimap.set_camera_view(cam_pos, vs)
+		var poses: Array[Vector2] = []
+		for r in (main._stage_relics if "_stage_relics" in main else []):
+			if is_instance_valid(r):
+				poses.append(r.global_position)
+		_minimap.set_relic_positions(poses)
 
 		_update_minimap_rect()
 	else:

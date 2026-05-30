@@ -56,9 +56,9 @@ func _show_notification():
 	card.anchor_top = 0.5
 	card.anchor_right = 0.5
 	card.offset_left = -card_w / 2.0
-	card.offset_top = -260.0
+	card.offset_top = -280.0
 	card.offset_right = card_w / 2.0
-	card.offset_bottom = 80.0
+	card.offset_bottom = 90.0  # taller to leave room for scrolling
 	card.theme_type_variation = &"CardPanel"
 	add_child(card)
 
@@ -98,12 +98,23 @@ func _show_notification():
 	sep.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	vb.add_child(sep)
 
+	# 可滚动区域（解锁条目较多时不溢出）
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vb.add_child(scroll)
+
+	var entry_vb = VBoxContainer.new()
+	entry_vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	entry_vb.add_theme_constant_override("separation", 6)
+	scroll.add_child(entry_vb)
+
 	# 解锁条目
 	for item in _pending_data:
 		var defn = item["def"]
 		var hb = HBoxContainer.new()
 		hb.alignment = BoxContainer.ALIGNMENT_CENTER
 		hb.add_theme_constant_override("separation", 10)
+		hb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var indicator = ColorRect.new()
 		indicator.custom_minimum_size = Vector2(8, 28)
 		indicator.color = _type_color(defn.unlock_type)
@@ -115,10 +126,7 @@ func _show_notification():
 		name_label.add_theme_font_size_override("font_size", 18)
 		name_label.add_theme_color_override("font_color", _type_color(defn.unlock_type))
 		hb.add_child(name_label)
-		vb.add_child(hb)
-
-	# 弹性撑开
-	vb.add_spacer(true)
+		entry_vb.add_child(hb)
 
 	# 底部间距
 	var pad2 = Control.new()

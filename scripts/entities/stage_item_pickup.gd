@@ -4,14 +4,18 @@ extends Area2D
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
 const ItemDefs = preload("res://scripts/data/item_defs.gd")
+const _ICON_GEN = preload("res://scripts/ui/icon_generator.gd")
 
 var item_type: int = -1
 var is_weapon: bool = true
 var player: Node2D
 var collected: bool = false
 
-var _icon_gen = preload("res://scripts/ui/icon_generator.gd")
 var _name_label: Label
+var _cached_icon_tex: ImageTexture
+
+# Cached emoji font — created once, shared across all pickup instances.
+static var _emoji_font: SystemFont
 
 
 func _ready():
@@ -37,12 +41,25 @@ func _ready():
 	_name_label.position = Vector2(-40, -24)
 	add_child(_name_label)
 
+	# Initialize static emoji font once
+	if _emoji_font == null:
+		_emoji_font = SystemFont.new()
+		_emoji_font.font_names = [
+			"Noto Color Emoji",
+			"Segoe UI Emoji",
+			"Apple Color Emoji",
+			"Twitter Color Emoji",
+		]
+
 
 func setup(wpn_type: int, wpn_is_weapon: bool, name_text: String):
 	item_type = wpn_type
 	is_weapon = wpn_is_weapon
 	if _name_label:
 		_name_label.text = name_text
+	# Cache icon texture once (IconGenerator.generate has a static cache,
+	# but caching the reference here avoids even the method-call overhead).
+	_cached_icon_tex = _ICON_GEN.generate(item_type, 16)
 
 
 func _on_area_entered(area: Area2D):
@@ -73,12 +90,16 @@ func _collect():
 
 
 func _process(_delta):
-	if _name_label:
-		# Float up/down — only redraw every 4 frames
-		if Engine.get_frames_drawn() % 4 == 0:
-			var off = sin(Time.get_ticks_msec() * 0.003) * 3
-			_name_label.position = Vector2(-40, -24 + off)
-			queue_redraw()
+	if not _name_label:
+		return
+	# Skip animation when off-screen
+	if not is_visible_in_tree():
+		return
+	# Float up/down — only redraw every 4 frames
+	if Engine.get_frames_drawn() % 4 == 0:
+		var off = sin(Time.get_ticks_msec() * 0.003) * 3
+		_name_label.position = Vector2(-40, -24 + off)
+		queue_redraw()
 
 
 func _draw():
@@ -87,20 +108,11 @@ func _draw():
 	draw_circle(Vector2.ZERO, 14, Color(color.r, color.g, color.b, 0.2))
 	draw_circle(Vector2.ZERO, 12, color * 0.6)
 	draw_circle(Vector2.ZERO, 12, Color.WHITE * 0.3, false, 1.5)
-	# Icon
-	if _icon_gen:
-		var tex = _icon_gen.generate(item_type, 16)
-		if tex:
-			draw_texture(tex, Vector2(-8, -8))
+	# Icon (cached in setup)
+	if _cached_icon_tex:
+		draw_texture(_cached_icon_tex, Vector2(-8, -8))
 	
-	# Emoji overlay
-	var emoji_str = _icon_gen.get_emoji(item_type)
-	if emoji_str:
-		var emoji_font = SystemFont.new()
-		emoji_font.font_names = [
-			"Noto Color Emoji",
-			"Segoe UI Emoji",
-			"Apple Color Emoji",
-			"Twitter Color Emoji",
-		]
-		draw_string(emoji_font, Vector2(-6, 5), emoji_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)
+	# Emoji overlay (cached font, no per-frame allocation)
+	var emoji_str = _ICON_GEN.get_emoji(item_type)
+	if emoji_str and _emoji_font:
+		draw_string(_emoji_font, Vector2(-6, 5), emoji_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)
