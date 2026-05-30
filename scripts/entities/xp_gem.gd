@@ -32,10 +32,12 @@ func _ready():
 	queue_redraw()
 
 
+var _throttle_offset: int = 0
+
 func _process(delta):
 	if is_instance_valid(player):
-		# Throttle distance check: only check every 4 frames when far from player
-		if attracted or Engine.get_frames_drawn() % 4 == 0 or not _far_from_player():
+		# Distribute throttled checks across frames — each gem checks on a different frame
+		if attracted or (Engine.get_frames_drawn() + _throttle_offset) % 4 == 0 or not _far_from_player():
 			var dist = global_position.distance_to(player.global_position)
 			if dist < player.pickup_range:
 				attracted = true
@@ -48,7 +50,6 @@ var _player_last_check_pos: Vector2 = Vector2.ZERO
 func _far_from_player() -> bool:
 	if not is_instance_valid(player):
 		return true
-	# Cache player pos to avoid frequent property access
 	var ppos = player.global_position
 	var dx = global_position.x - ppos.x
 	var dy = global_position.y - ppos.y

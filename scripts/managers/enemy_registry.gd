@@ -15,8 +15,8 @@ func register(e: Node):
 
 
 func unregister(e: Node):
-	# Fast path: most removals are from the tail (recently added dies first)
-	var idx = _enemies.find(e)
+	# Search from end — freshly spawned enemies are at the tail and die first
+	var idx = _enemies.rfind(e)
 	if idx >= 0:
 		_enemies.remove_at(idx)
 

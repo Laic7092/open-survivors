@@ -46,109 +46,109 @@ const EVOLUTION_RECIPES = {
 	# ── Evolution now requires the passive at MAX level ──
 	# This forces players to invest heavily in passives before evolving,
 	# stretching out the upgrade pipeline and creating meaningful tradeoffs.
-	Player.UpgradeType.WHIP: {
-		"passive": Player.UpgradeType.SPINACH,
+	ItemDefs.Type.WHIP: {
+		"passive": ItemDefs.Type.SPINACH,
 		"passive_level": 5,
 		"name": "Bloody Tear",
 		"desc": "Whip evolves into Bloody Tear\nHeals 20% of damage dealt"
 	},
-	Player.UpgradeType.MAGIC_WAND: {
-		"passive": Player.UpgradeType.WINGS,
+	ItemDefs.Type.MAGIC_WAND: {
+		"passive": ItemDefs.Type.WINGS,
 		"passive_level": 5,
 		"name": "Holy Wand",
 		"desc": "Magic Wand evolves into Holy Wand\nFires at super speed"
 	},
-	Player.UpgradeType.GARLIC: {
-		"passive": Player.UpgradeType.TOME,
+	ItemDefs.Type.GARLIC: {
+		"passive": ItemDefs.Type.TOME,
 		"passive_level": 5,
 		"name": "Soul Eater",
 		"desc": "Garlic evolves into Soul Eater\nHeals 1 HP per kill"
 	},
-	Player.UpgradeType.KNIFE: {
-		"passive": Player.UpgradeType.CANDELABRADOR,
+	ItemDefs.Type.KNIFE: {
+		"passive": ItemDefs.Type.CANDELABRADOR,
 		"passive_level": 5,
 		"name": "Thousand Edge",
 		"desc": "Knife evolves into Thousand Edge\nFires a spread of 3 blades"
 	},
-	Player.UpgradeType.AXE: {
-		"passive": Player.UpgradeType.HOLLOW_HEART,
+	ItemDefs.Type.AXE: {
+		"passive": ItemDefs.Type.HOLLOW_HEART,
 		"passive_level": 5,
 		"name": "Death Spiral",
 		"desc": "Axe evolves into Death Spiral\nAxes orbit and return to you"
 	},
-	Player.UpgradeType.FIRE_WAND: {
-		"passive": Player.UpgradeType.SPINACH,
+	ItemDefs.Type.FIRE_WAND: {
+		"passive": ItemDefs.Type.SPINACH,
 		"passive_level": 5,
 		"name": "Hellfire",
 		"desc": "Fire Wand evolves into Hellfire\nDouble explosions"
 	},
-	Player.UpgradeType.CROSS: {
-		"passive": Player.UpgradeType.CLOVER,
+	ItemDefs.Type.CROSS: {
+		"passive": ItemDefs.Type.CLOVER,
 		"passive_level": 5,
 		"name": "Heaven Sword",
 		"desc": "Cross evolves into Heaven Sword\nSword rains from above"
 	},
-	Player.UpgradeType.KING_BIBLE: {
-		"passive": Player.UpgradeType.SPELLBINDER,
+	ItemDefs.Type.KING_BIBLE: {
+		"passive": ItemDefs.Type.SPELLBINDER,
 		"passive_level": 5,
 		"name": "Unholy Vespers",
 		"desc": "King Bible evolves into Unholy Vespers\nDual orbiting shields"
 	},
-	Player.UpgradeType.SANTA_WATER: {
-		"passive": Player.UpgradeType.MAGNET,
+	ItemDefs.Type.SANTA_WATER: {
+		"passive": ItemDefs.Type.MAGNET,
 		"passive_level": 5,
 		"name": "La Borra",
 		"desc": "Santa Water evolves into La Borra\nTracking damaging puddles"
 	},
-	Player.UpgradeType.RUNETRACER: {
-		"passive": Player.UpgradeType.ARMOR,
+	ItemDefs.Type.RUNETRACER: {
+		"passive": ItemDefs.Type.ARMOR,
 		"passive_level": 5,
 		"name": "NO FUTURE",
 		"desc": "Runetracer evolves into NO FUTURE\nWalls of piercing lasers"
 	},
-	Player.UpgradeType.LIGHTNING_RING: {
-		"passive": Player.UpgradeType.SPINACH,
+	ItemDefs.Type.LIGHTNING_RING: {
+		"passive": ItemDefs.Type.SPINACH,
 		"passive_level": 5,
 		"name": "Thunder Loop",
 		"desc": "Lightning Ring evolves into Thunder Loop\nChain lightning"
 	},
 	# ── New Weapon Evolutions ──
-	Player.UpgradeType.PENTAGRAM: {
-		"passive": Player.UpgradeType.CROWN,
-		"passive_level": 5,
-		"name": "Gorgeous Moon",
-		"desc": "Pentagram evolves into Gorgeous Moon\nLarger range, lower cooldown"
-	},
-	Player.UpgradeType.SONG_OF_MANA: {
-		"passive": Player.UpgradeType.SKULL,
-		"passive_level": 5,
-		"name": "Mannajja",
-		"desc": "Song of Mana evolves into Mannajja\nTracking vines, full screen attack"
-	},
-	Player.UpgradeType.GATTI_AMARI: {
-		"passive": Player.UpgradeType.STONE_MASK,
-		"passive_level": 5,
-		"name": "Vicious Hunger",
-		"desc": "Gatti Amari evolves into Vicious Hunger\nCats pick up gold and items"
-	},
-	Player.UpgradeType.PHIERA_DER_TUPHELLO: {
-		"passive": Player.UpgradeType.TIRAGISU,
-		"passive_level": 2,
-		"name": "Phieraggi",
-		"desc": "Phiera + Eight evolve into Phieraggi\nUltra piercing attack"
-	},
-	Player.UpgradeType.EIGHT_THE_SPARROW: {
-		"passive": Player.UpgradeType.TIRAGISU,
-		"passive_level": 2,
-		"name": "Phieraggi",
-		"desc": "Phiera + Eight evolve into Phieraggi\nUltra piercing attack"
-	},
-	Player.UpgradeType.VICTORY_SWORD: {
-		"passive": Player.UpgradeType.TORRONA,
-		"passive_level": 9,
-		"name": "Sole Solution",
-		"desc": "Victory Sword evolves into Sole Solution\nCharges up then unleashes a massive slash"
-	},
+#	ItemDefs.Type.PENTAGRAM: {
+#		"passive": ItemDefs.Type.CROWN,
+#		"passive_level": 5,
+#		"name": "Gorgeous Moon",
+#		"desc": "Pentagram evolves into Gorgeous Moon\nLarger range, lower cooldown"
+#	},
+#	ItemDefs.Type.SONG_OF_MANA: {
+#		"passive": ItemDefs.Type.SKULL,
+#		"passive_level": 5,
+#		"name": "Mannajja",
+#		"desc": "Song of Mana evolves into Mannajja\nTracking vines, full screen attack"
+#	},
+#	ItemDefs.Type.GATTI_AMARI: {
+#		"passive": ItemDefs.Type.STONE_MASK,
+#		"passive_level": 5,
+#		"name": "Vicious Hunger",
+#		"desc": "Gatti Amari evolves into Vicious Hunger\nCats pick up gold and items"
+#	},
+#	ItemDefs.Type.PHIERA_DER_TUPHELLO: {
+#		"passive": ItemDefs.Type.TIRAGISU,
+#		"passive_level": 2,
+#		"name": "Phieraggi",
+#		"desc": "Phiera + Eight evolve into Phieraggi\nUltra piercing attack"
+#	},
+#	ItemDefs.Type.EIGHT_THE_SPARROW: {
+#		"passive": ItemDefs.Type.TIRAGISU,
+#		"passive_level": 2,
+#		"name": "Phieraggi",
+#		"desc": "Phiera + Eight evolve into Phieraggi\nUltra piercing attack"
+#	},
+#	ItemDefs.Type.VICTORY_SWORD: {
+#		"passive": ItemDefs.Type.TORRONA,
+#		"passive_level": 9,
+#		"name": "Sole Solution",
+#		"desc": "Victory Sword evolves into Sole Solution\nCharges up then unleashes a massive slash"
+#	},
 }
 
 
@@ -184,16 +184,16 @@ func _can_fire(w: WeaponState) -> bool:
 	var ppos = _player.global_position
 
 	# Aura weapons (Garlic, Soul Eater) are always active — no range check needed
-	if w.type == Player.UpgradeType.GARLIC:
+	if w.type == ItemDefs.Type.GARLIC:
 		return true
 
 	var range_limit: float
 	match w.type:
-		Player.UpgradeType.KING_BIBLE:
+		ItemDefs.Type.KING_BIBLE:
 			range_limit = 80.0 + w.area * _player.area_mult
-		Player.UpgradeType.WHIP:
+		ItemDefs.Type.WHIP:
 			range_limit = w.area * _player.area_mult * 3.0
-		Player.UpgradeType.SANTA_WATER:
+		ItemDefs.Type.SANTA_WATER:
 			range_limit = w.area * _player.area_mult * 2.5
 		_:
 			range_limit = 350.0 + w.area * _player.area_mult * 3.0
@@ -215,7 +215,7 @@ func process(delta: float):
 	if whip_hit_window > 0:
 		whip_hit_window -= delta
 		for w in weapons:
-			if w.type == Player.UpgradeType.WHIP:
+			if w.type == ItemDefs.Type.WHIP:
 				_check_whip_hits(w)
 	for w in weapons:
 		w.cooldown_timer -= delta
@@ -259,22 +259,22 @@ func get_count() -> int:
 
 func fire_weapon(w: WeaponState):
 	match w.type:
-		Player.UpgradeType.WHIP: _fire_whip(w)
-		Player.UpgradeType.MAGIC_WAND: _fire_wand(w)
-		Player.UpgradeType.GARLIC: _fire_garlic(w)
-		Player.UpgradeType.KNIFE: _fire_knife(w)
-		Player.UpgradeType.AXE: _fire_axe(w)
-		Player.UpgradeType.FIRE_WAND: _fire_fire_wand(w)
-		Player.UpgradeType.CROSS: _fire_cross(w)
-		Player.UpgradeType.KING_BIBLE: _fire_king_bible(w)
-		Player.UpgradeType.SANTA_WATER: _fire_santa_water(w)
-		Player.UpgradeType.RUNETRACER: _fire_runetracer(w)
-		Player.UpgradeType.LIGHTNING_RING: _fire_lightning_ring(w)
-		# New weapons — fire logic not yet implemented; silently skip
-		Player.UpgradeType.PENTAGRAM, Player.UpgradeType.SONG_OF_MANA, \
-		Player.UpgradeType.GATTI_AMARI, Player.UpgradeType.PHIERA_DER_TUPHELLO, \
-		Player.UpgradeType.EIGHT_THE_SPARROW, Player.UpgradeType.VICTORY_SWORD:
-			push_warning("Weapon %d fire logic not yet implemented" % w.type)
+		ItemDefs.Type.WHIP: _fire_whip(w)
+		ItemDefs.Type.MAGIC_WAND: _fire_wand(w)
+		ItemDefs.Type.GARLIC: _fire_garlic(w)
+		ItemDefs.Type.KNIFE: _fire_knife(w)
+		ItemDefs.Type.AXE: _fire_axe(w)
+		ItemDefs.Type.FIRE_WAND: _fire_fire_wand(w)
+		ItemDefs.Type.CROSS: _fire_cross(w)
+		ItemDefs.Type.KING_BIBLE: _fire_king_bible(w)
+		ItemDefs.Type.SANTA_WATER: _fire_santa_water(w)
+		ItemDefs.Type.RUNETRACER: _fire_runetracer(w)
+		ItemDefs.Type.LIGHTNING_RING: _fire_lightning_ring(w)
+	# 		# New weapons — fire logic not yet implemented; silently skip
+	# 		ItemDefs.Type.PENTAGRAM, ItemDefs.Type.SONG_OF_MANA, \
+	# 		ItemDefs.Type.GATTI_AMARI, ItemDefs.Type.PHIERA_DER_TUPHELLO, \
+	# 		ItemDefs.Type.EIGHT_THE_SPARROW, ItemDefs.Type.VICTORY_SWORD:
+	# 			push_warning("Weapon %d fire logic not yet implemented" % w.type)
 
 
 func get_projectile_count(weapon_type: int) -> int:
@@ -284,12 +284,12 @@ func get_projectile_count(weapon_type: int) -> int:
 	if ArcanaManager and ArcanaManager.has_effect("main_weapon_amount_plus_3"):
 		if weapons.size() > 0 and weapons[0].type == weapon_type:
 			count += 3
-	if weapon_type == Player.UpgradeType.KNIFE:
-		var w = _find_weapon(Player.UpgradeType.KNIFE)
+	if weapon_type == ItemDefs.Type.KNIFE:
+		var w = _find_weapon(ItemDefs.Type.KNIFE)
 		if w and w.evolved:
 			count += 2
-	elif weapon_type == Player.UpgradeType.MAGIC_WAND:
-		var w = _find_weapon(Player.UpgradeType.MAGIC_WAND)
+	elif weapon_type == ItemDefs.Type.MAGIC_WAND:
+		var w = _find_weapon(ItemDefs.Type.MAGIC_WAND)
 		if w and w.evolved:
 			count += 1
 	return max(count, 1)
@@ -321,17 +321,17 @@ func evolve_weapon(weapon_type: int):
 
 static func _evo_name_key(weapon_type: int) -> String:
 	match weapon_type:
-		Player.UpgradeType.WHIP: return "whip"
-		Player.UpgradeType.MAGIC_WAND: return "wand"
-		Player.UpgradeType.GARLIC: return "garlic"
-		Player.UpgradeType.KNIFE: return "knife"
-		Player.UpgradeType.AXE: return "axe"
-		Player.UpgradeType.FIRE_WAND: return "firewand"
-		Player.UpgradeType.CROSS: return "cross"
-		Player.UpgradeType.KING_BIBLE: return "king_bible"
-		Player.UpgradeType.SANTA_WATER: return "santa_water"
-		Player.UpgradeType.RUNETRACER: return "runetracer"
-		Player.UpgradeType.LIGHTNING_RING: return "lightning_ring"
+		ItemDefs.Type.WHIP: return "whip"
+		ItemDefs.Type.MAGIC_WAND: return "wand"
+		ItemDefs.Type.GARLIC: return "garlic"
+		ItemDefs.Type.KNIFE: return "knife"
+		ItemDefs.Type.AXE: return "axe"
+		ItemDefs.Type.FIRE_WAND: return "firewand"
+		ItemDefs.Type.CROSS: return "cross"
+		ItemDefs.Type.KING_BIBLE: return "king_bible"
+		ItemDefs.Type.SANTA_WATER: return "santa_water"
+		ItemDefs.Type.RUNETRACER: return "runetracer"
+		ItemDefs.Type.LIGHTNING_RING: return "lightning_ring"
 	return "whip"
 
 
@@ -380,27 +380,40 @@ func _fire_wand(w: WeaponState):
 		return
 	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult
-	var count = get_projectile_count(Player.UpgradeType.MAGIC_WAND)
+	var count = get_projectile_count(ItemDefs.Type.MAGIC_WAND)
 
-	# Sort a copy to avoid modifying the registry's internal array
-	var sorted = enemies.duplicate()
-	sorted.sort_custom(func(a, b): 
-		if not is_instance_valid(a) or not is_instance_valid(b):
-			return false
-		return _player.global_position.distance_squared_to(a.global_position) < _player.global_position.distance_squared_to(b.global_position))
-	# Limit to max targeting range (scales with area so Candelabrador extends reach)
 	var max_range_wsq: float = (350.0 + w.area * _player.area_mult * 3.0)
 	max_range_wsq *= max_range_wsq
-	sorted = sorted.filter(func(e): return is_instance_valid(e) and _player.global_position.distance_squared_to(e.global_position) <= max_range_wsq)
-	var targets = sorted.slice(0, min(count, sorted.size()))
-	if targets.is_empty():
+	var ppos = _player.global_position
+
+	# Single-pass top-N selection — avoids duplicate/sort_custom/filter/slice allocations
+	var best: Array = []
+	for e in enemies:
+		if not is_instance_valid(e):
+			continue
+		var dsq = ppos.distance_squared_to(e.global_position)
+		if dsq > max_range_wsq:
+			continue
+		# Insertion sort into best (max size = count, which is small: 1-5)
+		var inserted = false
+		for i in range(best.size()):
+			if dsq < best[i][0]:
+				best.insert(i, [dsq, e])
+				inserted = true
+				break
+		if not inserted and best.size() < count:
+			best.append([dsq, e])
+		if best.size() > count:
+			best.pop_back()
+	if best.is_empty():
 		return
 
 	if _wand_sfx_cooldown <= 0:
 		AudioManager.play_sfx("wpn_wand" if not w.evolved else "wpn_evo")
 		_wand_sfx_cooldown = 0.3
 
-	for target in targets:
+	for pair in best:
+		var target = pair[1]
 		if not is_instance_valid(target):
 			continue
 		var p = Area2D.new()
@@ -410,17 +423,16 @@ func _fire_wand(w: WeaponState):
 		c.radius = area
 		s.shape = c
 		p.add_child(s)
-		p.global_position = _player.global_position
+		p.global_position = ppos
 		var vis = Node2D.new()
 		vis.set_script(_proj_vis_script)
 		p.add_child(vis)
 		_player.get_parent().add_child(p)
 		p.body_entered.connect(_on_proj_hit.bind(p, dmg))
-		# Use projectile_mover instead of Tween for linear movement
-		var dir = (target.global_position - _player.global_position).normalized()
+		var dir = (target.global_position - ppos).normalized()
 		var mover = Node2D.new()
 		mover.set_script(_proj_mover_script)
-		mover.set_movement(dir * w.speed, _player.global_position.distance_to(target.global_position) / max(w.speed, 1.0))
+		mover.set_movement(dir * w.speed, ppos.distance_to(target.global_position) / max(w.speed, 1.0))
 		p.add_child(mover)
 
 
@@ -452,7 +464,7 @@ func _fire_knife(w: WeaponState):
 		_knife_sfx_cooldown = 0.3
 	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult
-	var count = get_projectile_count(Player.UpgradeType.KNIFE)
+	var count = get_projectile_count(ItemDefs.Type.KNIFE)
 	var base_dir = _player.direction if _player.direction.length() > 0 else Vector2.DOWN
 	var perp = Vector2(-base_dir.y, base_dir.x)
 
@@ -494,7 +506,7 @@ func _fire_axe(w: WeaponState):
 
 
 func _fire_axe_normal(w: WeaponState, dmg: float, area: float):
-	var count = get_projectile_count(Player.UpgradeType.AXE)
+	var count = get_projectile_count(ItemDefs.Type.AXE)
 	var spawn_dir = _player.direction if _player.direction.length() > 0 else Vector2.DOWN
 	var h_dir = Vector2(spawn_dir.x, 0.0)
 	if h_dir.length_squared() < 0.01:
@@ -570,19 +582,22 @@ func _fire_fire_wand(w: WeaponState):
 	var dmg = _calc_damage(w)
 	var area = w.area * _player.area_mult
 	var explosion_radius = area * 1.5
-	var count = get_projectile_count(Player.UpgradeType.FIRE_WAND)
-	# Limit to max targeting range
+	var count = get_projectile_count(ItemDefs.Type.FIRE_WAND)
 	var max_range_fsq: float = (350.0 + w.area * _player.area_mult * 3.0)
 	max_range_fsq *= max_range_fsq
-	var targets: Array = enemies.duplicate()
-	targets = targets.filter(func(e): return is_instance_valid(e) and _player.global_position.distance_squared_to(e.global_position) <= max_range_fsq)
-	if targets.is_empty():
+	var ppos = _player.global_position
+	# Single-pass: collect in-range enemies into a lightweight array, then pick randomly
+	var in_range: Array = []
+	for e in enemies:
+		if is_instance_valid(e) and ppos.distance_squared_to(e.global_position) <= max_range_fsq:
+			in_range.append(e)
+	if in_range.is_empty():
 		return
 	AudioManager.play_sfx("wpn_fire")
-	targets.shuffle()
-	var n = mini(count, targets.size())
+	in_range.shuffle()
+	var n = mini(count, in_range.size())
 	for i in range(n):
-		var target = targets[i]
+		var target = in_range[i]
 		if not is_instance_valid(target):
 			continue
 		_fire_one_fireball(target, dmg, area, explosion_radius, w)
@@ -628,7 +643,11 @@ func _fire_cross(w: WeaponState):
 		# Heaven Sword also respects targeting range
 		var max_range_hsq: float = (400.0 + w.area * _player.area_mult * 3.0)
 		max_range_hsq *= max_range_hsq
-		var in_range = enemies.filter(func(e): return is_instance_valid(e) and _player.global_position.distance_squared_to(e.global_position) <= max_range_hsq)
+		var ppos_cross = _player.global_position
+		var in_range: Array = []
+		for e in enemies:
+			if is_instance_valid(e) and ppos_cross.distance_squared_to(e.global_position) <= max_range_hsq:
+				in_range.append(e)
 		if in_range.is_empty():
 			return
 		AudioManager.play_sfx("wpn_heaven")
@@ -892,7 +911,11 @@ func _fire_lightning_ring(w: WeaponState):
 	# Limit to max targeting range
 	var max_range_lsq: float = (350.0 + w.area * _player.area_mult * 3.0)
 	max_range_lsq *= max_range_lsq
-	var in_range = enemies.filter(func(e): return is_instance_valid(e) and _player.global_position.distance_squared_to(e.global_position) <= max_range_lsq)
+	var ppos_lr = _player.global_position
+	var in_range: Array = []
+	for e in enemies:
+		if is_instance_valid(e) and ppos_lr.distance_squared_to(e.global_position) <= max_range_lsq:
+			in_range.append(e)
 	if in_range.is_empty():
 		return
 	AudioManager.play_sfx("wpn_lightning")

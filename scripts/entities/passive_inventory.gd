@@ -1,3 +1,4 @@
+const ItemDefs = preload("res://scripts/data/item_defs.gd")
 var _passives: Dictionary = {}
 
 
@@ -49,54 +50,54 @@ func recalculate(player):
 	for t in _passives:
 		var lv = _passives[t]
 		match t:
-			Player.UpgradeType.WINGS:
+			ItemDefs.Type.WINGS:
 				player.move_speed = 200.0 * (1.0 + 0.1 * lv)
-			Player.UpgradeType.SPINACH:
+			ItemDefs.Type.SPINACH:
 				player.damage_mult += 0.1 * lv
-			Player.UpgradeType.TOME:
+			ItemDefs.Type.TOME:
 				player.cooldown_reduction = 0.08 * lv
-			Player.UpgradeType.HOLLOW_HEART:
+			ItemDefs.Type.HOLLOW_HEART:
 				player.max_health = player.base_max_health * (1.0 + 0.2 * lv)
-			Player.UpgradeType.CANDELABRADOR:
+			ItemDefs.Type.CANDELABRADOR:
 				player.area_mult += 0.1 * lv
-			Player.UpgradeType.CROWN:
+			ItemDefs.Type.CROWN:
 				player.growth_mult = 1.0 + 0.08 * lv
-			Player.UpgradeType.PUMMAROLA:
+			ItemDefs.Type.PUMMAROLA:
 				player.recovery += 0.5 * lv
-			Player.UpgradeType.DUPLICATOR:
+			ItemDefs.Type.DUPLICATOR:
 				player.projectile_bonus = lv
-			Player.UpgradeType.STONE_MASK:
+			ItemDefs.Type.STONE_MASK:
 				player.greed_mult = 0.20 * lv
-			Player.UpgradeType.MAGNET:
+			ItemDefs.Type.MAGNET:
 				player.magnet_level = lv
 				player.pickup_range = 60.0 + 20.0 * lv
-			Player.UpgradeType.CLOVER:
+			ItemDefs.Type.CLOVER:
 				player.luck = 0.08 * lv
 				player._crit_chance = player.luck * 0.5  # Lv5 = 20% crit
-			Player.UpgradeType.SPELLBINDER:
+			ItemDefs.Type.SPELLBINDER:
 				player.duration_bonus += 0.3 * lv
-			Player.UpgradeType.ARMOR:
+			ItemDefs.Type.ARMOR:
 				player.armor = 0.08 * lv  # 8% damage reduction per level
-			Player.UpgradeType.BRACER:
+			ItemDefs.Type.BRACER:
 				player.speed_mult += 0.10 * lv
-			Player.UpgradeType.SKULL:
+			ItemDefs.Type.SKULL:
 				player.curse = 0.10 * lv
-			Player.UpgradeType.TIRAGISU:
+			ItemDefs.Type.TIRAGISU:
 				player.revivals = lv
-			Player.UpgradeType.TORRONA:
+			ItemDefs.Type.TORRONA:
 				player.damage_mult += 0.04 * lv
 				player.area_mult += 0.04 * lv
 				player.speed_mult += 0.04 * lv
 				player.duration_bonus += 0.04 * lv
-			Player.UpgradeType.SILVER_RING:
+			ItemDefs.Type.SILVER_RING:
 				player.duration_bonus += 0.05 * lv
 				player.area_mult += 0.05 * lv
-			Player.UpgradeType.GOLD_RING:
+			ItemDefs.Type.GOLD_RING:
 				player.curse += 0.05 * lv
-			Player.UpgradeType.METAGLIO_LEFT:
+			ItemDefs.Type.METAGLIO_LEFT:
 				player.recovery += 0.1 * lv
 				player.max_health += player.base_max_health * 0.05 * lv
-			Player.UpgradeType.METAGLIO_RIGHT:
+			ItemDefs.Type.METAGLIO_RIGHT:
 				player.curse += 0.05 * lv
 
 	# Scale health proportionally with max HP changes

@@ -13,17 +13,17 @@ var speed: float
 var evolved: bool = false
 
 static var _BASE = {
-	Player.UpgradeType.WHIP: {"cd": 1.0, "dmg": 50.0, "area": 60.0, "speed": 0.0},
-	Player.UpgradeType.MAGIC_WAND: {"cd": 0.35, "dmg": 20.0, "area": 12.0, "speed": 400.0},
-	Player.UpgradeType.GARLIC: {"cd": 0.8, "dmg": 10.0, "area": 70.0, "speed": 0.0},
-	Player.UpgradeType.KNIFE: {"cd": 0.3, "dmg": 30.0, "area": 10.0, "speed": 600.0},
-	Player.UpgradeType.AXE: {"cd": 1.2, "dmg": 100.0, "area": 40.0, "speed": 0.0},
-	Player.UpgradeType.FIRE_WAND: {"cd": 0.8, "dmg": 50.0, "area": 20.0, "speed": 300.0},
-	Player.UpgradeType.CROSS: {"cd": 1.2, "dmg": 60.0, "area": 40.0, "speed": 400.0},
-	Player.UpgradeType.KING_BIBLE: {"cd": 2.0, "dmg": 15.0, "area": 50.0, "speed": 200.0},
-	Player.UpgradeType.SANTA_WATER: {"cd": 2.0, "dmg": 20.0, "area": 60.0, "speed": 0.0},
-	Player.UpgradeType.RUNETRACER: {"cd": 0.8, "dmg": 25.0, "area": 16.0, "speed": 500.0},
-	Player.UpgradeType.LIGHTNING_RING: {"cd": 1.5, "dmg": 40.0, "area": 40.0, "speed": 0.0},
+	ItemDefs.Type.WHIP: {"cd": 1.0, "dmg": 50.0, "area": 60.0, "speed": 0.0},
+	ItemDefs.Type.MAGIC_WAND: {"cd": 0.35, "dmg": 20.0, "area": 12.0, "speed": 400.0},
+	ItemDefs.Type.GARLIC: {"cd": 0.8, "dmg": 10.0, "area": 70.0, "speed": 0.0},
+	ItemDefs.Type.KNIFE: {"cd": 0.3, "dmg": 30.0, "area": 10.0, "speed": 600.0},
+	ItemDefs.Type.AXE: {"cd": 1.2, "dmg": 100.0, "area": 40.0, "speed": 0.0},
+	ItemDefs.Type.FIRE_WAND: {"cd": 0.8, "dmg": 50.0, "area": 20.0, "speed": 300.0},
+	ItemDefs.Type.CROSS: {"cd": 1.2, "dmg": 60.0, "area": 40.0, "speed": 400.0},
+	ItemDefs.Type.KING_BIBLE: {"cd": 2.0, "dmg": 15.0, "area": 50.0, "speed": 200.0},
+	ItemDefs.Type.SANTA_WATER: {"cd": 2.0, "dmg": 20.0, "area": 60.0, "speed": 0.0},
+	ItemDefs.Type.RUNETRACER: {"cd": 0.8, "dmg": 25.0, "area": 16.0, "speed": 500.0},
+	ItemDefs.Type.LIGHTNING_RING: {"cd": 1.5, "dmg": 40.0, "area": 40.0, "speed": 0.0},
 }
 
 func _init(t: int):
@@ -60,37 +60,37 @@ func upgrade():
 func evolve():
 	evolved = true
 	match type:
-		Player.UpgradeType.WHIP:
+		ItemDefs.Type.WHIP:
 			damage *= 1.8
 			area *= 1.4
-		Player.UpgradeType.MAGIC_WAND:
+		ItemDefs.Type.MAGIC_WAND:
 			cooldown = 0.10
 			damage *= 1.5
-		Player.UpgradeType.GARLIC:
+		ItemDefs.Type.GARLIC:
 			area *= 1.3
 			damage *= 1.8
 			cooldown *= 0.7
-		Player.UpgradeType.KNIFE:
+		ItemDefs.Type.KNIFE:
 			damage *= 1.5
 			speed *= 1.3
-		Player.UpgradeType.AXE:
+		ItemDefs.Type.AXE:
 			damage *= 1.8
 			area *= 1.4
-		Player.UpgradeType.FIRE_WAND:
+		ItemDefs.Type.FIRE_WAND:
 			damage *= 1.5
 			area *= 1.3
-		Player.UpgradeType.CROSS:
+		ItemDefs.Type.CROSS:
 			damage *= 1.6
 			cooldown *= 0.7
-		Player.UpgradeType.KING_BIBLE:
+		ItemDefs.Type.KING_BIBLE:
 			damage *= 1.5
 			area *= 1.3
-		Player.UpgradeType.SANTA_WATER:
+		ItemDefs.Type.SANTA_WATER:
 			damage *= 1.6
 			area *= 1.3
-		Player.UpgradeType.RUNETRACER:
+		ItemDefs.Type.RUNETRACER:
 			damage *= 1.5
 			speed *= 1.4
-		Player.UpgradeType.LIGHTNING_RING:
+		ItemDefs.Type.LIGHTNING_RING:
 			damage *= 1.6
 			area *= 1.3

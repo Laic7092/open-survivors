@@ -51,6 +51,11 @@ var _culled: bool = false
 var _frozen: bool = false
 var _freeze_timer: float = 0.0
 
+# ── Cached EventBus values (updated every N frames to avoid autoload lookups) ──
+var _cached_speed_mod: float = 1.0
+var _cached_curse_level: int = 0
+var _cache_frame: int = -1
+
 # ── Scene references ──
 var _proj_scene = preload("res://scenes/enemy_projectile.tscn")
 
@@ -132,6 +137,16 @@ func scale_difficulty(diff: float):
 	set_enemy_type(0, diff)
 
 
+func _refresh_cached_config():
+	var frame = Engine.get_frames_drawn()
+	if frame == _cache_frame:
+		return
+	_cache_frame = frame
+	if EventBus:
+		_cached_speed_mod = EventBus.get_config("stage_enemy_speed_mod", 1.0)
+		_cached_curse_level = EventBus.get_curse_level()
+
+
 func _physics_process(delta):
 	if health <= 0 or not is_instance_valid(player):
 		return
@@ -143,48 +158,48 @@ func _physics_process(delta):
 		velocity = knockback_velocity
 		move_and_slide()
 		return
-		return
-	
+
 	# Visibility culling: skip full AI for distant enemies
 	var dist_sq = global_position.distance_squared_to(player.global_position)
 	if dist_sq > CULL_DIST_SQ:
 		if not _culled:
 			_culled = true
-			# Disable collision entirely for culled enemies (big physics savings)
 			collision_layer = 0
 			collision_mask = 0
-			# Simple slow drift toward player when culled
-			var dir = (player.global_position - global_position).normalized()
-			velocity = dir * move_speed * 0.3  # 30% speed when culled
+		# Throttle culled enemies to every 4th frame — they're far offscreen
+		if Engine.get_frames_drawn() % 4 != 0:
+			return
+		var dir = (player.global_position - global_position).normalized()
+		velocity = dir * move_speed * 0.3
 		move_and_slide()
 		return
 	elif _culled:
 		_culled = false
-		# Re-enable collision
 		collision_layer = CollisionLayers.ENEMY
 		collision_mask = 0
-	
+
+	# Refresh cached EventBus values once per frame (only for non-culled enemies)
+	_refresh_cached_config()
+
 	# Hit flash — use modulate which is GPU-side
 	if hit_flash_time > 0:
 		hit_flash_time -= delta
 		if hit_flash_time <= 0:
 			modulate = Color(1.0, 1.0, 1.0, 1.0)
-	
+
 	# Knockback decay
 	if knockback_velocity.length_squared() > 0.0:
 		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta * 60.0)
 		if knockback_velocity.length_squared() < 1.0:
 			knockback_velocity = Vector2.ZERO
-	
+
 	# Stationary enemies (Il Molise override)
-	var spd_mod = EventBus.get_config("stage_enemy_speed_mod", 1.0) if EventBus else 1.0
-	if spd_mod <= 0.0:
+	if _cached_speed_mod <= 0.0:
 		velocity = Vector2.ZERO + knockback_velocity
 		move_and_slide()
-		# Still do ranged attack
 		_update_ranged(delta)
 		return
-	
+
 	# Behavior dispatch
 	match _behavior:
 		"wavy":
@@ -193,29 +208,27 @@ func _physics_process(delta):
 			_behavior_stationary(delta)
 		_:
 			_behavior_chase(delta)
-	
+
 	# Apply knockback on top
 	velocity += knockback_velocity
 	move_and_slide()
-	
+
 	# Ranged attack update
 	_update_ranged(delta)
 
 
 func _behavior_chase(_delta: float):
-	var spd_mod = EventBus.get_config("stage_enemy_speed_mod", 1.0) if EventBus else 1.0
 	var dir = (player.global_position - global_position).normalized()
-	velocity = dir * move_speed * spd_mod
+	velocity = dir * move_speed * _cached_speed_mod
 
 
 func _behavior_wavy(delta: float):
-	var spd_mod = EventBus.get_config("stage_enemy_speed_mod", 1.0) if EventBus else 1.0
 	var dir = (player.global_position - global_position).normalized()
 	var perp = dir.rotated(PI / 2.0)
 	_wavy_time += delta
-	var wave_amp = 60.0 * spd_mod
+	var wave_amp = 60.0 * _cached_speed_mod
 	var wave = perp * sin(_wavy_time * 4.0) * wave_amp
-	velocity = dir * move_speed * spd_mod + wave
+	velocity = dir * move_speed * _cached_speed_mod + wave
 
 
 func _behavior_stationary(_delta: float):
@@ -236,8 +249,7 @@ func _fire_projectile():
 	if not is_instance_valid(player) or not is_inside_tree():
 		return
 	# Cursed Time: extra projectiles per volley
-	var curse_level = EventBus.get_curse_level() if EventBus else 0
-	var extra_shots = curse_level / 5  # +1 projectile every 5 curse levels
+	var extra_shots = _cached_curse_level / 5  # +1 projectile every 5 curse levels
 	
 	var shot_count = 1 + extra_shots
 	for s in range(shot_count):

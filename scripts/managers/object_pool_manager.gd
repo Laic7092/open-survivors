@@ -157,6 +157,8 @@ func _get_scene_path(obj: Node) -> String:
 # ── 向后兼容方法 ──
 
 # GemPool 兼容
+var _gem_throttle_counter: int = 0
+
 func borrow_gem() -> Node:
 	var gem = borrow(_SCENE_GEM)
 	gem.collected = false
@@ -165,6 +167,8 @@ func borrow_gem() -> Node:
 	gem.visible = true
 	gem.process_mode = PROCESS_MODE_INHERIT
 	gem.add_to_group("gems")
+	gem._throttle_offset = _gem_throttle_counter
+	_gem_throttle_counter = (_gem_throttle_counter + 1) % 4
 	return gem
 
 

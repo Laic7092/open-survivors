@@ -5,23 +5,6 @@ signal leveled_up
 signal died
 signal hurt
 
-enum UpgradeType {
-	WHIP, MAGIC_WAND, GARLIC,
-	WINGS, SPINACH, TOME,
-	HOLLOW_HEART, CANDELABRADOR, CROWN, PUMMAROLA,
-	KNIFE = 10, AXE = 11, FIRE_WAND = 12,
-	DUPLICATOR = 13, STONE_MASK = 14,
-	MAGNET = 15,
-	CROSS = 16, KING_BIBLE = 17, SANTA_WATER = 18,
-	RUNETRACER = 19, LIGHTNING_RING = 20,
-	CLOVER = 21, SPELLBINDER = 22, ARMOR = 23,
-	BRACER = 24, SKULL = 25, TIRAGISU = 26,
-	TORRONA = 27, SILVER_RING = 28, GOLD_RING = 29,
-	METAGLIO_LEFT = 30, METAGLIO_RIGHT = 31,
-	PENTAGRAM = 32, SONG_OF_MANA = 33, GATTI_AMARI = 34,
-	PHIERA_DER_TUPHELLO = 35, EIGHT_THE_SPARROW = 36, VICTORY_SWORD = 37
-}
-
 var move_speed: float = 200.0
 var max_health: float = 100.0
 var health: float = 100.0
@@ -77,6 +60,7 @@ var _ft_scene = preload("res://scenes/floating_text.tscn")
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
 const ItemDefs = preload("res://scripts/data/item_defs.gd")
+const UpgradeType = ItemDefs.Type
 
 
 func _ready():
@@ -327,9 +311,9 @@ func apply_upgrade(t: int):
 		UpgradeType.WHIP, UpgradeType.MAGIC_WAND, UpgradeType.GARLIC, \
 		UpgradeType.KNIFE, UpgradeType.AXE, UpgradeType.FIRE_WAND, \
 		UpgradeType.CROSS, UpgradeType.KING_BIBLE, UpgradeType.SANTA_WATER, \
-		UpgradeType.RUNETRACER, UpgradeType.LIGHTNING_RING, \
-		UpgradeType.PENTAGRAM, UpgradeType.SONG_OF_MANA, UpgradeType.GATTI_AMARI, \
-		UpgradeType.PHIERA_DER_TUPHELLO, UpgradeType.EIGHT_THE_SPARROW, UpgradeType.VICTORY_SWORD:
+		UpgradeType.RUNETRACER, UpgradeType.LIGHTNING_RING:
+	# 		UpgradeType.PENTAGRAM, UpgradeType.SONG_OF_MANA, UpgradeType.GATTI_AMARI, \
+	# 		UpgradeType.PHIERA_DER_TUPHELLO, UpgradeType.EIGHT_THE_SPARROW, UpgradeType.VICTORY_SWORD:
 			weapon_manager.add_or_upgrade(t)
 		UpgradeType.WINGS, UpgradeType.SPINACH, UpgradeType.TOME, \
 		UpgradeType.HOLLOW_HEART, UpgradeType.CANDELABRADOR, \
@@ -482,16 +466,23 @@ func update_xp_requirements():
 
 # ── Magnet ───────────────────────────────────────────────────────────
 
+var _magnet_frame_skip: int = 0
+
 func _magnet_pull(delta: float):
+	# Throttle to every 3rd frame — magnet effect doesn't need per-frame precision
+	_magnet_frame_skip += 1
+	if _magnet_frame_skip % 3 != 0:
+		return
 	var magnet_range = 80.0 + 50.0 * magnet_level
 	var pull_speed = 300.0 + 80.0 * magnet_level
 	var gems = get_tree().get_nodes_in_group("gems")
 	var player_pos = global_position
+	var range_sq = magnet_range * magnet_range
 	for g in gems:
 		if not is_instance_valid(g) or g.collected:
 			continue
 		var dist = player_pos.distance_squared_to(g.global_position)
-		if dist < magnet_range * magnet_range:
+		if dist < range_sq:
 			if not g.attracted:
 				g.attracted = true
 			g.attract_speed = max(g.attract_speed, pull_speed)
