@@ -4,10 +4,7 @@ extends Area2D
 
 var relic_id: String = ""
 var _collected: bool = false
-var _float_offset: float = 0.0
 var _pulse: float = 0.0
-var _arrow_bob: float = 0.0
-var _arrow_visible: bool = true  # green arrow indicator near player
 
 # Reference to player for arrow direction
 var player_ref: Node2D
@@ -31,15 +28,15 @@ func _ready():
 	timer.timeout.connect(queue_free)
 	add_child(timer)
 	timer.start()
-
-
-func _process(delta):
-	_float_offset += delta * 1.5
-	_pulse += delta * 3.0
-	_arrow_bob += delta * 2.0
-	# Throttle redraw to every 4 frames
-	if Engine.get_frames_drawn() % 4 == 0:
-		queue_redraw()
+	
+	# Floating bob + pulse animation via Tween — no _process needed
+	var tw = create_tween().set_loops()
+	tw.tween_property(self, "position:y", position.y - 6.0, 2.0)
+	tw.tween_property(self, "position:y", position.y + 6.0, 2.0)
+	
+	var tw2 = create_tween().set_loops()
+	tw2.tween_method(func(v): _pulse = v; queue_redraw(), 0.0, TAU, 2.0)
+	tw2.tween_method(func(v): _pulse = v; queue_redraw(), TAU, TAU * 2.0, 2.0)
 
 
 func initialize(id: String, player: Node2D):
@@ -116,36 +113,35 @@ func _draw():
 	
 	var color = Color(0.4, 0.8, 0.3)  # relic green glow
 	var pulse_alpha = 0.3 + sin(_pulse) * 0.15
-	var bob = Vector2(0, sin(_float_offset) * 4.0)
 	
 	# Outer glow circle
-	draw_circle(bob, 28 + sin(_pulse * 0.7) * 3, Color(color.r, color.g, color.b, pulse_alpha * 0.4))
+	draw_circle(Vector2.ZERO, 28 + sin(_pulse) * 3, Color(color.r, color.g, color.b, 0.3 + sin(_pulse * 0.5) * 0.1))
 	
 	# Inner halo
-	draw_circle(bob, 20, Color(color.r, color.g, color.b, pulse_alpha * 0.3), false, 2.0)
+	draw_circle(Vector2.ZERO, 20, Color(color.r, color.g, color.b, pulse_alpha * 0.3), false, 2.0)
 	
 	# Star/sparkle shape
 	var s = 10.0
-	var white = Color(1, 1, 1, 0.7 + sin(_pulse * 0.5) * 0.3)
+	var white = Color(1, 1, 1, 0.7 + sin(_pulse * 0.7) * 0.3)
 	# Four-point star
 	var star = PackedVector2Array([
-		bob + Vector2(0, -16),
-		bob + Vector2(4, -4),
-		bob + Vector2(16, 0),
-		bob + Vector2(4, 4),
-		bob + Vector2(0, 16),
-		bob + Vector2(-4, 4),
-		bob + Vector2(-16, 0),
-		bob + Vector2(-4, -4),
+		Vector2(0, -16),
+		Vector2(4, -4),
+		Vector2(16, 0),
+		Vector2(4, 4),
+		Vector2(0, 16),
+		Vector2(-4, 4),
+		Vector2(-16, 0),
+		Vector2(-4, -4),
 	])
 	draw_polygon(star, [Color(color.r * 0.6, color.g * 1.0, color.b * 0.6, 0.8)])
 	
 	# Center diamond
 	var dim = PackedVector2Array([
-		bob + Vector2(0, -6),
-		bob + Vector2(4, 0),
-		bob + Vector2(0, 6),
-		bob + Vector2(-4, 0),
+		Vector2(0, -6),
+		Vector2(4, 0),
+		Vector2(0, 6),
+		Vector2(-4, 0),
 	])
 	draw_polygon(dim, [white])
 	

@@ -40,6 +40,11 @@ func _ready():
 	_name_label.size = Vector2(80, 16)
 	_name_label.position = Vector2(-40, -24)
 	add_child(_name_label)
+	
+	# Label float animation via Tween — no per-frame _process needed
+	var tw = create_tween().set_loops()
+	tw.tween_property(_name_label, "position:y", -27.0, 1.0)
+	tw.tween_property(_name_label, "position:y", -21.0, 1.0)
 
 	# Initialize static emoji font once
 	if _emoji_font == null:
@@ -89,17 +94,7 @@ func _collect():
 	queue_free()
 
 
-func _process(_delta):
-	if not _name_label:
-		return
-	# Skip animation when off-screen
-	if not is_visible_in_tree():
-		return
-	# Float up/down — only redraw every 4 frames
-	if Engine.get_frames_drawn() % 4 == 0:
-		var off = sin(Time.get_ticks_msec() * 0.003) * 3
-		_name_label.position = Vector2(-40, -24 + off)
-		queue_redraw()
+
 
 
 func _draw():

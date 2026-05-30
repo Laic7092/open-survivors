@@ -5,13 +5,14 @@ extends StaticBody2D
 # - Added to "enemies" group so aura/melee weapons also hit it
 # - Has take_damage() like enemies; handles own death without emitting died signal
 # - Drops XP gems + chance of gold/chicken when destroyed
+#
+# Hit flash uses modulate (GPU-side) — no per-frame queue_redraw.
 
 class_name BreakableWall
 
 signal wall_destroyed(pos: Vector2)
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
-# _gem_scene removed — using GemPool.borrow()
 
 # ── Visual properties ──
 var wall_color: Color = Color(0.25, 0.2, 0.15)
@@ -24,12 +25,11 @@ var xp_drop: int = 3
 var gold_drop_chance: float = 0.15
 var chicken_drop_chance: float = 0.10
 
-# ── Knockback (like props getting pushed) ──
+# ── Knockback ──
 var knockback_velocity: Vector2 = Vector2.ZERO
 const KNOCKBACK_DECAY: float = 6.0
 
 var _player_ref: Node2D = null
-var _hit_flash: float = 0.0
 var _destroyed: bool = false
 
 
@@ -49,13 +49,10 @@ func _ready():
 
 func _draw():
 	var half = wall_size / 2.0
-	var col = wall_color
-	if _hit_flash > 0.0:
-		col = Color(1.0, 1.0, 1.0, 0.8)
 	
-	draw_rect(Rect2(-half, wall_size), col)
+	draw_rect(Rect2(-half, wall_size), wall_color)
 	# Outline
-	draw_rect(Rect2(-half, wall_size), col * 0.6, false, 2.0)
+	draw_rect(Rect2(-half, wall_size), wall_color * 0.6, false, 2.0)
 	
 	# Cracks based on damage taken
 	if hp < max_hp * 0.75:
@@ -68,11 +65,7 @@ func _draw():
 
 
 func _process(delta):
-	if _hit_flash > 0.0:
-		_hit_flash -= delta
-		queue_redraw()
-	
-	# Apply knockback decay
+	# Knockback only — no queue_redraw (hit flash uses modulate)
 	if knockback_velocity.length_squared() > 1.0:
 		position += knockback_velocity * delta
 		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta)
@@ -84,8 +77,13 @@ func take_damage(dmg: float, _src_pos: Vector2 = Vector2.ZERO):
 		return
 	
 	hp -= dmg
-	_hit_flash = 0.1
-	queue_redraw()
+	
+	# Hit flash via modulate — cheaper than queue_redraw every frame
+	modulate = Color(1.5, 1.5, 1.5)
+	var tw = create_tween()
+	tw.tween_property(self, "modulate", Color.WHITE, 0.1)
+	
+	queue_redraw()  # update crack visuals
 	
 	if hp <= 0:
 		_destroy()
@@ -147,3 +145,6 @@ func setup(size: Vector2, color: Color, health: float, player_ref: Node2D):
 	max_hp = health
 	hp = health
 	_player_ref = player_ref
+	
+	if is_inside_tree():
+		queue_redraw()

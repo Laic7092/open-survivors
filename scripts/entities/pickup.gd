@@ -42,10 +42,14 @@ const COIN_VALUES: Dictionary = {
 	PickupType.BIG_COIN_BAG: 25,
 }
 
-var type: int = PickupType.CHICKEN
+var type: int = PickupType.CHICKEN:
+	set(v):
+		if type != v:
+			type = v
+			if is_inside_tree():
+				queue_redraw()
 var player: Node2D
 var collected: bool = false
-var float_offset: float = 0.0
 var _rarity: float = 12.0
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
@@ -63,12 +67,11 @@ func _ready():
 	timer.timeout.connect(queue_free)
 	add_child(timer)
 	timer.start()
-
-
-func _process(delta):
-	float_offset += delta * 2.0
-	if Engine.get_frames_drawn() % 4 == 0:
-		queue_redraw()
+	
+	# Floating bob animation — Tween on position.y, no _process needed
+	var tw = create_tween().set_loops()
+	tw.tween_property(self, "position:y", position.y - 4.0, 1.5)
+	tw.tween_property(self, "position:y", position.y + 4.0, 1.5)
 
 
 func _on_body_entered(body: Node):
@@ -171,7 +174,7 @@ func _trigger_gold_fever():
 
 
 func _draw():
-	var off = Vector2(0, sin(float_offset) * 3)
+	var off = Vector2.ZERO
 	match type:
 		PickupType.CHICKEN:
 			draw_circle(off, 8, Color(0.9, 0.15, 0.15))

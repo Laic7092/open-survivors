@@ -1,13 +1,12 @@
 extends Node
 # WaveSystem — 波次生成系统
 #
-# 模式 1 — 数据驱动（主线关卡）
-#   解析 stage_data.wave_defs，按游戏时间精确触发波次
-#   每波从定义中读取敌人组合、间隔、Boss、事件
-#   波间休息阶段维持 enemy_minimum
+# 解析 stage_data.wave_defs，按游戏时间精确触发波次
+# 每波从定义中读取敌人组合、间隔、Boss、事件
+# 波间休息阶段维持 enemy_minimum
+# 所有波次耗尽后进入自由刷怪模式
 #
-# 模式 2 — 程序化生成（无 wave_defs 的关卡回退）
-#   波次规模随时间增长，敌人类型按阶段加权随机
+# 如关卡未定义 wave_defs，系统静默跳过（不做任何事）
 
 const EnemyDefs = preload("res://scripts/data/enemy_defs.gd")
 const GameState = preload("res://scripts/core/game_state.gd")
@@ -48,9 +47,7 @@ const ENEMY_NAME_MAP := {
 
 # ── 内部状态 ──
 var _map_ready: bool = false
-var _use_data_driven: bool = false
 
-# 数据驱动状态
 var _wave_defs: Array = []
 var _next_wave_index: int = 0        # 下一个待触发的波次索引
 var _spawn_queue: Array = []         # [{type_id, remaining}]
@@ -60,10 +57,6 @@ var _wave_spawn_timer: float = 0.0
 var _wave_boss_id: int = -1          # 当前波次 Boss 类型 ID
 var _rest_timer: float = 0.5         # 波间休息计时
 var _rest_spawn_cooldown: float = 0.0 # 维持最小敌人的冷却计时
-
-# 程序化生成状态（fallback）
-var _proc_wave_spawn_timer: float = 0.0
-var _proc_rest_spawn_timer: float = 0.0
 
 # ── 信号 ──
 signal wave_started(wave_number: int)
@@ -77,12 +70,10 @@ func setup(gs: GameState, p: Node2D, spawn_func: Callable):
 	player = p
 	spawn_enemy_func = spawn_func
 
-	# 检测关卡是否定义了 wave_defs
+	# 加载 wave_defs（如无定义则波次系统静默跳过）
 	var stage_data = gs.stage_data
 	if stage_data.has("wave_defs") and not stage_data["wave_defs"].is_empty():
-		_use_data_driven = true
 		_wave_defs = stage_data["wave_defs"].duplicate()
-		# 按 time（分钟）升序排列，确保可靠顺序
 		_wave_defs.sort_custom(_sort_by_time)
 
 
@@ -94,17 +85,19 @@ func set_map_ready(val: bool):
 	_map_ready = val
 	if val:
 		_rest_timer = 0.5
-		_proc_rest_spawn_timer = -1.0
 
 
 func process(delta: float):
 	if not _map_ready or game_state.game_over or game_state.stage_complete:
 		return
-
-	if _use_data_driven:
-		_process_data_driven(delta)
-	else:
-		_process_procedural(delta)
+	if _wave_defs.is_empty():
+		# 无波次定义：仅维持最低敌人数量
+		_rest_spawn_cooldown -= delta
+		if _rest_spawn_cooldown <= 0.0:
+			_rest_spawn_cooldown = 0.3
+			_maintain_minimum_enemies()
+		return
+	_process_data_driven(delta)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -116,11 +109,16 @@ func _process_data_driven(delta: float):
 
 	if gs.wave_active:
 		# ── 波次进行中 ──
-		# 波次系统自己不断生成敌人，不需要额外维持最小值
 		if gs.wave_spawning:
 			_wave_spawn_timer -= delta
 			if _wave_spawn_timer <= 0.0:
 				_spawn_queue_next()
+
+		# 持续维持波次的最低敌人数（非波次敌人不计入 wave_alive，不影响波次结束判定）
+		_rest_spawn_cooldown -= delta
+		if _rest_spawn_cooldown <= 0.0:
+			_rest_spawn_cooldown = 0.3
+			_maintain_minimum_enemies()
 
 		# 波次结束条件：全部生成完毕 + 全部击杀
 		if not gs.wave_spawning and gs.wave_alive <= 0:
@@ -129,7 +127,7 @@ func _process_data_driven(delta: float):
 		# ── 休息阶段 ──
 		_rest_timer -= delta
 
-		# 每 0.3 秒检查一次最低敌人数量，避免每帧查 EnemyRegistry
+		# 每 0.3 秒检查一次最低敌人数量
 		_rest_spawn_cooldown -= delta
 		if _rest_spawn_cooldown <= 0.0:
 			_rest_spawn_cooldown = 0.3
@@ -164,6 +162,10 @@ func _try_trigger_next_wave():
 	gs.wave_number += 1
 	gs.wave_active = true
 	gs.wave_spawning = true
+
+	# 波次级最低敌人数（覆盖关卡默认值）
+	if wd.has("enemy_minimum"):
+		gs.enemy_minimum = wd["enemy_minimum"]
 
 	# 构建生成队列
 	_spawn_queue.clear()
@@ -258,88 +260,6 @@ func _spawn_free_mode_enemy():
 	var enemy = spawn_enemy_func.call(type_idx)
 	if is_instance_valid(enemy):
 		enemy.is_wave_enemy = true
-
-
-# ═══════════════════════════════════════════════════════════
-#  程序化生成模式（回退）
-# ═══════════════════════════════════════════════════════════
-
-func _process_procedural(delta: float):
-	var gs = game_state
-
-	if gs.wave_active:
-		if gs.wave_spawning:
-			_proc_wave_spawn_timer -= delta
-			if _proc_wave_spawn_timer <= 0.0:
-				_proc_spawn_wave_enemy()
-
-		if _proc_rest_spawn_timer > 0:
-			_proc_rest_spawn_timer -= delta
-			if _proc_rest_spawn_timer <= 0.0:
-				_proc_spawn_rest_enemy()
-
-		if not gs.wave_spawning and gs.wave_alive <= 0:
-			_proc_end_wave()
-	else:
-		gs.wave_break_timer -= delta
-		if gs.wave_break_timer <= 0.0:
-			_proc_start_wave()
-		elif _proc_rest_spawn_timer > 0:
-			_proc_rest_spawn_timer -= delta
-			if _proc_rest_spawn_timer <= 0.0:
-				_proc_spawn_rest_enemy()
-
-
-func _proc_start_wave():
-	var gs = game_state
-	gs.wave_number += 1
-	gs.wave_active = true
-	gs.wave_spawning = true
-	var base = gs.starting_spawns
-	gs.wave_total = base + int(gs.game_time / 10.0 + gs.game_time * gs.game_time / 5000.0)
-	gs.wave_spawned = 0
-	gs.wave_alive = gs.wave_total
-	_proc_wave_spawn_timer = 0.1
-	wave_started.emit(gs.wave_number)
-
-
-func _proc_spawn_wave_enemy():
-	var gs = game_state
-	var pool = EnemyDefs.get_types_for_stage(gs._stage_id, gs.game_time)
-	if pool.is_empty():
-		pool = [0]
-	var type_idx = EnemyDefs.pick_weighted(pool)
-	var enemy = spawn_enemy_func.call(type_idx)
-	if is_instance_valid(enemy):
-		enemy.is_wave_enemy = true
-	gs.wave_spawned += 1
-	_proc_wave_spawn_timer = 0.04
-	if gs.wave_spawned >= gs.wave_total:
-		gs.wave_spawning = false
-
-
-func _proc_end_wave():
-	var gs = game_state
-	gs.wave_active = false
-	gs.wave_break_timer = 0.1 + randf_range(0.0, 0.3)
-	_proc_rest_spawn_timer = 0.05
-	_spawn_elite_if_due()
-	wave_ended.emit(gs.wave_number)
-
-
-func _proc_spawn_rest_enemy():
-	var gs = game_state
-	_maintain_minimum_enemies()
-
-	var pool = EnemyDefs.get_types_for_stage(gs._stage_id, gs.game_time)
-	if pool.is_empty():
-		pool = [0]
-	var type_idx = EnemyDefs.pick_weighted(pool)
-	spawn_enemy_func.call(type_idx)
-
-	var rest_elapsed = 1.0 - gs.wave_break_timer / max(gs.wave_break_timer + _proc_rest_spawn_timer, 0.001)
-	var base_interval = 0.1 - min(gs.game_time * 0.00002, 0.05)
-	_proc_rest_spawn_timer = base_interval - rest_elapsed * 0.07
 
 
 # ═══════════════════════════════════════════════════════════
