@@ -119,7 +119,8 @@ func _on_body_exited(body: Node2D):
 	if body.is_in_group("player"):
 		_player_inside = false
 		# Start linger countdown (buff stays until timer fires)
-		if _active:
+		# Guard: during scene cleanup the timer may not be in the tree
+		if _active and _linger_timer.is_inside_tree():
 			_linger_timer.start(linger_duration)
 
 
