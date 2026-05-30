@@ -88,17 +88,18 @@ func _spawn_loot(player: Node2D):
 		gem.global_position = global_position + Vector2(randf_range(-15, 15), randf_range(-15, 15))
 		get_parent().add_child(gem)
 	
-	# Gold
+	# Gold (coin variants: COIN_BAG(2) or RICH_COIN_BAG(3))
 	if randf() < gold_chance:
 		var main = get_parent()
 		if main and main.has_method("_spawn_pickup_at"):
-			main._spawn_pickup_at(global_position, 1)  # GOLD
+			var coin_type = 3 if randf() < 0.2 else 2
+			main._spawn_pickup_at(global_position, coin_type)
 	
-	# Chance for extra gold instead of stage item
+	# Extra coin bag
 	if randf() < item_chance:
 		var main = get_parent()
 		if main and main.has_method("_spawn_pickup_at"):
-			main._spawn_pickup_at(global_position, 1)
+			main._spawn_pickup_at(global_position, 2)  # COIN_BAG
 
 
 func setup(size: Vector2, color: Color, player_ref: Node2D):

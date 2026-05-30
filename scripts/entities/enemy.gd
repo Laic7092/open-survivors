@@ -47,6 +47,10 @@ var _wavy_time: float = 0.0
 const CULL_DIST_SQ: float = 1000.0 * 1000.0  # ~1000px max processing range
 var _culled: bool = false
 
+# ── Freeze state (Orologion pickup) ──
+var _frozen: bool = false
+var _freeze_timer: float = 0.0
+
 # ── Scene references ──
 var _proj_scene = preload("res://scenes/enemy_projectile.tscn")
 
@@ -130,6 +134,15 @@ func scale_difficulty(diff: float):
 
 func _physics_process(delta):
 	if health <= 0 or not is_instance_valid(player):
+		return
+	if _frozen:
+		_freeze_timer -= delta
+		if _freeze_timer <= 0:
+			_frozen = false
+		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta * 60.0)
+		velocity = knockback_velocity
+		move_and_slide()
+		return
 		return
 	
 	# Visibility culling: skip full AI for distant enemies
@@ -264,6 +277,11 @@ func take_damage(amount: float, source_pos: Vector2 = Vector2.ZERO):
 	
 	if health <= 0:
 		die()
+
+
+func freeze(duration: float):
+	_frozen = true
+	_freeze_timer = duration
 
 
 func die():

@@ -270,6 +270,7 @@ func _process(delta):
 	wave_system.process(delta)
 	curse_system.process(delta)
 	camera_ctrl.process(delta)
+	_process_pickup_timers(delta)
 	
 	# ── Boss 检测 ──
 	if not game_state.boss_spawned and game_state.game_time >= 900.0:
@@ -290,9 +291,111 @@ func _process(delta):
 	_update_interaction_prompt(every_n)
 
 
-# ═══════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════
+#  PICKUP TIMERS (Gold Finger, Nduja, Gold Fever, Freeze)
+# ════════════════════════════════════════════════════════════════════
+
+func _process_pickup_timers(delta: float):
+	# Gold Finger countdown
+	var gf = EventBus.get_config("gold_finger_timer", 0.0)
+	if gf > 0.0:
+		gf -= delta
+		if gf <= 0.0:
+			EventBus.set_config("gold_finger_timer", 0.0)
+			_on_gold_finger_end()
+		else:
+			EventBus.set_config("gold_finger_timer", gf)
+			if is_instance_valid(player):
+				player.invincible = max(player.invincible, 0.1)
+
+	# Nduja Fritta countdown
+	var nd = EventBus.get_config("nduja_timer", 0.0)
+	if nd > 0.0:
+		nd -= delta
+		if nd <= 0.0:
+			EventBus.set_config("nduja_timer", 0.0)
+		else:
+			EventBus.set_config("nduja_timer", nd)
+			_emit_nduja_fire()
+
+	# Gold Fever countdown
+	var gft = EventBus.get_config("gold_fever_timer", 0.0)
+	if gft > 0.0:
+		gft -= delta
+		if gft <= 0.0:
+			EventBus.set_config("gold_fever_timer", 0.0)
+		else:
+			EventBus.set_config("gold_fever_timer", gft)
+
+
+func _on_gold_finger_end():
+	var kills = EventBus.get_config("gold_finger_kills", 0)
+	var tier = "bronze"
+	if kills >= 10: tier = "silver"
+	if kills >= 30: tier = "gold"
+	if kills >= 60: tier = "demon"
+	if kills >= 100: tier = "cosmic"
+
+	match tier:
+		"bronze":
+			_spawn_pickup_at(player.global_position, 2)  # COIN_BAG
+		"silver":
+			_spawn_pickup_at(player.global_position, 3)  # RICH_COIN_BAG
+			_spawn_pickup_at(player.global_position, 7)  # LITTLE_CLOVER
+		"gold":
+			_spawn_pickup_at(player.global_position, 3)  # RICH_COIN_BAG
+			_spawn_pickup_at(player.global_position, 8)  # GILDED_CLOVER
+		"demon":
+			for i in range(3):
+				_spawn_pickup_at(player.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 3)
+			_spawn_pickup_at(player.global_position, 4)  # ROSARY
+		"cosmic":
+			for i in range(5):
+				_spawn_pickup_at(player.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 3)
+			_spawn_pickup_at(player.global_position, 8)  # GILDED_CLOVER
+			_spawn_pickup_at(player.global_position, 4)  # ROSARY
+
+	var txt = "Gold Finger: " + str(kills) + " kills - " + tier.capitalize() + " prize!"
+	if is_instance_valid(player) and player.has_method("show_floating_text"):
+		player.show_floating_text(txt, Color(0.9, 0.7, 0.0), 22)
+
+
+func _emit_nduja_fire():
+	if not is_instance_valid(player) or not is_inside_tree():
+		return
+	if Engine.get_frames_drawn() % 5 != 0:
+		return
+	var dir = player.direction if player.direction.length() > 0 else Vector2.DOWN
+	var offset = dir * 24.0
+	var area = Area2D.new()
+	area.global_position = player.global_position + offset
+	var shape = CollisionShape2D.new()
+	var circle = CircleShape2D.new()
+	circle.radius = 20.0
+	shape.shape = circle
+	area.add_child(shape)
+	add_child(area)
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(e) and area.global_position.distance_to(e.global_position) < 24.0:
+			if e.has_method("take_damage"):
+				var dmg = 10.0 * (player.damage_mult if player.has_method("get_curse") else 1.0)
+				e.take_damage(dmg, player.global_position)
+	var fb = preload("res://scripts/entities/fireball_node.gd").new()
+	fb.fb_size = 8.0
+	fb.seed_offset = randi()
+	fb.global_position = area.global_position
+	add_child(fb)
+	var tw = create_tween()
+	tw.tween_interval(0.3)
+	tw.finished.connect(area.queue_free)
+	tw.finished.connect(fb.queue_free)
+
+# ════════════════════════════════════════════════════════════════════# ════════════════════════════════════════════════════════════════════
+
+
+# ════════════════════════════════════════════════════════════════════
 #  HUD
-# ═══════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════
 
 func _update_hud():
 	if player.level != _hud_last_level:
@@ -489,7 +592,23 @@ func _spawn_arcana_boss():
 func _spawn_pickup_at(pos: Vector2, pickup_type: int = -1):
 	var pickup = _pickup_scene.instantiate()
 	pickup.player = player
-	pickup.type = pickup_type if pickup_type >= 0 else randi() % 4
+	if pickup_type >= 0:
+		pickup.type = pickup_type
+	else:
+		# Weighted random: chicken, coin, coin_bag, or rare rosary/vacuum
+		var r = randf()
+		if r < 0.35:
+			pickup.type = 0   # CHICKEN
+		elif r < 0.65:
+			pickup.type = 2   # COIN_BAG
+		elif r < 0.85:
+			pickup.type = 1   # GOLD_COIN
+		elif r < 0.90:
+			pickup.type = 3   # RICH_COIN_BAG
+		elif r < 0.95:
+			pickup.type = 4   # ROSARY
+		else:
+			pickup.type = 6   # VACUUM
 	pickup.global_position = _clamp_to_map(pos, 20.0)
 	call_deferred("add_child", pickup)
 
@@ -505,9 +624,15 @@ func _spawn_initial_pickups(hw: float, hh: float):
 		var pos = Vector2(x, y)
 		if pos.length() < clear_radius:
 			continue
-		var pt = rng.randi_range(0, 1)
-		if rng.randf() < 0.02:
-			pt = 2
+		# CHICKEN (0), COIN_BAG (2), or rarely LITTLE_CLOVER (7) / ROSARY (4)
+		var pt = rng.randi_range(0, 2)
+		if pt == 1:
+			pt = 2  # map GOLD_COIN(1) to COIN_BAG(2) for map spawns
+		var roll = rng.randf()
+		if roll < 0.01:
+			pt = 7  # Little Clover
+		elif roll < 0.02:
+			pt = 4  # Rosary
 		_spawn_pickup_at(pos, pt)
 
 
@@ -604,7 +729,7 @@ func _on_enemy_died(enemy: Node2D):
 			gem.global_position = enemy.global_position + Vector2(randf_range(-30, 30), randf_range(-30, 30))
 			call_deferred("add_child", gem)
 		for i in range(2):
-			_spawn_pickup_at(enemy.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 1)
+			_spawn_pickup_at(enemy.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 2)  # COIN_BAG
 		call_deferred("_show_arcana_chest_pick")
 		return
 	
@@ -620,7 +745,7 @@ func _on_enemy_died(enemy: Node2D):
 			gem.global_position = enemy.global_position + Vector2(randf_range(-30, 30), randf_range(-30, 30))
 			call_deferred("add_child", gem)
 		for i in range(3):
-			_spawn_pickup_at(enemy.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 1 if i == 0 else -1)
+			_spawn_pickup_at(enemy.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 3 if i == 0 else -1)  # RICH_COIN_BAG
 		_spawn_pickup_at(enemy.global_position, 0)
 	else:
 		if randf() < 0.28:
@@ -638,7 +763,8 @@ func _on_enemy_died(enemy: Node2D):
 				gem.value = maxi(enemy.xp_value * 3, 10)
 			call_deferred("add_child", gem)
 		if randf() < 0.001:
-			var pt = 2 if randf() < 0.5 else 3
+			# Rare: ROSARY(4), OROLOGION(5), or VACUUM(6)
+			var pt = 4 + randi() % 3
 			_spawn_pickup_at(enemy.global_position, pt)
 
 

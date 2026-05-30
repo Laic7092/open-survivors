@@ -46,6 +46,7 @@ var unlocked_stages: int = 1
 var unlocked_hyper: int = 0
 var unlocked_chars: int = 1
 var run_gold: int = 0
+var run_rerolls: int = 0
 
 
 func _ready():
@@ -183,6 +184,10 @@ func add_run_gold(amount: int):
 	run_gold += amount
 
 
+func add_reroll(amount: int):
+	run_rerolls += amount
+
+
 func end_run(save_run: bool = true):
 	if save_run and run_gold > 0:
 		var bonuses = get_stat_bonuses()
@@ -196,6 +201,7 @@ func end_run(save_run: bool = true):
 
 func reset_run_gold():
 	run_gold = 0
+	run_rerolls = 0
 
 
 func get_stat_bonuses() -> Dictionary:
