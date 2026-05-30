@@ -2,7 +2,6 @@ extends Control
 
 const UnlockDefs = preload("res://scripts/data/unlock_defs.gd")
 const ArcanaDefs = preload("res://scripts/data/arcana_defs.gd")
-const StageDefs = preload("res://scripts/data/stage_defs.gd")
 
 # ── Scene node references ──
 @onready var _gold_lbl: Label = %GoldLabel

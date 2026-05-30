@@ -53,7 +53,7 @@ func _rebuild_cards():
 		c.queue_free()
 
 	var vp = get_viewport().get_visible_rect().size
-	var stages = StageDefs.STAGES
+	var stages = StageDefs.get_all_stages()
 	var avail_w = vp.x - 32.0  # scroll margins
 	var card_min_w = 200.0
 	var gap = 14.0

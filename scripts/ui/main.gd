@@ -170,34 +170,47 @@ func _ready():
 func _apply_stage_mods():
 	var sd = game_state.stage_data
 	
-	# Hurry 模式
 	var hurry = Engine.has_meta("hurry_mode") and Engine.get_meta("hurry_mode")
 	var hyper = Engine.has_meta("hyper_mode") and Engine.get_meta("hyper_mode")
 	var hyper_mods = sd.get("hyper_mods", {})
 	
-	game_state.stage_enemy_speed_mod = sd.get("enemy_speed_mod", 1.0)
+	var enemy_speed = sd.get("enemy_speed_mod", 1.0)
 	if hurry:
-		game_state.stage_enemy_speed_mod *= 1.5
+		enemy_speed *= 1.5
 	if hyper:
-		game_state.stage_enemy_speed_mod += hyper_mods.get("enemy_speed_bonus", 0.0)
+		enemy_speed += hyper_mods.get("enemy_speed_bonus", 0.0)
+	game_state.stage_enemy_speed_mod = enemy_speed
 	
-	var move_speed_base = sd.get("move_speed_mod", 1.0)
+	var move_speed = sd.get("move_speed_mod", 1.0)
 	if hyper:
-		move_speed_base += hyper_mods.get("move_speed_bonus", 0.0)
-	EventBus.set_config("stage_move_speed_mod", move_speed_base)
+		move_speed += hyper_mods.get("move_speed_bonus", 0.0)
+	EventBus.set_config("stage_move_speed_mod", move_speed)
 	
 	var gold_mod = sd.get("gold_mod", 1.0)
 	if hyper:
 		gold_mod *= hyper_mods.get("gold_mult", 1.0)
+	game_state.stage_gold_mod = gold_mod
 	EventBus.set_config("stage_gold_mod", gold_mod)
 	
 	var enemy_hp_mod = sd.get("enemy_hp_mod", 1.0)
 	if hyper:
 		enemy_hp_mod += hyper_mods.get("enemy_hp_bonus", 0.0)
+	game_state.stage_enemy_hp_mod = enemy_hp_mod
 	EventBus.set_config("stage_enemy_hp_mod", enemy_hp_mod)
 	
-	EventBus.set_config("stage_enemy_speed_mod", game_state.stage_enemy_speed_mod)
+	var proj_speed = sd.get("projectile_speed_mod", 1.0)
+	if hyper:
+		proj_speed += hyper_mods.get("projectile_speed_bonus", 0.0)
+	game_state.stage_projectile_speed_mod = proj_speed
+	EventBus.set_config("stage_projectile_speed_mod", proj_speed)
+	
+	game_state.stage_xp_mod = sd.get("xp_mod", 1.0)
+	game_state.stage_luck_mod = sd.get("luck_mod", 0.0)
+	
+	EventBus.set_config("stage_enemy_speed_mod", enemy_speed)
 	EventBus.set_config("stage_speed_mult", 1.5 if hurry else 1.0)
+	EventBus.set_config("stage_xp_mod", game_state.stage_xp_mod)
+	EventBus.set_config("stage_luck_mod", game_state.stage_luck_mod)
 
 
 func _deferred_setup():
@@ -212,6 +225,15 @@ func _on_map_ready():
 	var hw = game_state.map_width / 2.0
 	var hh = game_state.map_height / 2.0
 	_spawn_initial_pickups(hw, hh)
+	
+	# 初始敌人（starting_spawns）
+	var starting = game_state.starting_spawns
+	var pool = EnemyDefs.get_types_for_stage(game_state._stage_id, 0.0)
+	for i in range(starting):
+		var t = EnemyDefs.pick_weighted(pool) if not pool.is_empty() else 11
+		var e = _spawn_enemy(t)
+		if e:
+			e.is_wave_enemy = false
 
 
 # ═══════════════════════════════════════════════════════════
@@ -516,23 +538,35 @@ func _spawn_stage_items():
 	for it in items:
 		var t = it.get("type", -1)
 		var is_wpn = it.get("is_weapon", true)
-		var pos = it.get("pos", Vector2.ZERO)
 		if t < 0:
 			continue
-		var pickup = Area2D.new()
-		pickup.set_script(item_script)
-		pickup.item_type = t
-		pickup.is_weapon = is_wpn
-		pickup.player = player
-		pickup.global_position = _clamp_to_map(pos, 30.0)
-		var shape = CollisionShape2D.new()
-		var circle = CircleShape2D.new()
-		circle.radius = 20.0
-		shape.shape = circle
-		pickup.add_child(shape)
-		var nm = I18N.t(ItemDefs.item_name_key(t), ItemDefs.item_name(t))
-		pickup.setup(t, is_wpn, nm)
-		add_child(pickup)
+		var positions = it.get("positions", [])
+		for entry in positions:
+			var pos: Vector2
+			var chance := 1.0
+			if entry is Vector2:
+				pos = entry
+			elif entry is Dictionary:
+				pos = entry.get("pos", Vector2.ZERO)
+				chance = entry.get("chance", 1.0)
+			else:
+				continue
+			if chance < 1.0 and randf() > chance:
+				continue
+			var pickup = Area2D.new()
+			pickup.set_script(item_script)
+			pickup.item_type = t
+			pickup.is_weapon = is_wpn
+			pickup.player = player
+			pickup.global_position = _clamp_to_map(pos, 30.0)
+			var shape = CollisionShape2D.new()
+			var circle = CircleShape2D.new()
+			circle.radius = 20.0
+			shape.shape = circle
+			pickup.add_child(shape)
+			var nm = I18N.t(ItemDefs.item_name_key(t), ItemDefs.item_name(t))
+			pickup.setup(t, is_wpn, nm)
+			add_child(pickup)
 
 
 func _get_nearest_relic_pos() -> Vector2:

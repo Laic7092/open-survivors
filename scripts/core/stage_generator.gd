@@ -69,6 +69,12 @@ func _add_background(bg_color: Color, hw: float, hh: float):
 
 
 func _add_stage_decor(stage_id: int, hw: float, hh: float):
+	# 优先读取数据驱动的 decor_config
+	var dc = game_state.stage_data.get("decor_config", {})
+	if not dc.is_empty():
+		_apply_decor_config(dc, hw, hh)
+		return
+	# 回退到硬编码装饰函数
 	match stage_id:
 		0:  pass  # Mad Forest — props only
 		1:  _setup_library_decor(hw, hh)
@@ -86,6 +92,47 @@ func _add_stage_decor(stage_id: int, hw: float, hh: float):
 		13: _setup_space_decor(hw, hh)
 		14: _setup_bat_decor(hw, hh)
 		15: _setup_eudaimonia_decor(hw, hh)
+
+
+# ── 数据驱动装饰系统（从 decor_config 读取）──
+
+func _apply_decor_config(dc: Dictionary, hw: float, hh: float):
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	var margin = 40.0
+
+	for el in dc.get("decor_elements", []):
+		var el_type = el.get("type", "dot")
+		var count = el.get("count", 10)
+		var size_min = el.get("size_min", 2.0)
+		var size_max = el.get("size_max", 4.0)
+		var base_color: Color = el.get("color", Color.WHITE)
+		var alpha_min = el.get("alpha_min", 0.2)
+		var alpha_max = el.get("alpha_max", 0.5)
+		var z = el.get("z", -50)
+
+		for i in range(count):
+			var pos = Vector2(
+				rng.randf_range(-hw + margin, hw - margin),
+				rng.randf_range(-hh + margin, hh - margin)
+			)
+			var sz = rng.randf_range(size_min, size_max)
+			var alpha = rng.randf_range(alpha_min, alpha_max)
+			var col = Color(base_color.r, base_color.g, base_color.b, alpha)
+
+			var rect = ColorRect.new()
+			rect.position = pos
+			rect.size = Vector2(sz, sz)
+			rect.color = col
+			rect.z_index = z
+			main_node.add_child(rect)
+
+	# Props 颜色配置（覆盖硬编码 prop 生成中的颜色）
+	var props_cfg = dc.get("props", {})
+	if not props_cfg.is_empty():
+		var prop_colors = props_cfg.get("colors", [])
+		if not prop_colors.is_empty():
+			game_state.set_meta("prop_colors", prop_colors)
 
 
 # ── 各关卡装饰 ──
@@ -248,6 +295,11 @@ func _add_wall_strip(pos: Vector2, size: Vector2, color: Color):
 # ── Props（带碰撞的装饰物）──
 
 func _generate_props(stage_id: int, hw: float, hh: float):
+	# 优先从 decor_config 读取密度
+	var dc = game_state.stage_data.get("decor_config", {})
+	var props_cfg = dc.get("props", {})
+	var cfg_density = props_cfg.get("density", -1.0)
+	
 	var density_map = {
 		0: 0.0020, 1: 0.0015, 2: 0.0010, 3: 0.0018,
 		4: 0.0012, 5: 0.0015, 6: 0.0015, 7: 0.0020,
@@ -255,6 +307,8 @@ func _generate_props(stage_id: int, hw: float, hh: float):
 		12: 0.0020, 13: 0.0012, 14: 0.0018, 15: 0.0
 	}
 	var density = density_map.get(stage_id, 0.0015)
+	if cfg_density >= 0.0:
+		density = cfg_density
 	if density <= 0.0:
 		return
 	
@@ -306,6 +360,10 @@ func _make_stage_prop(stage_id: int, pos: Vector2, rng: RandomNumberGenerator):
 
 
 func _make_forest_prop(pos: Vector2, rng: RandomNumberGenerator):
+	var prop_colors = game_state.get_meta("prop_colors", []) if game_state.has_meta("prop_colors") else []
+	var green = prop_colors[0] if prop_colors.size() > 0 else Color(0.15, 0.35, 0.05)
+	var dark_green = prop_colors[1] if prop_colors.size() > 1 else Color(0.25, 0.40, 0.10)
+	var brown = prop_colors[2] if prop_colors.size() > 2 else Color(0.30, 0.20, 0.10)
 	var roll = rng.randf()
 	if roll < 0.45:
 		var shade = rng.randf_range(0.15, 0.35)
@@ -514,6 +572,12 @@ func _add_interactive_elements(data: Dictionary, hw: float, hh: float):
 	if bd > 0.0:
 		_spawn_breakable_walls(bd, data.get("breakable_hp", 25.0), hw, hh, prop_manager)
 	
+	# Light sources (braziers) — from breakable_chance
+	var breakable_chance = data.get("breakable_chance", -1.0)
+	var max_breakable = data.get("max_breakable", 10)
+	if breakable_chance > 0.0:
+		_spawn_light_sources(breakable_chance, max_breakable, hw, hh, prop_manager)
+	
 	for h in data.get("hazards", []):
 		var zone = HazardZone.new()
 		zone.setup(h.get("size", Vector2(100, 100)), h.get("dps", 15.0), h.get("color", Color(0.8, 0.1, 0.05)), h.get("hurt_enemies", true))
@@ -564,6 +628,44 @@ func _spawn_breakable_walls(density: float, hp: float, hw: float, hh: float, pro
 		bw.wall_destroyed.connect(_on_breakable_destroyed)
 		main_node.add_child(bw)
 		prop_manager.register_interactable(bw)
+		obstacle_positions.append(pos)
+		placed += 1
+
+
+func _spawn_light_sources(chance: float, max_count: int, hw: float, hh: float, prop_manager):
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	var margin = 80.0
+	var clear_radius = 180.0
+	var min_dist = 80.0
+	var placed = 0
+	var attempts = max_count * 10
+
+	for _a in range(attempts):
+		if placed >= max_count:
+			break
+		if rng.randf() > chance:
+			continue
+		var x = rng.randf_range(-hw + margin, hw - margin)
+		var y = rng.randf_range(-hh + margin, hh - margin)
+		var pos = Vector2(x, y)
+		if pos.length() < clear_radius:
+			continue
+		var too_close = false
+		for ep in obstacle_positions:
+			if pos.distance_to(ep) < min_dist:
+				too_close = true
+				break
+		if too_close:
+			continue
+
+		var sz = rng.randf_range(16, 24)
+		var brazier = BreakableWall.new()
+		brazier.setup(Vector2(sz, sz * 1.3), Color(0.6, 0.3, 0.05), 15.0, player)
+		brazier.global_position = pos
+		brazier.wall_destroyed.connect(_on_breakable_destroyed)
+		main_node.add_child(brazier)
+		prop_manager.register_interactable(brazier)
 		obstacle_positions.append(pos)
 		placed += 1
 

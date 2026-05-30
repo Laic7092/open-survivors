@@ -137,12 +137,170 @@ static func _load_types():
 			0.9, true,
 			10.0, 0.6, 0.2
 		),
+		# 8 — Zombie (Mad Forest early enemy)
+		EnemyTypeData.new(
+			8, "Zombie",
+			18.0, 30.0, 10.0, 1.1, 3,
+			Color(0.35, 0.3, 0.25), Color(0.45, 0.4, 0.3), 1.5,
+			"circle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.3, false,
+			1.0, 0.0, 0.0
+		),
+		# 9 — Skeleton (Mad Forest mid enemy)
+		EnemyTypeData.new(
+			9, "Skeleton",
+			22.0, 40.0, 12.0, 1.0, 4,
+			Color(0.5, 0.45, 0.35), Color(0.6, 0.55, 0.4), 1.5,
+			"diamond", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.2, false,
+			1.5, 0.01, 0.0
+		),
+		# 10 — Ghost (Mad Forest mid enemy)
+		EnemyTypeData.new(
+			10, "Ghost",
+			15.0, 60.0, 8.0, 0.9, 5,
+			Color(0.5, 0.5, 0.7, 0.6), Color(0.6, 0.6, 0.9), 1.5,
+			"circle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.0, false,
+			1.2, 0.0, 0.0
+		),
+		# 11 — Bat (basic swarm, fast fragile)
+		EnemyTypeData.new(
+			11, "Bat",
+			8.0, 80.0, 6.0, 0.6, 1,
+			Color(0.25, 0.15, 0.35), Color(0.35, 0.25, 0.45), 1.0,
+			"triangle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.0, false,
+			0.5, 0.0, 0.0
+		),
+		# 12 — Red-Eyed Bat (stronger bat)
+		EnemyTypeData.new(
+			12, "Red-Eyed Bat",
+			12.0, 75.0, 8.0, 0.7, 2,
+			Color(0.5, 0.1, 0.1), Color(0.6, 0.15, 0.15), 1.0,
+			"triangle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.0, false,
+			0.8, 0.0, 0.0
+		),
+		# 13 — Giant Bat (large slow bat)
+		EnemyTypeData.new(
+			13, "Giant Bat",
+			45.0, 35.0, 15.0, 1.8, 8,
+			Color(0.3, 0.15, 0.25), Color(0.4, 0.2, 0.3), 2.0,
+			"circle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.2, false,
+			2.0, 0.02, 0.0
+		),
+		# 14 — Glowing Bat (special mini-boss, drops chests)
+		EnemyTypeData.new(
+			14, "Glowing Bat",
+			60.0, 60.0, 12.0, 1.2, 15,
+			Color(0.9, 0.8, 0.2), Color(1.0, 0.9, 0.3), 2.0,
+			"triangle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.5, false,
+			3.0, 0.1, 0.3
+		),
+		# 15 — Mudman (slow tank)
+		EnemyTypeData.new(
+			15, "Mudman",
+			50.0, 25.0, 18.0, 1.5, 6,
+			Color(0.3, 0.25, 0.15), Color(0.4, 0.35, 0.2), 2.0,
+			"circle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.4, false,
+			2.0, 0.05, 0.0
+		),
+		# 16 — Green Mudman (poison variant)
+		EnemyTypeData.new(
+			16, "Green Mudman",
+			40.0, 30.0, 14.0, 1.3, 5,
+			Color(0.2, 0.4, 0.2), Color(0.3, 0.5, 0.3), 2.0,
+			"circle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.3, false,
+			1.5, 0.02, 0.0
+		),
+		# 17 — Mantichana (lion-scorpion, mid-boss)
+		EnemyTypeData.new(
+			17, "Mantichana",
+			120.0, 50.0, 20.0, 1.8, 25,
+			Color(0.8, 0.4, 0.1), Color(0.9, 0.5, 0.15), 2.5,
+			"hexagon", "chase",
+			true, 3.0, 200.0, 0.7,
+			0.6, true,
+			4.0, 0.15, 0.05
+		),
+		# 18 — Werewolf (fast aggressive)
+		EnemyTypeData.new(
+			18, "Werewolf",
+			60.0, 65.0, 18.0, 1.4, 10,
+			Color(0.4, 0.3, 0.2), Color(0.5, 0.4, 0.25), 2.0,
+			"triangle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.2, false,
+			2.5, 0.03, 0.0
+		),
+		# 19 — Big Mummy (large slow)
+		EnemyTypeData.new(
+			19, "Big Mummy",
+			100.0, 18.0, 22.0, 2.0, 12,
+			Color(0.4, 0.35, 0.2), Color(0.5, 0.45, 0.25), 2.5,
+			"circle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.7, false,
+			3.0, 0.05, 0.0
+		),
+		# 20 — Venus (plant boss)
+		EnemyTypeData.new(
+			20, "Venus",
+			150.0, 20.0, 25.0, 2.2, 30,
+			Color(0.6, 0.1, 0.3), Color(0.7, 0.15, 0.35), 2.5,
+			"circle", "stationary",
+			true, 2.5, 220.0, 1.0,
+			0.8, true,
+			5.0, 0.2, 0.1
+		),
+		# 21 — Giant Blue Venus (stage boss)
+		EnemyTypeData.new(
+			21, "Giant Blue Venus",
+			500.0, 15.0, 35.0, 3.5, 100,
+			Color(0.1, 0.3, 0.8), Color(0.2, 0.4, 0.9), 3.0,
+			"circle", "stationary",
+			true, 1.5, 280.0, 1.2,
+			0.9, true,
+			10.0, 0.4, 0.15
+		),
+		# 22 — The Reaper (death, 30min+)
+		EnemyTypeData.new(
+			22, "The Reaper",
+			999999.0, 120.0, 999.0, 3.0, 999,
+			Color(0.1, 0.1, 0.1), Color(0.5, 0.0, 0.0), 3.0,
+			"diamond", "chase",
+			false, 0.0, 0.0, 0.0,
+			1.0, true,
+			0.0, 0.0, 0.0
+		),
 	]
 
 	# Spawn weight overrides (lower = much rarer)
 	for t in _types:
 		match t.id:
-			3: t.spawn_weight = 0.03   # Cursed Eye — greatly reduced
+			3:  t.spawn_weight = 0.03   # Cursed Eye — greatly reduced
+			13: t.spawn_weight = 0.08   # Giant Bat — rarer
+			14: t.spawn_weight = 0.02   # Glowing Bat — very rare mini-boss
+			17: t.spawn_weight = 0.04   # Mantichana — rare mid-boss
+			18: t.spawn_weight = 0.15   # Werewolf — uncommon
+			19: t.spawn_weight = 0.10   # Big Mummy — uncommon
+			20: t.spawn_weight = 0.01   # Venus — very rare
+			21: t.spawn_weight = 0.005  # Giant Blue Venus — stage boss only
+			22: t.spawn_weight = 0.0    # The Reaper — never random spawn
 
 
 static func get_type(id: int) -> EnemyTypeData:
@@ -169,13 +327,27 @@ static func get_types_for_stage(stage_id: int, game_time: float) -> Array[int]:
 	var late := game_time >= 480.0
 
 	match stage_id:
-		0:  # Mad Forest — starter stage
-			if early:
-				pool = [0, 1]           # Wraith + Viper
-			elif mid:
-				pool = [0, 1, 2, 3]     # +Golem + Cursed Eye
-			elif late:
-				pool = [0, 1, 2, 3, 4]  # +Mantis
+		0:  # Mad Forest — VS timeline
+			if game_time < 60.0:
+				pool = [11, 12]                # Bats only (0:00-1:00)
+			elif game_time < 120.0:
+				pool = [8, 11, 12]             # +Zombie (1:00-2:00)
+			elif game_time < 180.0:
+				pool = [9, 11, 12]             # +Skeleton (2:00-3:00)
+			elif game_time < 240.0:
+				pool = [8, 9, 10]              # Skeletons + Ghosts
+			elif game_time < 300.0:
+				pool = [15, 16]                # Mudmen (5:00)
+			elif game_time < 480.0:
+				pool = [8, 9, 10, 15, 16]      # Mid: all basic
+			elif game_time < 720.0:
+				pool = [9, 10, 15, 16, 18]     # +Werewolf (12:00)
+			elif game_time < 1020.0:
+				pool = [10, 13, 15, 16, 18, 19]  # +Giant Bat, Big Mummy (17:00)
+			elif game_time < 1260.0:
+				pool = [13, 15, 16, 18, 19, 20]  # +Venus (21:00)
+			else:
+				pool = [8, 13, 15, 16, 18, 19, 20]  # late (25:00+)
 		1:  # Inlaid Library — ranged focus
 			if early:
 				pool = [0, 3]           # Wraith + Cursed Eye
@@ -304,7 +476,19 @@ static func pick_weighted(pool: Array[int]) -> int:
 static func get_boss_type(stage_id: int, game_time: float) -> int:
 	_ensure_loaded()
 	match stage_id:
-		0, 1:  # Mad Forest, Inlaid Library — Nightmare at 15:00
+		0:  # Mad Forest — VS boss timeline
+			if game_time >= 1800.0:
+				return 22   # The Reaper at 30:00
+			if game_time >= 1500.0:
+				return 21   # Giant Blue Venus at 25:00
+			if game_time >= 900.0:
+				return 20   # Venus at 15:00
+			if game_time >= 600.0:
+				return 17   # Mantichana at 10:00
+			if game_time >= 300.0:
+				return 14   # Glowing Bat at 5:00
+			return -1
+		1:  # Inlaid Library — Nightmare at 15:00
 			if game_time >= 900.0:
 				return 5
 		2:  # Il Molise — no boss (15 min stage)

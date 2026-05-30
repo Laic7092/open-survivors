@@ -69,8 +69,9 @@ func _start_wave():
 	gs.wave_number += 1
 	gs.wave_active = true
 	gs.wave_spawning = true
-	# 波次规模随时间快速增长：0s→15, 5min→81, 10min→195, 15min→357, 30min→843
-	gs.wave_total = 15 + int(gs.game_time / 10.0 + gs.game_time * gs.game_time / 5000.0)
+	# 波次规模：基数来自关卡 starting_spawns，随难度快速增长
+	var base = gs.starting_spawns
+	gs.wave_total = base + int(gs.game_time / 10.0 + gs.game_time * gs.game_time / 5000.0)
 	gs.wave_spawned = 0
 	gs.wave_alive = gs.wave_total
 	gs.wave_spawn_timer = 0.1
@@ -133,6 +134,17 @@ func _spawn_elite_enemy():
 
 func _spawn_rest_enemy():
 	var gs = game_state
+	# 确保场上至少有 enemy_minimum 个敌人
+	var alive_count = EnemyRegistry.get_count() if EnemyRegistry else 0
+	var needed = gs.enemy_minimum
+	if alive_count < needed:
+		for i in range(needed - alive_count):
+			var pool = EnemyDefs.get_types_for_stage(gs._stage_id, gs.game_time)
+			if pool.is_empty():
+				pool = [0]
+			var type_idx = EnemyDefs.pick_weighted(pool)
+			spawn_enemy_func.call(type_idx)
+	
 	var pool = EnemyDefs.get_types_for_stage(gs._stage_id, gs.game_time)
 	if pool.is_empty():
 		pool = [0]
