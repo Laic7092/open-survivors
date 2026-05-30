@@ -9,6 +9,7 @@ signal stage_complete_final
 signal boss_spawned_event
 signal curse_level_changed(level: int)
 signal difficulty_changed(value: float)
+signal kills_changed(total_kills: int)
 
 # ── 时间 & 进度 ──
 var game_time: float = 0.0
@@ -115,6 +116,7 @@ func update_difficulty(delta: float):
 
 func add_kill(count: int = 1):
 	total_kills += count
+	kills_changed.emit(total_kills)
 
 
 func set_game_over():

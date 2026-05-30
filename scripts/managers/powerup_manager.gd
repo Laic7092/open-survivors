@@ -1,5 +1,7 @@
 extends Node
 
+signal run_gold_changed(amount: int)
+
 # PowerUpManager — autoload singleton
 # Manages permanent meta-progression: gold + purchasable stat upgrades.
 # Persistence delegated to SaveManager autoload.
@@ -180,8 +182,14 @@ func buy_character(char_id: int, cost: int) -> bool:
 
 # ── Run gold management ──
 
+func set_run_gold(amount: int):
+	run_gold = amount
+	run_gold_changed.emit(run_gold)
+
+
 func add_run_gold(amount: int):
 	run_gold += amount
+	run_gold_changed.emit(run_gold)
 
 
 func add_reroll(amount: int):
@@ -202,6 +210,7 @@ func end_run(save_run: bool = true):
 func reset_run_gold():
 	run_gold = 0
 	run_rerolls = 0
+	run_gold_changed.emit(run_gold)
 
 
 func get_stat_bonuses() -> Dictionary:

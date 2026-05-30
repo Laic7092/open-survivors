@@ -34,8 +34,8 @@ func _on_runetracer_tick(proj: Node2D, delta: float):
 	
 	var half_w = 1600.0
 	var half_h = 1200.0
-	if Engine.has_meta("selected_stage"):
-		var sd = Engine.get_meta("selected_stage")
+	var sd = EventBus.get_config("selected_stage", null)
+	if sd != null:
 		half_w = sd.get("map_width", 3200.0) * 0.5
 		half_h = sd.get("map_height", 2400.0) * 0.5
 	var margin = 20.0

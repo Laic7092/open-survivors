@@ -25,6 +25,7 @@ var is_wave_enemy: bool = false
 
 # ── Runtime stats (scaled from base) ──
 var player: Node2D
+var game_state: Node = null
 var move_speed: float = 60.0
 var health: float = 20.0
 var max_health: float = 20.0
@@ -51,10 +52,14 @@ var _culled: bool = false
 var _frozen: bool = false
 var _freeze_timer: float = 0.0
 
-# ── Cached EventBus values (updated every N frames to avoid autoload lookups) ──
-var _cached_speed_mod: float = 1.0
-var _cached_curse_level: int = 0
-var _cache_frame: int = -1
+
+# ── Helper: read current stage mods from GameState (single source of truth) ──
+func _get_speed_mod() -> float:
+	return game_state.stage_enemy_speed_mod if game_state else 1.0
+
+
+func _get_curse_level() -> int:
+	return game_state.curse_level if game_state else 0
 
 # ── Scene references ──
 var _proj_scene = preload("res://scenes/enemy_projectile.tscn")
@@ -119,7 +124,7 @@ func _scale_difficulty(diff: float):
 	xp_value = t.base_xp + int((diff - 1.0) * 3 * t.drop_xp_mult)
 	
 	# ── Cursed Time: additional stacking penalty ──
-	var curse_level = EventBus.get_curse_level() if EventBus else 0
+	var curse_level = _get_curse_level()
 	if curse_level > 0:
 		var curse_factor = curse_level * 0.15  # 15% per curse level
 		health *= (1.0 + curse_factor)
@@ -135,16 +140,6 @@ func _scale_difficulty(diff: float):
 # Public — kept for backward compat; delegates to set_enemy_type(0, diff)
 func scale_difficulty(diff: float):
 	set_enemy_type(0, diff)
-
-
-func _refresh_cached_config():
-	var frame = Engine.get_frames_drawn()
-	if frame == _cache_frame:
-		return
-	_cache_frame = frame
-	if EventBus:
-		_cached_speed_mod = EventBus.get_config("stage_enemy_speed_mod", 1.0)
-		_cached_curse_level = EventBus.get_curse_level()
 
 
 func _physics_process(delta):
@@ -178,9 +173,6 @@ func _physics_process(delta):
 		collision_layer = CollisionLayers.ENEMY
 		collision_mask = 0
 
-	# Refresh cached EventBus values once per frame (only for non-culled enemies)
-	_refresh_cached_config()
-
 	# Hit flash — use modulate which is GPU-side
 	if hit_flash_time > 0:
 		hit_flash_time -= delta
@@ -194,7 +186,8 @@ func _physics_process(delta):
 			knockback_velocity = Vector2.ZERO
 
 	# Stationary enemies (Il Molise override)
-	if _cached_speed_mod <= 0.0:
+	var speed_mod = _get_speed_mod()
+	if speed_mod <= 0.0:
 		velocity = Vector2.ZERO + knockback_velocity
 		move_and_slide()
 		_update_ranged(delta)
@@ -203,11 +196,11 @@ func _physics_process(delta):
 	# Behavior dispatch
 	match _behavior:
 		"wavy":
-			_behavior_wavy(delta)
+			_behavior_wavy(delta, speed_mod)
 		"stationary":
 			_behavior_stationary(delta)
 		_:
-			_behavior_chase(delta)
+			_behavior_chase(delta, speed_mod)
 
 	# Apply knockback on top
 	velocity += knockback_velocity
@@ -217,18 +210,18 @@ func _physics_process(delta):
 	_update_ranged(delta)
 
 
-func _behavior_chase(_delta: float):
+func _behavior_chase(_delta: float, speed_mod: float = 1.0):
 	var dir = (player.global_position - global_position).normalized()
-	velocity = dir * move_speed * _cached_speed_mod
+	velocity = dir * move_speed * speed_mod
 
 
-func _behavior_wavy(delta: float):
+func _behavior_wavy(delta: float, speed_mod: float = 1.0):
 	var dir = (player.global_position - global_position).normalized()
 	var perp = dir.rotated(PI / 2.0)
 	_wavy_time += delta
-	var wave_amp = 60.0 * _cached_speed_mod
+	var wave_amp = 60.0 * speed_mod
 	var wave = perp * sin(_wavy_time * 4.0) * wave_amp
-	velocity = dir * move_speed * _cached_speed_mod + wave
+	velocity = dir * move_speed * speed_mod + wave
 
 
 func _behavior_stationary(_delta: float):
@@ -249,7 +242,7 @@ func _fire_projectile():
 	if not is_instance_valid(player) or not is_inside_tree():
 		return
 	# Cursed Time: extra projectiles per volley
-	var extra_shots = _cached_curse_level / 5  # +1 projectile every 5 curse levels
+	var extra_shots = _get_curse_level() / 5  # +1 projectile every 5 curse levels
 	
 	var shot_count = 1 + extra_shots
 	for s in range(shot_count):

@@ -271,7 +271,7 @@ func _update_stats():
 	if not player:
 		return
 
-	var char_data = Engine.get_meta("selected_character", {})
+	var char_data = EventBus.get_config("selected_character", {})
 	var char_name = char_data.get("name", "?")
 	var char_weapon = CharacterDefs.get_weapon_name(char_data.get("weapon", 0)) if char_data else "?"
 	var char_id = char_data.get("id", 0) if char_data else 0

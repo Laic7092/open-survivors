@@ -4,6 +4,10 @@ class_name Player
 signal leveled_up
 signal died
 signal hurt
+signal xp_changed(xp: int, xp_to_next: int)
+signal health_changed(health: float, max_health: float)
+signal weapons_changed
+signal passives_changed
 
 var move_speed: float = 200.0
 var max_health: float = 100.0
@@ -97,14 +101,13 @@ func _ready():
 
 	health = max_health
 	var start_weapon_type = UpgradeType.WHIP
-	if Engine.has_meta("selected_character"):
-		var char_data = Engine.get_meta("selected_character")
+	var char_data = EventBus.get_config("selected_character", {})
+	if not char_data.is_empty():
 		start_weapon_type = char_data.get("weapon", UpgradeType.WHIP)
 	var starter = WeaponState.new(start_weapon_type)
 	weapon_manager.add_weapon(starter)
 	update_xp_requirements()
-	if Engine.has_meta("selected_character"):
-		var char_data = Engine.get_meta("selected_character")
+	if not char_data.is_empty():
 		var bonus_type = char_data.get("bonus_type", "")
 		var bonus_val = char_data.get("bonus_value", 0.0)
 		match bonus_type:
@@ -113,6 +116,7 @@ func _ready():
 			"movespeed": move_speed += 200.0 * bonus_val
 			"area": area_mult += bonus_val
 	_apply_powerup_bonuses()
+	health_changed.emit(health, max_health)
 
 
 func _process(delta):
@@ -121,7 +125,10 @@ func _process(delta):
 	if invincible > 0:
 		invincible -= delta
 	if recovery > 0.0 and health < max_health:
+		var old = health
 		health = min(health + recovery * delta, max_health)
+		if health != old:
+			health_changed.emit(health, max_health)
 	weapon_manager.process(delta)
 	if magnet_level > 0:
 		_magnet_pull(delta)
@@ -252,8 +259,8 @@ func get_weapon_count() -> int:
 func recalculate_stats():
 	# ── Step 1: Prepare base_max_health (PowerUp + character) BEFORE passives ──
 	var hp_mult := 1.0
-	if Engine.has_meta("selected_character"):
-		var char_data = Engine.get_meta("selected_character")
+	var char_data = EventBus.get_config("selected_character", {})
+	if not char_data.is_empty():
 		var stats = char_data.get("stats", {})
 		if not stats.is_empty():
 			hp_mult = 1.0 + stats.get("max_hp_pct", 0.0)
@@ -263,31 +270,31 @@ func recalculate_stats():
 	else:
 		base_max_health = 100.0 * hp_mult
 	
+	var old_max = max_health
+	
 	# ── Step 2: Recalculate passives (uses base_max_health for max_health) ──
 	passive_inventory.recalculate(self)
 	
 	# ── Step 3: Apply character non-HP stats on top ──
-	if Engine.has_meta("selected_character"):
-		var char_data = Engine.get_meta("selected_character")
-		var stats = char_data.get("stats", {})
-		if not stats.is_empty():
-			damage_mult += stats.get("damage_mult", 0.0)
-			cooldown_reduction += stats.get("cooldown_reduction", 0.0)
-			area_mult += stats.get("area_mult", 0.0)
-			move_speed += 200.0 * stats.get("move_speed_pct", 0.0)
-			growth_mult += stats.get("growth_pct", 0.0)
-			recovery += stats.get("recovery", 0.0)
-			armor += stats.get("armor", 0)
-			greed_mult += stats.get("greed_pct", 0.0)
-			# max_health already handled via base_max_health above — no overwrite!
-		else:
-			var bonus_type = char_data.get("bonus_type", "")
-			var bonus_val = char_data.get("bonus_value", 0.0)
-			match bonus_type:
-				"might": damage_mult += bonus_val
-				"growth": growth_mult += bonus_val
-				"movespeed": move_speed += 200.0 * bonus_val
-				"area": area_mult += bonus_val
+	var char_data_stats = char_data.get("stats", {}) if not char_data.is_empty() else {}
+	if not char_data_stats.is_empty():
+		damage_mult += char_data_stats.get("damage_mult", 0.0)
+		cooldown_reduction += char_data_stats.get("cooldown_reduction", 0.0)
+		area_mult += char_data_stats.get("area_mult", 0.0)
+		move_speed += 200.0 * char_data_stats.get("move_speed_pct", 0.0)
+		growth_mult += char_data_stats.get("growth_pct", 0.0)
+		recovery += char_data_stats.get("recovery", 0.0)
+		armor += char_data_stats.get("armor", 0)
+		greed_mult += char_data_stats.get("greed_pct", 0.0)
+		# max_health already handled via base_max_health above — no overwrite!
+	else:
+		var bonus_type = char_data.get("bonus_type", "")
+		var bonus_val = char_data.get("bonus_value", 0.0)
+		match bonus_type:
+			"might": damage_mult += bonus_val
+			"growth": growth_mult += bonus_val
+			"movespeed": move_speed += 200.0 * bonus_val
+			"area": area_mult += bonus_val
 	
 	# ── Step 4: Apply PowerUp non-HP stats on top ──
 	if PowerUpManager:
@@ -304,28 +311,29 @@ func recalculate_stats():
 		var circle = _collect_shape_ref.shape as CircleShape2D
 		if circle:
 			circle.radius = pickup_range
+	
+	# ── Step 5: Emit health_changed if max_health changed ──
+	# (passive_inventory.recalculate already scales health proportionally)
+	if max_health != old_max or health > max_health:
+		health = min(health, max_health)
+		health_changed.emit(health, max_health)
 
 
 func apply_upgrade(t: int):
-	match t:
-		UpgradeType.WHIP, UpgradeType.MAGIC_WAND, UpgradeType.GARLIC, \
-		UpgradeType.KNIFE, UpgradeType.AXE, UpgradeType.FIRE_WAND, \
-		UpgradeType.CROSS, UpgradeType.KING_BIBLE, UpgradeType.SANTA_WATER, \
-		UpgradeType.RUNETRACER, UpgradeType.LIGHTNING_RING:
-	# 		UpgradeType.PENTAGRAM, UpgradeType.SONG_OF_MANA, UpgradeType.GATTI_AMARI, \
-	# 		UpgradeType.PHIERA_DER_TUPHELLO, UpgradeType.EIGHT_THE_SPARROW, UpgradeType.VICTORY_SWORD:
-			weapon_manager.add_or_upgrade(t)
-		UpgradeType.WINGS, UpgradeType.SPINACH, UpgradeType.TOME, \
-		UpgradeType.HOLLOW_HEART, UpgradeType.CANDELABRADOR, \
-		UpgradeType.CROWN, UpgradeType.PUMMAROLA, \
-		UpgradeType.DUPLICATOR, UpgradeType.STONE_MASK, \
-		UpgradeType.MAGNET, UpgradeType.CLOVER, UpgradeType.SPELLBINDER, \
-		UpgradeType.ARMOR, UpgradeType.BRACER, UpgradeType.SKULL, \
-		UpgradeType.TIRAGISU, UpgradeType.TORRONA, \
-		UpgradeType.SILVER_RING, UpgradeType.GOLD_RING, \
-		UpgradeType.METAGLIO_LEFT, UpgradeType.METAGLIO_RIGHT:
-			passive_inventory.add_or_upgrade(t)
+	var is_weapon = t in [
+		UpgradeType.WHIP, UpgradeType.MAGIC_WAND, UpgradeType.GARLIC,
+		UpgradeType.KNIFE, UpgradeType.AXE, UpgradeType.FIRE_WAND,
+		UpgradeType.CROSS, UpgradeType.KING_BIBLE, UpgradeType.SANTA_WATER,
+		UpgradeType.RUNETRACER, UpgradeType.LIGHTNING_RING]
+	if is_weapon:
+		weapon_manager.add_or_upgrade(t)
+	else:
+		passive_inventory.add_or_upgrade(t)
 	recalculate_stats()
+	if is_weapon:
+		weapons_changed.emit()
+	else:
+		passives_changed.emit()
 
 
 func get_weapon_level(t: int) -> int:
@@ -350,6 +358,7 @@ func can_evolve(weapon_type: int) -> bool:
 
 func evolve_weapon(weapon_type: int):
 	weapon_manager.evolve_weapon(weapon_type)
+	weapons_changed.emit()
 
 
 func set_speed_mult(val: float):
@@ -429,6 +438,7 @@ func heal(amount: float):
 		effective = amount * ArcanaManager.get_healing_multiplier()
 	health = min(health + effective, max_health)
 	show_floating_text(I18N.t("player.heal") % [int(effective)], Color(0.3, 1.0, 0.3), 16)
+	health_changed.emit(health, max_health)
 	if ArcanaManager and ArcanaManager.has_effect("healing_damages_enemies"):
 		_damage_nearby_enemies(effective)
 
@@ -456,6 +466,7 @@ func add_xp(value: int):
 		show_floating_text(I18N.t("player.level_up"), Color(0.9, 0.8, 0.2), 22)
 		AudioManager.play_sfx("level_up")
 		leveled_up.emit()
+	xp_changed.emit(xp, xp_to_next)
 
 
 func update_xp_requirements():
@@ -497,14 +508,18 @@ func _on_hurt(body: Node):
 		health -= max(body.get_contact_damage() * (1.0 - armor), 1.0)
 		invincible = 0.3
 		hurt.emit()
+		var dead = false
 		if health <= 0:
 			if revivals > 0:
 				_revive()
 				return
 			health = 0
+			dead = true
 			died.emit()
 		else:
 			AudioManager.play_sfx("player_hurt")
+		if not dead:
+			health_changed.emit(health, max_health)
 
 
 func _on_hurt_area(area: Area2D):
@@ -515,14 +530,18 @@ func _on_hurt_area(area: Area2D):
 		health -= max(dmg * (1.0 - armor * 0.5), 1.0)
 		invincible = 0.3
 		hurt.emit()
+		var dead = false
 		if health <= 0:
 			if revivals > 0:
 				_revive()
 				return
 			health = 0
+			dead = true
 			died.emit()
 		else:
 			AudioManager.play_sfx("player_hurt")
+		if not dead:
+			health_changed.emit(health, max_health)
 
 
 func _damage_nearby_enemies(amount: float):
@@ -556,6 +575,7 @@ func _revive():
 	invincible = 2.0
 	show_floating_text(I18N.t("player.revive"), Color(0.9, 0.8, 0.2), 24)
 	AudioManager.play_sfx("player_revive")
+	health_changed.emit(health, max_health)
 
 
 # ── PowerUp ──────────────────────────────────────────────────────────

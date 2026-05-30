@@ -44,8 +44,7 @@ func _update_toggle_states():
 	var has_randomazzo = RelicManager.has_relic("randomazzo")
 	_arcana_btn.disabled = not has_randomazzo
 	if has_randomazzo:
-		_arcana_btn.button_pressed = Engine.get_meta("arcanas_enabled", true)
-		Engine.set_meta("arcanas_enabled", _arcana_btn.button_pressed)
+		_arcana_btn.button_pressed = EventBus.get_config("arcanas_enabled", true)
 
 
 func _rebuild_cards():
@@ -213,7 +212,7 @@ func _get_unlock_text(req: String) -> String:
 
 func _on_select(stage_data: Dictionary):
 	AudioManager.play_sfx("menu_confirm")
-	Engine.set_meta("selected_stage", stage_data)
+	EventBus.set_config("selected_stage", stage_data)
 	SceneManager.change_scene("res://scenes/main.tscn")
 
 
@@ -224,24 +223,24 @@ func _on_back():
 
 func _on_hyper_toggled(toggled_on: bool, _stage_id: int):
 	AudioManager.play_sfx("menu_select")
-	Engine.set_meta("hyper_mode", toggled_on)
+	EventBus.set_config("hyper_mode", toggled_on)
 
 
 func _on_hurry_toggled(toggled_on: bool):
 	AudioManager.play_sfx("menu_select")
-	Engine.set_meta("hurry_mode", toggled_on)
+	EventBus.set_config("hurry_mode", toggled_on)
 
 
 func _on_endless_toggled(toggled_on: bool):
 	AudioManager.play_sfx("menu_select")
-	Engine.set_meta("endless_mode", toggled_on)
+	EventBus.set_config("endless_mode", toggled_on)
 
 
 func _on_music_toggled(toggled_on: bool):
 	AudioManager.play_sfx("menu_select")
-	Engine.set_meta("alt_music", toggled_on)
+	EventBus.set_config("alt_music", toggled_on)
 
 
 func _on_arcana_toggled(toggled_on: bool):
 	AudioManager.play_sfx("menu_select")
-	Engine.set_meta("arcanas_enabled", toggled_on)
+	EventBus.set_config("arcanas_enabled", toggled_on)

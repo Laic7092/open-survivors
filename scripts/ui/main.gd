@@ -41,15 +41,7 @@ var _arcana_boss_spawned_11: bool = false
 var _arcana_boss_spawned_21: bool = false
 var _frame_count: int = 0
 var _map_ready: bool = false
-var _hud_weapon_cache: Array = []
-var _hud_passive_cache: Array = []
-var _hud_last_level: int = -1
-var _hud_last_kills: int = -1
-var _hud_last_gold: int = -1
-var _hud_last_wave: int = -1
-var _hud_last_xp: int = -1
-var _hud_last_xp_to_next: int = -1
-var _last_speed_mult: float = -1.0
+
 var _cached_vp_size: Vector2 = Vector2.ZERO
 var _stage_relics: Array = []
 var _has_relic_arrow: bool = false
@@ -63,13 +55,14 @@ func _ready():
 	add_child(game_state)
 	
 	# 读取关卡数据
-	if Engine.has_meta("selected_stage"):
-		game_state.set_stage_data(Engine.get_meta("selected_stage"))
+	var stage_data = EventBus.get_config("selected_stage", null)
+	if stage_data != null:
+		game_state.set_stage_data(stage_data)
 	else:
 		game_state.set_stage_data(StageDefs.get_stage(0))
 	
 	# 无尽模式
-	if Engine.has_meta("endless_mode") and Engine.get_meta("endless_mode"):
+	if EventBus.get_config("endless_mode", false):
 		game_state.stage_time_limit = INF
 	
 	# 各种模式修正
@@ -153,6 +146,10 @@ func _ready():
 	_lazy_unlock_manager().reset_run_state()
 	ArcanaManager.deactivate_all()
 	
+	# ── HUD 信号连接 + 初始同步 ──
+	_connect_hud_signals()
+	_sync_hud_initial()
+	
 	call_deferred("start_game_music")
 	
 	if RelicManager.has_relic("randomazzo"):
@@ -162,16 +159,15 @@ func _ready():
 	call_deferred("_deferred_setup")
 	
 	# 首次奥秘选择
-	var arcanas_enabled = Engine.has_meta("arcanas_enabled") and Engine.get_meta("arcanas_enabled")
-	if arcanas_enabled and ArcanaManager.is_system_enabled() and ArcanaManager.get_unlocked_count() > 0:
+	if EventBus.get_config("arcanas_enabled", false) and ArcanaManager.is_system_enabled() and ArcanaManager.get_unlocked_count() > 0:
 		call_deferred("_show_arcana_first_pick")
 
 
 func _apply_stage_mods():
 	var sd = game_state.stage_data
 	
-	var hurry = Engine.has_meta("hurry_mode") and Engine.get_meta("hurry_mode")
-	var hyper = Engine.has_meta("hyper_mode") and Engine.get_meta("hyper_mode")
+	var hurry = EventBus.get_config("hurry_mode", false)
+	var hyper = EventBus.get_config("hyper_mode", false)
 	var hyper_mods = sd.get("hyper_mods", {})
 	
 	var enemy_speed = sd.get("enemy_speed_mod", 1.0)
@@ -181,36 +177,23 @@ func _apply_stage_mods():
 		enemy_speed += hyper_mods.get("enemy_speed_bonus", 0.0)
 	game_state.stage_enemy_speed_mod = enemy_speed
 	
-	var move_speed = sd.get("move_speed_mod", 1.0)
-	if hyper:
-		move_speed += hyper_mods.get("move_speed_bonus", 0.0)
-	EventBus.set_config("stage_move_speed_mod", move_speed)
-	
 	var gold_mod = sd.get("gold_mod", 1.0)
 	if hyper:
 		gold_mod *= hyper_mods.get("gold_mult", 1.0)
 	game_state.stage_gold_mod = gold_mod
-	EventBus.set_config("stage_gold_mod", gold_mod)
 	
 	var enemy_hp_mod = sd.get("enemy_hp_mod", 1.0)
 	if hyper:
 		enemy_hp_mod += hyper_mods.get("enemy_hp_bonus", 0.0)
 	game_state.stage_enemy_hp_mod = enemy_hp_mod
-	EventBus.set_config("stage_enemy_hp_mod", enemy_hp_mod)
 	
 	var proj_speed = sd.get("projectile_speed_mod", 1.0)
 	if hyper:
 		proj_speed += hyper_mods.get("projectile_speed_bonus", 0.0)
 	game_state.stage_projectile_speed_mod = proj_speed
-	EventBus.set_config("stage_projectile_speed_mod", proj_speed)
 	
 	game_state.stage_xp_mod = sd.get("xp_mod", 1.0)
 	game_state.stage_luck_mod = sd.get("luck_mod", 0.0)
-	
-	EventBus.set_config("stage_enemy_speed_mod", enemy_speed)
-	EventBus.set_config("stage_speed_mult", 1.5 if hurry else 1.0)
-	EventBus.set_config("stage_xp_mod", game_state.stage_xp_mod)
-	EventBus.set_config("stage_luck_mod", game_state.stage_luck_mod)
 
 
 func _deferred_setup():
@@ -249,19 +232,17 @@ func _process(delta):
 	
 	# ── 倍速控制 ──
 	var speed_mult = GameState.SPEED_VALUES[game_state.speed_level]
-	var hurry = Engine.has_meta("hurry_mode") and Engine.get_meta("hurry_mode")
+	var hurry = EventBus.get_config("hurry_mode", false)
 	if hurry and game_state.speed_level == 0:
 		speed_mult = 1.5
 	if speed_mult != Engine.time_scale:
 		Engine.time_scale = speed_mult
-		_last_speed_mult = speed_mult
-		EventBus.set_config("stage_speed_mult", speed_mult)
 	
 	game_state.game_time += delta
 	game_state.update_difficulty(delta)
 	
 	# ── 胜利条件 ──
-	var endless = Engine.has_meta("endless_mode") and Engine.get_meta("endless_mode")
+	var endless = EventBus.get_config("endless_mode", false)
 	if not endless and game_state.game_time >= game_state.stage_time_limit:
 		_on_stage_complete()
 		return
@@ -278,8 +259,8 @@ func _process(delta):
 		if boss_t >= 0:
 			_spawn_boss()
 	
-	# ── HUD 更新 ──
-	_update_hud()
+	# ── HUD 计时器 ──
+	hud.set_timer(game_state.game_time)
 	
 	# ── 奥秘系统 ──
 	_update_arcana(delta)
@@ -394,75 +375,81 @@ func _emit_nduja_fire():
 
 
 # ════════════════════════════════════════════════════════════════════
-#  HUD
+#  HUD — 信号驱动（替代逐帧轮询）
 # ════════════════════════════════════════════════════════════════════
 
-func _update_hud():
-	if player.level != _hud_last_level:
-		_hud_last_level = player.level
-		hud.set_level(player.level)
-	if game_state.total_kills != _hud_last_kills:
-		_hud_last_kills = game_state.total_kills
-		hud.set_kills(game_state.total_kills)
-	if PowerUpManager.run_gold != _hud_last_gold:
-		_hud_last_gold = PowerUpManager.run_gold
-		hud.set_gold(PowerUpManager.run_gold)
-	if game_state.wave_number != _hud_last_wave:
-		_hud_last_wave = game_state.wave_number
-		hud.set_wave(game_state.wave_number)
-	if player.xp != _hud_last_xp or player.xp_to_next != _hud_last_xp_to_next:
-		_hud_last_xp = player.xp
-		_hud_last_xp_to_next = player.xp_to_next
-		hud.set_xp(player.xp, player.xp_to_next)
+func _connect_hud_signals():
+	# 玩家属性
+	player.leveled_up.connect(_on_player_level_changed)
+	player.xp_changed.connect(_on_xp_changed)
+	player.health_changed.connect(_on_health_changed)
+	player.weapons_changed.connect(_on_weapons_changed)
+	player.passives_changed.connect(_on_passives_changed)
+	
+	# 游戏状态
+	game_state.kills_changed.connect(_on_kills_changed)
+	wave_system.wave_started.connect(_on_wave_changed)
+	
+	# 运行金币
+	PowerUpManager.run_gold_changed.connect(_on_run_gold_changed)
+
+
+func _sync_hud_initial():
+	hud.set_level(player.level)
+	hud.set_kills(game_state.total_kills)
+	hud.set_gold(PowerUpManager.run_gold)
+	hud.set_wave(game_state.wave_number)
+	hud.set_xp(player.xp, player.xp_to_next)
 	hud.set_health(player.health, player.max_health)
 	hud.set_timer(game_state.game_time)
-	
-	# 武器显示
-	var weapons = player.weapon_manager.weapons
-	var wep_changed = weapons.size() != _hud_weapon_cache.size()
-	if not wep_changed:
-		for i in range(weapons.size()):
-			var w = weapons[i]
-			var cached = _hud_weapon_cache[i]
-			if w.type != cached.get("type", -1) or w.level != cached.get("level", -1) or w.evolved != cached.get("evolved", false):
-				wep_changed = true
-				break
-	if wep_changed:
-		var wep_data: Array = []
-		_hud_weapon_cache.clear()
-		for w in weapons:
-			var entry = {
-				"name": ItemDefs.item_name(w.type),
-				"name_key": ItemDefs.item_name_key(w.type),
-				"type": w.type,
-				"level": w.level,
-				"evolved": w.evolved,
-				"color": ItemDefs.item_color(w.type),
-			}
-			wep_data.append(entry)
-			_hud_weapon_cache.append(entry)
-		hud.set_weapons(wep_data)
-	
-	# 被动显示
-	var pas_dict = player.passive_inventory.get_all()
-	var pas_changed = pas_dict.size() != _hud_passive_cache.size()
-	if not pas_changed:
-		var i = 0
-		for t in pas_dict:
-			var lv = pas_dict[t]
-			var cached = _hud_passive_cache[i]
-			if t != cached.get("type", -1) or lv != cached.get("level", -1):
-				pas_changed = true
-				break
-			i += 1
-	if pas_changed:
-		var pas_data: Array = []
-		_hud_passive_cache.clear()
-		for t in pas_dict:
-			var lv = pas_dict[t]
-			pas_data.append({"type": t, "level": lv, "color": ItemDefs.item_color(t)})
-			_hud_passive_cache.append({"type": t, "level": lv})
-		hud.set_passives(pas_data)
+	_on_weapons_changed()
+	_on_passives_changed()
+
+
+func _on_player_level_changed():
+	hud.set_level(player.level)
+
+
+func _on_xp_changed(_xp: int, _need: int):
+	hud.set_xp(player.xp, player.xp_to_next)
+
+
+func _on_health_changed(_hp: float, _max_hp: float):
+	hud.set_health(player.health, player.max_health)
+
+
+func _on_kills_changed(total: int):
+	hud.set_kills(total)
+
+
+func _on_run_gold_changed(amount: int):
+	hud.set_gold(amount)
+
+
+func _on_wave_changed(wave: int):
+	hud.set_wave(wave)
+
+
+func _on_weapons_changed():
+	var wep_data: Array = []
+	for w in player.weapon_manager.weapons:
+		wep_data.append({
+			"name": ItemDefs.item_name(w.type),
+			"name_key": ItemDefs.item_name_key(w.type),
+			"type": w.type,
+			"level": w.level,
+			"evolved": w.evolved,
+			"color": ItemDefs.item_color(w.type),
+		})
+	hud.set_weapons(wep_data)
+
+
+func _on_passives_changed():
+	var pas_data: Array = []
+	for t in player.passive_inventory.get_all():
+		var lv = player.passive_inventory.get_level(t)
+		pas_data.append({"type": t, "level": lv, "color": ItemDefs.item_color(t)})
+	hud.set_passives(pas_data)
 
 
 func _update_arcana(delta: float):
@@ -470,7 +457,7 @@ func _update_arcana(delta: float):
 		ArcanaManager.process_time_effects(delta, player, game_state.game_time)
 		hud.set_arcanas(ArcanaManager.get_active())
 	
-	var arcanas_enabled = Engine.has_meta("arcanas_enabled") and Engine.get_meta("arcanas_enabled")
+	var arcanas_enabled = EventBus.get_config("arcanas_enabled", false)
 	if arcanas_enabled and ArcanaManager.is_system_enabled():
 		if not _arcana_boss_spawned_11 and game_state.game_time >= 660.0:
 			_arcana_boss_spawned_11 = true
@@ -515,6 +502,7 @@ func _update_interaction_prompt(every_n: Callable):
 func _spawn_enemy(type_id: int = 0) -> Node2D:
 	var enemy = _enemy_scene.instantiate()
 	enemy.player = player
+	enemy.game_state = game_state
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
 	var bounds = camera_ctrl.get_camera_bounds()
 	var margin = 60.0
@@ -544,6 +532,7 @@ func _spawn_boss():
 	
 	var enemy = _enemy_scene.instantiate()
 	enemy.player = player
+	enemy.game_state = game_state
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
 	enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod)
 	
@@ -571,6 +560,7 @@ func _spawn_arcana_boss():
 	
 	var enemy = _enemy_scene.instantiate()
 	enemy.player = player
+	enemy.game_state = game_state
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
 	enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod * 1.5)
 	enemy.set_meta("arcana_boss", true)
@@ -808,7 +798,7 @@ func _on_stage_complete():
 	var total_gold = PowerUpManager.run_gold + gold_bonus
 	PowerUpManager.add_run_gold(gold_bonus)
 	PowerUpManager.end_run(true)
-	PowerUpManager.run_gold = total_gold
+	PowerUpManager.set_run_gold(total_gold)
 	get_tree().paused = true
 	level_up_screen.hide_screen()
 	pause_overlay.visible = false
@@ -830,7 +820,6 @@ func _on_evolution_selected(weapon_type: int):
 func _on_gold_selected(amount: int):
 	get_tree().paused = false
 	PowerUpManager.add_run_gold(amount)
-	hud.set_gold(PowerUpManager.run_gold)
 	level_up_screen.hide_screen()
 
 
@@ -892,7 +881,7 @@ func _show_boss_announcement(text: String):
 func start_game_music():
 	if AudioManager and AudioManager.has_method("play_bgm"):
 		AudioManager.stop_bgm()
-		var use_alt = Engine.has_meta("alt_music") and Engine.get_meta("alt_music") and RelicManager.has_relic("magic_banger")
+		var use_alt = EventBus.get_config("alt_music", false) and RelicManager.has_relic("magic_banger")
 		var bgm_key = "bgm_alt" if use_alt else "bgm_game"
 		if AudioManager.sounds.has(bgm_key):
 			AudioManager.play_bgm(AudioManager.sounds.get(bgm_key))

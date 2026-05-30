@@ -3,8 +3,9 @@ extends Node
 # 替代 Engine.set_meta/get_meta 的跨模块通信方式
 # 用法:
 #   EventBus.stage_started.connect(...)
-#   EventBus.set_config("stage_curse_level", 3)
-#   var v = EventBus.get_config("stage_curse_level", 0)
+#   EventBus.set_config("selected_stage", stage_data)
+#   EventBus.set_config("hurry_mode", true)
+#   EventBus.get_config("selected_character", {})
 
 # ═══════════════════════════════════════════════
 #  游戏事件信号
@@ -58,23 +59,13 @@ func set_mode_flags(hurry: bool, hyper: bool, endless: bool, alt_music: bool, ar
 	set_config("alt_music", alt_music)
 	set_config("arcanas_enabled", arcanas)
 
-func get_stage_move_speed_mod() -> float:
-	return get_config("stage_move_speed_mod", 1.0)
 
-func get_stage_enemy_speed_mod() -> float:
-	return get_config("stage_enemy_speed_mod", 1.0)
+# ═══════════════════════════════════════════════
+#  便捷查询：模式标志
+# ═══════════════════════════════════════════════
 
-func get_stage_gold_mod() -> float:
-	return get_config("stage_gold_mod", 1.0)
-
-func get_stage_enemy_hp_mod() -> float:
-	return get_config("stage_enemy_hp_mod", 1.0)
-
-func get_curse_level() -> int:
-	return get_config("stage_curse_level", 0)
-
-func get_speed_mult() -> float:
-	return get_config("stage_speed_mult", 1.0)
+func is_mode_enabled(mode: String) -> bool:
+	return get_config(mode + "_mode", false) or false
 
 
 # ═══════════════════════════════════════════════════════════

@@ -138,7 +138,7 @@ func _on_select(char_data: Dictionary):
 	if not PowerUpManager.has_unlocked_character(char_data["id"]):
 		return
 	AudioManager.play_sfx("menu_confirm")
-	Engine.set_meta("selected_character", char_data)
+	EventBus.set_config("selected_character", char_data)
 	SceneManager.change_scene("res://scenes/stage_select.tscn")
 
 

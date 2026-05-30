@@ -29,7 +29,6 @@ func process(delta: float):
 		game_state.cursed_time_active = true
 		game_state.curse_timer = 60.0
 		game_state.curse_level = 0
-		EventBus.set_config("stage_curse_level", 0)
 		_on_cursed_time_start()
 	
 	if game_state.cursed_time_active:
@@ -37,7 +36,6 @@ func process(delta: float):
 		while game_state.curse_timer <= 0.0:
 			game_state.curse_level += 1
 			game_state.curse_timer += 60.0 * (0.9 / max(1.0, game_state.curse_level * 0.05))
-			EventBus.set_config("stage_curse_level", game_state.curse_level)
 			_on_curse_level_up()
 			game_state.curse_level_changed.emit(game_state.curse_level)
 
