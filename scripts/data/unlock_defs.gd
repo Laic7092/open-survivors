@@ -29,40 +29,39 @@ class UnlockCondition:
 	func description() -> String:
 		match type:
 			ConditionType.STAGE_CLEARED:
-				var stage_id = params.get("stage_id", -1)
-				return "Clear stage %d" % stage_id
+				return I18N.t("unlock.cond.stage_cleared") % params.get("stage_id", -1)
 			ConditionType.PLAYER_LEVEL:
-				return "Reach level %d in a run" % params.get("min_level", 0)
+				return I18N.t("unlock.cond.player_level") % params.get("min_level", 0)
 			ConditionType.RELIC_OWNED:
-				return "Collect relic: %s" % params.get("relic_id", "?")
+				return I18N.t("unlock.cond.relic_owned") % params.get("relic_id", "?")
 			ConditionType.SURVIVE_CHAR_TIME:
 				var t = params.get("min_time", 0) / 60
 				var char_id = params.get("char_id", -1)
 				if char_id >= 0:
-					return "Survive %d min with char %d" % [t, char_id]
-				return "Survive %d min" % t
+					return I18N.t("unlock.cond.survive_time_char") % [t, char_id]
+				return I18N.t("unlock.cond.survive_time") % t
 			ConditionType.TOTAL_KILLS:
-				return "Accumulate %d total kills" % params.get("min_kills", 0)
+				return I18N.t("unlock.cond.total_kills") % params.get("min_kills", 0)
 			ConditionType.WEAPON_AT_LEVEL:
-				return "Upgrade weapon %d to level %d" % [params.get("weapon_type", 0), params.get("min_level", 0)]
+				return I18N.t("unlock.cond.weapon_at_level") % [params.get("weapon_type", 0), params.get("min_level", 0)]
 			ConditionType.ITEM_FOUND:
-				return "Find item %d" % params.get("item_type", 0)
+				return I18N.t("unlock.cond.item_found") % params.get("item_type", 0)
 			ConditionType.DESTROY_LIGHT_SOURCES:
-				return "Destroy %d light sources" % params.get("count", 0)
+				return I18N.t("unlock.cond.destroy_lights") % params.get("count", 0)
 			ConditionType.START_WITH_CHAR:
-				return "Start a run with character %d" % params.get("char_id", 0)
+				return I18N.t("unlock.cond.start_with_char") % params.get("char_id", 0)
 			ConditionType.ALL_EVOLUTIONS:
-				return "Evolve all weapons in a run"
+				return I18N.t("unlock.cond.all_evolutions")
 			ConditionType.RUN_KILLS:
-				return "Kill %d enemies in one run" % params.get("min_kills", 0)
+				return I18N.t("unlock.cond.run_kills") % params.get("min_kills", 0)
 			ConditionType.CHAR_LEVEL:
-				return "Reach character level %d" % params.get("min_level", 0)
+				return I18N.t("unlock.cond.char_level") % params.get("min_level", 0)
 			ConditionType.HAVE_WEAPONS_COUNT:
-				return "Have %d different weapons in one run" % params.get("min_count", 6)
+				return I18N.t("unlock.cond.have_weapons") % params.get("min_count", 6)
 			ConditionType.PICKUP_COLLECTED:
-				return "Collect pickup: %s" % params.get("pickup_type", "?")
+				return I18N.t("unlock.cond.pickup_collected") % params.get("pickup_type", "?")
 			_:
-				return "Unknown condition"
+				return "?"
 
 
 class UnlockDef:

@@ -103,21 +103,29 @@ func _ready():
 	collect_area.area_entered.connect(_on_collect_area)
 
 	health = max_health
-	var start_weapon_type = UpgradeType.WHIP
-	var char_data = EventBus.get_config("selected_character", {})
-	if not char_data.is_empty():
-		start_weapon_type = char_data.get("weapon", UpgradeType.WHIP)
-	var starter = WeaponState.new(start_weapon_type)
-	weapon_manager.add_weapon(starter)
+	var debug_weapons = EventBus.get_config("debug_starting_weapons", [])
+	if not debug_weapons.is_empty():
+		for w_type in debug_weapons:
+			var starter = WeaponState.new(w_type)
+			weapon_manager.add_weapon(starter)
+	else:
+		var start_weapon_type = UpgradeType.WHIP
+		var char_data = EventBus.get_config("selected_character", {})
+		if not char_data.is_empty():
+			start_weapon_type = char_data.get("weapon", UpgradeType.WHIP)
+		var starter = WeaponState.new(start_weapon_type)
+		weapon_manager.add_weapon(starter)
 	update_xp_requirements()
-	if not char_data.is_empty():
-		var bonus_type = char_data.get("bonus_type", "")
-		var bonus_val = char_data.get("bonus_value", 0.0)
-		match bonus_type:
-			"might": damage_mult += bonus_val
-			"growth": growth_mult += bonus_val
-			"movespeed": move_speed += 200.0 * bonus_val
-			"area": area_mult += bonus_val
+	if debug_weapons.is_empty():
+		var char_data = EventBus.get_config("selected_character", {})
+		if not char_data.is_empty():
+			var bonus_type = char_data.get("bonus_type", "")
+			var bonus_val = char_data.get("bonus_value", 0.0)
+			match bonus_type:
+				"might": damage_mult += bonus_val
+				"growth": growth_mult += bonus_val
+				"movespeed": move_speed += 200.0 * bonus_val
+				"area": area_mult += bonus_val
 	_apply_powerup_bonuses()
 	health_changed.emit(health, max_health)
 

@@ -9,7 +9,6 @@ const HudCell = preload("res://scripts/ui/hud_cell.gd")
 @onready var _level_label: Label = $LevelLabel
 @onready var _timer_label: Label = $TimerLabel
 @onready var _kills_label: Label = $KillsLabel
-@onready var _wave_label: Label = $WaveLabel
 @onready var _gold_label: Label = $GoldLabel
 @onready var _curse_label: Label = $CurseLabel
 @onready var _arcana_container: HBoxContainer = $ArcanaContainer
@@ -152,8 +151,8 @@ func set_gold(g: int):
 	_gold_label.text = _str_gold + str(g)
 
 
-func set_wave(n: int):
-	_wave_label.text = "Wave " + str(n)
+func set_wave(_n: int):
+	pass
 
 
 func set_curse_level(n: int):

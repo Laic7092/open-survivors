@@ -4,7 +4,7 @@ extends Node
 # and loaded on first access via load().
 # Usage: I18N.t("key") returns the string in the current language.
 
-const SETTINGS_PATH := "user://desire_survivors_settings.json"
+const SETTINGS_PATH := "user://opensurvivors_settings.json"
 
 var current_lang: String = "zh"  # default: Chinese
 var fullscreen: bool = true

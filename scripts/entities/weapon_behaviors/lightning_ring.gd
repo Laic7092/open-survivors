@@ -26,35 +26,42 @@ static func fire(w, weapon_manager, player, get_enemies):
 	flash.global_position = target.global_position
 	player.get_parent().add_child(flash)
 
-	var all_enemies = get_enemies.call()
-	for e in all_enemies:
+	# 复用 enemies 变量，不二次 get_enemies()
+	var target_pos = target.global_position
+	var strike_r_sq = strike_radius * strike_radius
+	for e in enemies:
 		if not is_instance_valid(e):
 			continue
-		var dist = e.global_position.distance_to(target.global_position)
-		if dist <= strike_radius:
+		if e.global_position.distance_squared_to(target_pos) <= strike_r_sq:
 			if e.has_method("take_damage"):
-				e.take_damage(dmg, target.global_position)
+				e.take_damage(dmg, target_pos)
 
 	var tw = player.create_tween()
 	tw.tween_property(flash, "modulate", Color(1, 1, 0.3, 0), 0.15)
 	tw.finished.connect(flash.queue_free)
 
 	if w.evolved:
-		var chained = [target]
+		var chained: Array[Node2D] = [target]
+		# Dictionary 替代 Array.has() O(n) → O(1)
+		var chained_set: Dictionary = {target.get_instance_id(): true}
 		var chain_dmg = dmg * 0.6
 		var chain_radius = strike_radius * 0.8
+		var chain_r_sq = chain_radius * chain_radius
 		for _c in range(5):
 			var last = chained[-1]
 			if not is_instance_valid(last):
 				break
 			var next_target: Node2D = null
-			var min_d = chain_radius * chain_radius
-			for e in all_enemies:
-				if not is_instance_valid(e) or e == last or chained.has(e):
+			var min_d_sq = INF
+			var last_pos = last.global_position
+			for e in enemies:
+				if not is_instance_valid(e):
 					continue
-				var d = e.global_position.distance_squared_to(last.global_position)
-				if d < min_d:
-					min_d = d
+				if chained_set.has(e.get_instance_id()):
+					continue
+				var d_sq = e.global_position.distance_squared_to(last_pos)
+				if d_sq < min_d_sq and d_sq <= chain_r_sq:
+					min_d_sq = d_sq
 					next_target = e
 			if next_target:
 				var ch_flash = ColorRect.new()
@@ -69,3 +76,4 @@ static func fire(w, weapon_manager, player, get_enemies):
 				if next_target.has_method("take_damage"):
 					next_target.take_damage(chain_dmg, next_target.global_position)
 				chained.append(next_target)
+				chained_set[next_target.get_instance_id()] = true

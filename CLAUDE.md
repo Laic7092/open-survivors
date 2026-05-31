@@ -10,7 +10,7 @@ godot  # Run the game (editor window, or F5/F6 in editor)
 
 ## Architecture
 
-Desire Survivors — a Vampire Survivors-like roguelite built with Godot 4.6 (GDScript).
+OpenSurvivors — a Vampire Survivors-like roguelite built with Godot 4.6 (GDScript).
 
 All game content is data-driven. RefCounted scripts under `scripts/data/` define items, enemies, stages, relics, arcanas, characters, and unlocks — adding content means adding data, not logic. Stage definitions are lazy-loaded from `scripts/data/stages/stage_{id}.gd`.
 

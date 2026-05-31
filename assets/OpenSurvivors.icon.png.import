@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cqhp7afthlfos"
-path="res://.godot/imported/Desire Survivors.png-2f8793f38edf890bb632b6a5d14e95de.ctex"
+uid="uid://cvqhqbui4mkvc"
+path="res://.godot/imported/OpenSurvivors.icon.png-86aa0addb4f827cbf3dedee2bfa82411.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Desire Survivors.png"
-dest_files=["res://.godot/imported/Desire Survivors.png-2f8793f38edf890bb632b6a5d14e95de.ctex"]
+source_file="res://assets/OpenSurvivors.icon.png"
+dest_files=["res://.godot/imported/OpenSurvivors.icon.png-86aa0addb4f827cbf3dedee2bfa82411.ctex"]
 
 [params]
 

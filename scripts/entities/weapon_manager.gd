@@ -9,10 +9,7 @@ var weapons: Array[WeaponState] = []
 
 # ── 武器状态（各 behavior 访问使用） ──
 var whip_vis_time: float = 0.0
-var whip_hit_window: float = 0.0
 var whip_vis_area: float = 60.0
-
-var _whip_hit_this_swing: Dictionary = {}
 var _wand_sfx_cooldown: float = 0.0
 var _knife_sfx_cooldown: float = 0.0
 
@@ -378,14 +375,8 @@ func process(delta: float):
 		_knife_sfx_cooldown -= delta
 	if whip_vis_time > 0:
 		whip_vis_time -= delta
-	if whip_hit_window > 0:
-		whip_hit_window -= delta
-		for w in weapons:
-			if w.type == ItemTypes.Type.WHIP:
-				_whip_hit_this_swing.clear()
-				var b = _behaviors.get(ItemTypes.Type.WHIP)
-				if b:
-					b._check_hits(w, self, _player, _get_enemies)
+	# whip hit detection: fire() 时已做一次扫描 + 0.075s 延迟扫描,
+	# 不再每帧扫全量敌人 — 原先 whip_hit_window 相关逻辑已移除
 	for w in weapons:
 		w.cooldown_timer -= delta
 		if w.cooldown_timer <= 0 and _can_fire(w):
@@ -609,22 +600,27 @@ func _on_tween_done(proj):
 		proj.queue_free()
 
 
-func _on_axe_arc_done(proj, end_pos: Vector2):
+func _on_axe_arc_done(proj, area: float):
 	if not is_instance_valid(proj):
 		return
+	var fall_dist = 500.0 + area * 3.0
+	var target = proj.global_position + Vector2(0, fall_dist)
 	var tw = _player.create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(proj, "global_position", end_pos, 0.5)
-	tw.tween_property(proj, "rotation", proj.rotation - TAU * 1.5, 0.5)
+	tw.tween_property(proj, "global_position", target, 0.8).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	tw.tween_property(proj, "rotation", proj.rotation - TAU * 2.0, 0.8)
 	tw.finished.connect(_on_tween_done.bind(proj))
 
 
-func _on_axe_return(proj, return_pos: Vector2):
+func _on_axe_return(proj, area: float):
 	if not is_instance_valid(proj):
 		return
+	var fall_dist = 400.0 + area * 3.0
+	var target = proj.global_position + Vector2(0, fall_dist)
 	var tw = _player.create_tween()
-	tw.tween_property(proj, "global_position", return_pos, 0.5)
-	tw.tween_property(proj, "scale", Vector2(0.3, 0.3), 0.5)
+	tw.set_parallel(true)
+	tw.tween_property(proj, "global_position", target, 0.7).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	tw.tween_property(proj, "rotation", proj.rotation - TAU * 2.0, 0.7)
 	tw.finished.connect(_on_tween_done.bind(proj))
 
 
@@ -652,19 +648,21 @@ func _on_firewand_explode(proj, explosion_radius: float, dmg: float, w: WeaponSt
 
 func _explode_at(pos: Vector2, explosion_radius: float, dmg: float, w: WeaponState):
 	_spawn_explosion_fx(pos, explosion_radius, Color(0.9, 0.4, 0.1))
+	var evolved = w and w.evolved
+	var dbl_radius = explosion_radius * 1.6 if evolved else 0.0
+	if evolved:
+		_spawn_explosion_fx(pos, dbl_radius, Color(1.0, 0.3, 0.0))
 	var enemies = _get_enemies()
 	for e in enemies:
-		if is_instance_valid(e) and pos.distance_to(e.global_position) < explosion_radius:
+		if not is_instance_valid(e):
+			continue
+		var d = pos.distance_to(e.global_position)
+		if d < explosion_radius:
 			if e.has_method("take_damage"):
 				e.take_damage(dmg, Vector2.ZERO)
-	var evolved = w and w.evolved
-	if evolved:
-		var dbl_radius = explosion_radius * 1.6
-		_spawn_explosion_fx(pos, dbl_radius, Color(1.0, 0.3, 0.0))
-		for e in enemies:
-			if is_instance_valid(e) and pos.distance_to(e.global_position) < dbl_radius:
-				if e.has_method("take_damage"):
-					e.take_damage(dmg, Vector2.ZERO)
+		if evolved and d < dbl_radius:
+			if e.has_method("take_damage"):
+				e.take_damage(dmg, Vector2.ZERO)
 
 
 func _spawn_explosion_fx(pos: Vector2, radius: float, color: Color):
@@ -703,25 +701,45 @@ func _on_water_tick(zone: Area2D, area: float, dmg: float, evolved: bool):
 	if not is_instance_valid(zone):
 		return
 	var src_pos = zone.global_position
+	var nearest: Node2D = null
+	var min_d_sq = INF
+	var area_sq = area * area
 	for e in _get_enemies():
 		if not is_instance_valid(e):
 			continue
-		if src_pos.distance_to(e.global_position) <= area:
+		var d_sq = src_pos.distance_squared_to(e.global_position)
+		if d_sq <= area_sq:
 			if e.has_method("take_damage"):
 				e.take_damage(dmg * 0.5, Vector2.ZERO)
-	if evolved:
-		var nearest: Node2D = null
-		var min_d = INF
-		for e in _get_enemies():
-			if not is_instance_valid(e):
-				continue
-			var d = src_pos.distance_squared_to(e.global_position)
-			if d < min_d:
-				min_d = d
-				nearest = e
-		if nearest:
-			var dir = (nearest.global_position - src_pos).normalized()
-			zone.global_position += dir * 30.0
+		if evolved and d_sq < min_d_sq:
+			min_d_sq = d_sq
+			nearest = e
+	if evolved and nearest:
+		var dir = (nearest.global_position - src_pos).normalized()
+		zone.global_position += dir * 30.0
+
+	# ===== Tick 视觉反馈 =====
+	if zone.has_meta("puddle"):
+		var p = zone.get_meta("puddle")
+		if is_instance_valid(p):
+			p.modulate.a = 0.7
+			var tw = _player.create_tween()
+			var target_a = 0.35 if not evolved else 0.5
+			tw.tween_property(p, "modulate:a", target_a, 0.2)
+	if zone.has_meta("rings"):
+		var rings = zone.get_meta("rings")
+		for r in rings:
+			if is_instance_valid(r):
+				r.modulate.a = 0.8
+				var tw = _player.create_tween()
+				tw.tween_property(r, "modulate:a", 0.5, 0.2)
+	if evolved and zone.has_meta("gold_rings"):
+		var grings = zone.get_meta("gold_rings")
+		for r in grings:
+			if is_instance_valid(r):
+				r.modulate.a = 0.6
+				var tw = _player.create_tween()
+				tw.tween_property(r, "modulate:a", 0.25, 0.2)
 
 
 func _on_water_cleanup(zone):

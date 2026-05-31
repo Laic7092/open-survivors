@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://8cbo71qrwb85"
-path="res://.godot/imported/Desire Survivors.apple-touch-icon.png-293a03db773b0f385f4b76e34f96e966.ctex"
+path="res://.godot/imported/OpenSurvivors.apple-touch-icon.png-94b0baf14ee215d929e672a0dfedf3c6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Desire Survivors.apple-touch-icon.png"
-dest_files=["res://.godot/imported/Desire Survivors.apple-touch-icon.png-293a03db773b0f385f4b76e34f96e966.ctex"]
+source_file="res://assets/OpenSurvivors.apple-touch-icon.png"
+dest_files=["res://.godot/imported/OpenSurvivors.apple-touch-icon.png-94b0baf14ee215d929e672a0dfedf3c6.ctex"]
 
 [params]
 

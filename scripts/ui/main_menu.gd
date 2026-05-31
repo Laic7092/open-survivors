@@ -19,6 +19,7 @@ extends Control
 @onready var _version_lbl: Label = %VersionLabel
 @onready var _quit_btn: Button = %QuitBtn
 @onready var _center: VBoxContainer = %Center
+@onready var _debug_btn: Button = %DebugBtn
 
 var _save_screen: Control
 var _unlock_notif: Control
@@ -36,6 +37,7 @@ func _ready():
 	_fs_btn.pressed.connect(_on_fs_pressed)
 	_res_btn.pressed.connect(_on_res_pressed)
 	_quit_btn.pressed.connect(_on_quit_pressed)
+	_debug_btn.pressed.connect(_on_debug_pressed)
 
 	# Set i18n text
 	_refresh_text()
@@ -71,6 +73,7 @@ func _refresh_text():
 	_res_btn.text = _resolution_text()
 	_version_lbl.text = I18N.t("menu.footer")
 	_quit_btn.text = I18N.t("menu.quit")
+	_debug_btn.text = I18N.t("menu.debug_select")
 
 
 # ═══════════════════════════════════════════════════════════
@@ -210,6 +213,11 @@ func _on_quit_pressed():
 	AudioManager.play_sfx("menu_select")
 	await get_tree().create_timer(0.15).timeout
 	get_tree().quit()
+
+
+func _on_debug_pressed():
+	AudioManager.play_sfx("menu_select")
+	SceneManager.change_scene("res://scenes/debug_weapon_select.tscn")
 
 
 func _input(event):

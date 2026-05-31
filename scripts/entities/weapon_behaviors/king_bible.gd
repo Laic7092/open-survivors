@@ -19,12 +19,8 @@ static func fire(w, weapon_manager, player, get_enemies):
 		c.radius = max(w.area * player.area_mult * 0.5, 6.0)
 		s.shape = c
 		p.add_child(s)
-		var color = Color(0.3, 0.7, 1.0, 0.85) if not w.evolved else Color(0.5, 0.9, 1.0, 0.9)
-		var vis = ColorRect.new()
-		vis.color = color
 		var orb_sz = max(w.area * player.area_mult * 0.8, 10.0)
-		vis.size = Vector2(orb_sz, orb_sz)
-		vis.position = Vector2(-orb_sz / 2, -orb_sz / 2)
+		var vis = weapon_manager._make_emoji_node("📖", orb_sz)
 		p.add_child(vis)
 		if w.evolved:
 			var glow = ColorRect.new()

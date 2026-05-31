@@ -45,7 +45,7 @@ const EMOJI := {
 	33: "🐦",  # Peachone
 	34: "🐦‍⬛", # Ebony Wings
 	35: "🔫",  # Phiera Der Tuphello
-	36: "🔫",  # Eight The Sparrow
+	36: "🐤",  # Eight The Sparrow
 	37: "🐱",  # Gatti Amari
 	38: "🎵",  # Song of Mana
 	39: "🌑",  # Shadow Pinion

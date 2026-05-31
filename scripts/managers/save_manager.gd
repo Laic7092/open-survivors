@@ -13,7 +13,7 @@ extends Node
 #   }
 # }
 
-const SAVE_PATH := "user://desire_survivors_save.json"
+const SAVE_PATH := "user://opensurvivors_save.json"
 const SLOT_COUNT := 3
 const SAVE_VERSION := "2.0"
 

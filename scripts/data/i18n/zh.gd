@@ -4,7 +4,7 @@ extends RefCounted
 static func get_data() -> Dictionary:
 	return {
 		# ── Main Menu ──
-		"menu.title": "欲望幸存者",
+		"menu.title": "OpenSurvivors",
 		"menu.subtitle": "吸血鬼幸存者同人游戏",
 		"menu.start_game": "开始游戏",
 		"menu.power_ups": "能力强化",
@@ -14,6 +14,10 @@ static func get_data() -> Dictionary:
 		"menu.language": "English",
 		"menu.fullscreen_off": "[ ] 全屏",
 		"menu.fullscreen_on": "[✓] 全屏",
+		"menu.debug_select": "🧪 调试",
+		"menu.debug_weapon_select": "选择初始武器",
+		"debug.select_weapons": "请选择初始武器（至少 1 个）",
+		"debug.selected_count": "已选择 %d 种武器",
 
 		# ── Loading ──
 		"loading": "加载中…",
@@ -240,6 +244,7 @@ static func get_data() -> Dictionary:
 		"hud.lv": "LV ",
 		"hud.kills": "击杀: ",
 		"hud.gold": "金币: ",
+		"hud.wave": "波次: ",
 		"hud.game_over": "游戏结束",
 		"hud.stage_complete": "关卡完成",
 		"hud.restart": "重新开始",
@@ -776,7 +781,25 @@ static func get_data() -> Dictionary:
 		"unlock.type_stage": "关卡",
 		"unlock.type_arcana": "密术",
 		"unlock.type_character": "角色",
+		"unlock.type_item": "道具",
 		"unlock.separator": "：",
+
+		# ── 解锁条件 ──
+		"unlock.cond.stage_cleared": "通关关卡 %d",
+		"unlock.cond.player_level": "一局内升到 %d 级",
+		"unlock.cond.relic_owned": "收集遗物：%s",
+		"unlock.cond.survive_time": "存活 %d 分钟",
+		"unlock.cond.survive_time_char": "存活 %d 分钟（角色 %d）",
+		"unlock.cond.total_kills": "累计击杀 %d 个敌人",
+		"unlock.cond.weapon_at_level": "将武器 %d 升至 %d 级",
+		"unlock.cond.item_found": "找到道具 %d",
+		"unlock.cond.destroy_lights": "摧毁 %d 个光源",
+		"unlock.cond.start_with_char": "用角色 %d 开始游戏",
+		"unlock.cond.all_evolutions": "一局中进化所有武器",
+		"unlock.cond.run_kills": "一局内击杀 %d 个敌人",
+		"unlock.cond.char_level": "角色达到 %d 级",
+		"unlock.cond.have_weapons": "一局内拥有 %d 种不同武器",
+		"unlock.cond.pickup_collected": "收集道具：%s",
 
 		# ── 道具拾取提示 ──
 		"stage_item.new": "NEW!",

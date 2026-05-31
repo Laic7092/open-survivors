@@ -3,7 +3,7 @@ extends RefCounted
 
 static func get_data() -> Dictionary:
 	return {
-		"menu.title": "Desire Survivors",
+		"menu.title": "OpenSurvivors",
 		"menu.subtitle": "A Vampire Survivors Tribute",
 		"menu.start_game": "START GAME",
 		"menu.power_ups": "POWER UPS",
@@ -13,6 +13,10 @@ static func get_data() -> Dictionary:
 		"menu.language": "中文",
 		"menu.fullscreen_off": "[ ] FS",
 		"menu.fullscreen_on": "[✓] FS",
+		"menu.debug_select": "🧪 Debug",
+		"menu.debug_weapon_select": "Select Starting Weapons",
+		"debug.select_weapons": "Select starting weapons (at least 1)",
+		"debug.selected_count": "%d weapons selected",
 
 		# ── Loading ──
 		"loading": "Loading…",
@@ -234,6 +238,7 @@ static func get_data() -> Dictionary:
 		"hud.lv": "LV ",
 		"hud.kills": "Kills: ",
 		"hud.gold": "Gold: ",
+		"hud.wave": "Wave: ",
 		"hud.game_over": "GAME OVER",
 		"hud.stage_complete": "STAGE COMPLETE",
 		"hud.restart": "RESTART",
@@ -758,7 +763,25 @@ static func get_data() -> Dictionary:
 		"unlock.type_stage": "Stage",
 		"unlock.type_arcana": "Arcana",
 		"unlock.type_character": "Character",
+		"unlock.type_item": "Item",
 		"unlock.separator": ": ",
+
+		# ── Unlock conditions ──
+		"unlock.cond.stage_cleared": "Clear stage %d",
+		"unlock.cond.player_level": "Reach level %d in a run",
+		"unlock.cond.relic_owned": "Collect relic: %s",
+		"unlock.cond.survive_time": "Survive %d min",
+		"unlock.cond.survive_time_char": "Survive %d min with character %d",
+		"unlock.cond.total_kills": "Accumulate %d total kills",
+		"unlock.cond.weapon_at_level": "Upgrade weapon %d to level %d",
+		"unlock.cond.item_found": "Find item %d",
+		"unlock.cond.destroy_lights": "Destroy %d light sources",
+		"unlock.cond.start_with_char": "Start a run with character %d",
+		"unlock.cond.all_evolutions": "Evolve all weapons in a run",
+		"unlock.cond.run_kills": "Kill %d enemies in one run",
+		"unlock.cond.char_level": "Reach character level %d",
+		"unlock.cond.have_weapons": "Have %d different weapons in one run",
+		"unlock.cond.pickup_collected": "Collect pickup: %s",
 
 		# ── Item pickup notification ──
 		"stage_item.new": "NEW!",

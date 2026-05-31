@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Desire Survivors"
+config/name="OpenSurvivors"
 run/main_scene="uid://bcolnekflouth"
 config/features=PackedStringArray("4.6")
 

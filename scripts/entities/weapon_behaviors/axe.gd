@@ -34,13 +34,12 @@ static func _fire_axe_normal(w, dmg: float, area: float, weapon_manager, player,
 		p.rotation = h_dir.angle()
 		player.get_parent().add_child(p)
 		p.body_entered.connect(weapon_manager._on_proj_hit.bind(p, dmg))
-		var mid = player.global_position + h_dir * 120 + Vector2(0, -160) + side
-		var end = player.global_position + h_dir * 320 + side
+		var apex = player.global_position + h_dir * 130 + Vector2(0, -180) + side
 		var tw = player.create_tween()
 		tw.set_parallel(true)
-		tw.tween_property(p, "global_position", mid, 0.6)
-		tw.tween_property(p, "rotation", p.rotation - TAU * 1.5, 0.6)
-		tw.finished.connect(weapon_manager._on_axe_arc_done.bind(p, end))
+		tw.tween_property(p, "global_position", apex, 0.5)
+		tw.tween_property(p, "rotation", p.rotation - TAU * 1.5, 0.5)
+		tw.finished.connect(weapon_manager._on_axe_arc_done.bind(p, area))
 
 
 static func _fire_death_spiral(w, dmg: float, area: float, weapon_manager, player, get_enemies):
@@ -64,10 +63,9 @@ static func _fire_death_spiral(w, dmg: float, area: float, weapon_manager, playe
 		p.rotation = angle
 		player.get_parent().add_child(p)
 		p.body_entered.connect(weapon_manager._on_proj_hit.bind(p, dmg))
-		var mid = player.global_position + spawn_dir * 140
-		var end = player.global_position + spawn_dir * 80
+		var mid = player.global_position + spawn_dir * 160 + Vector2(0, -120)
 		var tw = player.create_tween()
 		tw.set_parallel(true)
-		tw.tween_property(p, "global_position", mid, 0.3)
-		tw.tween_property(p, "scale", Vector2(1.5, 1.5), 0.3)
-		tw.finished.connect(weapon_manager._on_axe_return.bind(p, end))
+		tw.tween_property(p, "global_position", mid, 0.35)
+		tw.tween_property(p, "scale", Vector2(1.5, 1.5), 0.35)
+		tw.finished.connect(weapon_manager._on_axe_return.bind(p, area))

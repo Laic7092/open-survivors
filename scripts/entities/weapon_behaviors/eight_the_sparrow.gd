@@ -16,7 +16,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 			c.radius = area
 			s.shape = c
 			p.add_child(s)
-			var vis = weapon_manager._make_emoji_node("🔫", max(area * 1.2, 12.0))
+			var vis = weapon_manager._make_emoji_node("🐤", max(area * 1.2, 12.0))
 			p.add_child(vis)
 			p.global_position = player.global_position
 			p.rotation = dir.angle()

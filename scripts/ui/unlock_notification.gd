@@ -112,22 +112,63 @@ func _show_notification():
 	# 解锁条目
 	for item in _pending_data:
 		var defn = item["def"]
-		var hb = HBoxContainer.new()
-		hb.alignment = BoxContainer.ALIGNMENT_CENTER
-		hb.add_theme_constant_override("separation", 10)
-		hb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+		# ── 每个条目用纵向容器：条件 + 解锁项 ──
+		var entry_vbox = VBoxContainer.new()
+		entry_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		entry_vbox.add_theme_constant_override("separation", 2)
+		entry_vb.add_child(entry_vbox)
+
+		# 顶部留空
+		var top_pad = Control.new()
+		top_pad.custom_minimum_size = Vector2(0, 2)
+		entry_vbox.add_child(top_pad)
+
+		# 条件描述行
+		var cond_hb = HBoxContainer.new()
+		cond_hb.add_theme_constant_override("separation", 6)
+		entry_vbox.add_child(cond_hb)
+
+		var cond_icon = Label.new()
+		cond_icon.text = "⚡"
+		cond_icon.add_theme_font_size_override("font_size", 14)
+		cond_icon.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2, 0.7))
+		cond_hb.add_child(cond_icon)
+
+		var cond_label = Label.new()
+		var cond_texts = []
+		for c in defn.conditions:
+			cond_texts.append(c.description())
+		cond_label.text = "  ".join(cond_texts)
+		cond_label.add_theme_font_size_override("font_size", 13)
+		cond_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 0.75))
+		cond_hb.add_child(cond_label)
+
+		# 解锁项行
+		var item_hb = HBoxContainer.new()
+		item_hb.alignment = BoxContainer.ALIGNMENT_CENTER
+		item_hb.add_theme_constant_override("separation", 10)
+		item_hb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		entry_vbox.add_child(item_hb)
+
 		var indicator = ColorRect.new()
 		indicator.custom_minimum_size = Vector2(8, 28)
 		indicator.color = _type_color(defn.unlock_type)
-		hb.add_child(indicator)
+		item_hb.add_child(indicator)
+
+		var arrow_label = Label.new()
+		arrow_label.text = "▶"
+		arrow_label.add_theme_font_size_override("font_size", 16)
+		arrow_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6, 0.6))
+		item_hb.add_child(arrow_label)
+
 		var name_label = Label.new()
 		var name = I18N.t(defn.name_key, str(defn.target_id))
 		var type_name = _type_name(defn.unlock_type)
 		name_label.text = type_name + I18N.t("unlock.separator") + name
 		name_label.add_theme_font_size_override("font_size", 18)
 		name_label.add_theme_color_override("font_color", _type_color(defn.unlock_type))
-		hb.add_child(name_label)
-		entry_vb.add_child(hb)
+		item_hb.add_child(name_label)
 
 	# 底部间距
 	var pad2 = Control.new()

@@ -68,15 +68,6 @@ offset_bottom = 80.0
 mouse_filter = 1
 text = "Kills 0"
 
-[node name="WaveLabel" type="Label" parent="." unique_id=2076417254]
-layout_mode = 0
-offset_left = 132.0
-offset_top = 60.0
-offset_right = 250.0
-offset_bottom = 80.0
-mouse_filter = 1
-theme_override_colors/font_color = Color(0.9, 0.3, 0.3, 1)
-text = "Wave 0"
 
 [node name="GoldLabel" type="Label" parent="." unique_id=1123860109]
 layout_mode = 0
