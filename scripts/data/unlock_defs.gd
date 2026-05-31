@@ -206,6 +206,31 @@ static var _ALL_DEFS: Array = [
 		[UnlockCondition.new(ConditionType.RELIC_OWNED, {"relic_id": "yellow_sign"})],
 		"stage.15_name", "stage.15_desc", "stage"
 	),
+	UnlockDef.new(
+		"stage_16", UnlockableType.STAGE, 16,
+		[UnlockCondition.new(ConditionType.STAGE_CLEARED, {"stage_id": 5})],
+		"stage.16_name", "stage.16_desc", "stage"
+	),
+	UnlockDef.new(
+		"stage_17", UnlockableType.STAGE, 17,
+		[UnlockCondition.new(ConditionType.PLAYER_LEVEL, {"min_level": 65})],
+		"stage.17_name", "stage.17_desc", "stage"
+	),
+	UnlockDef.new(
+		"stage_18", UnlockableType.STAGE, 18,
+		[UnlockCondition.new(ConditionType.PLAYER_LEVEL, {"min_level": 70})],
+		"stage.18_name", "stage.18_desc", "stage"
+	),
+	UnlockDef.new(
+		"stage_19", UnlockableType.STAGE, 19,
+		[UnlockCondition.new(ConditionType.PLAYER_LEVEL, {"min_level": 75})],
+		"stage.19_name", "stage.19_desc", "stage"
+	),
+	UnlockDef.new(
+		"stage_20", UnlockableType.STAGE, 20,
+		[UnlockCondition.new(ConditionType.PLAYER_LEVEL, {"min_level": 80})],
+		"stage.20_name", "stage.20_desc", "stage"
+	),
 
 	# ═══════════════════════════════════════════════════════
 	#  ARCANAS

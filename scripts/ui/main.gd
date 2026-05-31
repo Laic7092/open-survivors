@@ -162,7 +162,9 @@ func _apply_stage_mods():
 	var sd = game_state.stage_data
 	var hurry = EventBus.get_config("hurry_mode", false)
 	var hyper = EventBus.get_config("hyper_mode", false)
+	var inverse = EventBus.get_config("inverse_mode", false) and RelicManager.has_relic("gracia_mirror")
 	var hyper_mods = sd.get("hyper_mods", {})
+	var inverse_mods = sd.get("inverse_mods", {})
 	
 	var enemy_speed = sd.get("enemy_speed_mod", 1.0)
 	if hurry: enemy_speed *= 1.5
@@ -171,18 +173,29 @@ func _apply_stage_mods():
 	
 	var gold_mod = sd.get("gold_mod", 1.0)
 	if hyper: gold_mod *= hyper_mods.get("gold_mult", 1.0)
+	if inverse: gold_mod *= inverse_mods.get("gold_mult", 3.0)
 	game_state.stage_gold_mod = gold_mod
 	
 	var enemy_hp_mod = sd.get("enemy_hp_mod", 1.0)
 	if hyper: enemy_hp_mod += hyper_mods.get("enemy_hp_bonus", 0.0)
+	if inverse: enemy_hp_mod = inverse_mods.get("enemy_hp", 3.0)
 	game_state.stage_enemy_hp_mod = enemy_hp_mod
 	
 	var proj_speed = sd.get("projectile_speed_mod", 1.0)
 	if hyper: proj_speed += hyper_mods.get("projectile_speed_bonus", 0.0)
+	if inverse: proj_speed = inverse_mods.get("projectile_speed", 1.25)
 	game_state.stage_projectile_speed_mod = proj_speed
 	
 	game_state.stage_xp_mod = sd.get("xp_mod", 1.0)
 	game_state.stage_luck_mod = sd.get("luck_mod", 0.0)
+	if inverse: game_state.stage_luck_mod += inverse_mods.get("luck", 0.2)
+	
+	if inverse:
+		game_state.starting_spawns = inverse_mods.get("starting_spawns", game_state.starting_spawns)
+	
+	# Handle random events
+	if EventBus.get_config("random_events", false) and RelicManager.has_relic("trisection"):
+		game_state.stage_data["random_events"] = true
 
 
 func _deferred_setup():

@@ -13,6 +13,11 @@ const UiUtils = preload("res://scripts/ui/ui_utils.gd")
 @onready var _music_btn: Button = %MusicBtn
 @onready var _arcana_btn: Button = %ArcanaBtn
 
+# Programmatic toggles for relic-gated modes
+var _inverse_btn: Button
+var _random_events_btn: Button
+var _random_upgrade_btn: Button
+
 
 func _ready():
 	_title.text = I18N.t("stage_select.title")
@@ -28,6 +33,7 @@ func _ready():
 	_music_btn.toggled.connect(_on_music_toggled)
 	_arcana_btn.toggled.connect(_on_arcana_toggled)
 
+	_add_extra_toggles()
 	_rebuild_cards()
 	_update_toggle_states()
 
@@ -35,6 +41,27 @@ func _ready():
 func _notification(what):
 	if what == NOTIFICATION_RESIZED and _card_container:
 		_rebuild_cards()
+
+
+func _add_extra_toggles():
+	var toggles := [
+		{"name": I18N.t("stage_select.inverse"),    "relic": "gracia_mirror",   "config": "inverse_mode"},
+		{"name": I18N.t("stage_select.random_events"), "relic": "trisection",    "config": "random_events"},
+		{"name": I18N.t("stage_select.random_upgrade"), "relic": "brave_story",  "config": "random_upgrade"},
+	]
+	for t in toggles:
+		var btn = Button.new()
+		btn.text = t["name"]
+		btn.toggle_mode = true
+		btn.disabled = not RelicManager.has_relic(t["relic"])
+		if not btn.disabled:
+			btn.button_pressed = EventBus.get_config(t["config"], false)
+		btn.toggled.connect(func(v): EventBus.set_config(t["config"], v))
+		_toggle_bar.add_child(btn)
+		match t["config"]:
+			"inverse_mode": _inverse_btn = btn
+			"random_events": _random_events_btn = btn
+			"random_upgrade": _random_upgrade_btn = btn
 
 
 func _update_toggle_states():
@@ -45,6 +72,13 @@ func _update_toggle_states():
 	_arcana_btn.disabled = not has_randomazzo
 	if has_randomazzo:
 		_arcana_btn.button_pressed = EventBus.get_config("arcanas_enabled", true)
+	
+	if _inverse_btn:
+		_inverse_btn.disabled = not RelicManager.has_relic("gracia_mirror")
+	if _random_events_btn:
+		_random_events_btn.disabled = not RelicManager.has_relic("trisection")
+	if _random_upgrade_btn:
+		_random_upgrade_btn.disabled = not RelicManager.has_relic("brave_story")
 
 
 func _rebuild_cards():
@@ -207,6 +241,9 @@ func _get_unlock_text(req: String) -> String:
 		"reach_level_55": return I18N.t("stage_select.reach_55")
 		"reach_level_60": return I18N.t("stage_select.reach_60")
 		"reach_level_65": return I18N.t("stage_select.reach_65")
+		"reach_level_70": return I18N.t("stage_select.reach_70")
+		"reach_level_75": return I18N.t("stage_select.reach_75")
+		"reach_level_80": return I18N.t("stage_select.reach_80")
 		"relic_yellow_sign": return I18N.t("stage_select.relic_yellow")
 		_: return ""
 

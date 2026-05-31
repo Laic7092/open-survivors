@@ -221,7 +221,7 @@ func save_current_slot():
 		slot["unlocked_chars"] = PowerUpManager.unlocked_chars
 	
 	if RelicManager:
-		slot["relics"] = RelicManager.get_all_ids()
+		slot["relics"] = RelicManager.get_collected()
 	
 	if ArcanaManager:
 		slot["unlocked_arcanas"] = ArcanaManager.get_unlocked()
