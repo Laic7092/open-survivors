@@ -129,12 +129,14 @@ func apply_effect():
 			for g in get_tree().get_nodes_in_group("gems"):
 				if is_instance_valid(g):
 					g.attracted = true
+			EventBus.pickup_collected.emit(type)
 
 		PickupType.LITTLE_CLOVER:
 			_show_text(I18N.t("pickup.little_clover"), Color(0.2, 0.9, 0.3), 18)
 			AudioManager.play_sfx("pickup_clover")
 			if is_instance_valid(player) and player.has_method("add_luck"):
 				player.add_luck(0.10)
+			EventBus.pickup_collected.emit(type)
 
 		PickupType.GILDED_CLOVER:
 			_show_text(I18N.t("pickup.gilded_clover"), Color(0.9, 0.8, 0.1), 20)
@@ -145,7 +147,10 @@ func apply_effect():
 		PickupType.GOLD_FINGER:
 			_show_text(I18N.t("pickup.gold_finger"), Color(0.9, 0.7, 0.0), 22)
 			AudioManager.play_sfx("pickup_gold_finger")
-			EventBus.set_config("gold_finger_timer", 14.0)
+			var gf_bonus = 0.0
+			if is_instance_valid(player) and player.has_method("get_gold_fever_duration_bonus"):
+				gf_bonus = player.get_gold_fever_duration_bonus()
+			EventBus.set_config("gold_finger_timer", 14.0 * (1.0 + gf_bonus))
 			EventBus.set_config("gold_finger_kills", 0)
 
 		PickupType.NDUJA_FRITTA:
@@ -170,7 +175,10 @@ func _collect_all_gold():
 
 
 func _trigger_gold_fever():
-	EventBus.set_config("gold_fever_timer", 10.0)
+	var gf_bonus = 0.0
+	if is_instance_valid(player) and player.has_method("get_gold_fever_duration_bonus"):
+		gf_bonus = player.get_gold_fever_duration_bonus()
+	EventBus.set_config("gold_fever_timer", 10.0 * (1.0 + gf_bonus))
 
 
 func _draw():

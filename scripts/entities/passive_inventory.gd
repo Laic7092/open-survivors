@@ -46,6 +46,9 @@ func recalculate(player):
 	player.armor = 0.0
 	player.pickup_range = 60.0
 	player.max_health = player.base_max_health
+	player.invincible_duration = 0.3
+	player.charm = 0
+	player.gold_fever_duration_bonus = 0.0
 
 	for t in _passives:
 		var lv = _passives[t]
@@ -57,25 +60,25 @@ func recalculate(player):
 			ItemTypes.Type.TOME:
 				player.cooldown_reduction = 0.08 * lv
 			ItemTypes.Type.HOLLOW_HEART:
-				player.max_health = player.base_max_health * (1.0 + 0.2 * lv)
+				player.max_health = player.base_max_health * (1.0 + 0.4 * lv)
 			ItemTypes.Type.CANDELABRADOR:
 				player.area_mult += 0.1 * lv
 			ItemTypes.Type.CROWN:
 				player.growth_mult = 1.0 + 0.08 * lv
 			ItemTypes.Type.PUMMAROLA:
-				player.recovery += 0.5 * lv
+				player.recovery += 0.2 * lv
 			ItemTypes.Type.DUPLICATOR:
 				player.projectile_bonus = lv
 			ItemTypes.Type.STONE_MASK:
-				player.greed_mult = 0.20 * lv
+				player.greed_mult = 0.10 * lv
 			ItemTypes.Type.MAGNET:
 				player.magnet_level = lv
 				player.pickup_range = 60.0 + 20.0 * lv
 			ItemTypes.Type.CLOVER:
-				player.luck = 0.08 * lv
-				player._crit_chance = player.luck * 0.5  # Lv5 = 20% crit
+				player.luck = 0.10 * lv
+				player._crit_chance = player.luck * 0.5  # Lv5 = 25% crit
 			ItemTypes.Type.SPELLBINDER:
-				player.duration_bonus += 0.3 * lv
+				player.duration_bonus += 0.10 * lv
 			ItemTypes.Type.ARMOR:
 				player.armor = 0.08 * lv  # 8% damage reduction per level
 			ItemTypes.Type.BRACER:
@@ -99,6 +102,11 @@ func recalculate(player):
 				player.max_health += player.base_max_health * 0.05 * lv
 			ItemTypes.Type.METAGLIO_RIGHT:
 				player.curse += 0.05 * lv
+			ItemTypes.Type.PARM_AEGIS:
+				player.invincible_duration = 0.3 + 0.05 * lv
+			ItemTypes.Type.KAROMAS_MANA:
+				player.charm = lv * 10
+				player.gold_fever_duration_bonus = 0.10 * lv
 
 	# Scale health proportionally with max HP changes
 	if player.max_health != old_max and old_max > 0:

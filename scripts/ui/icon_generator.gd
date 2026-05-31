@@ -71,6 +71,8 @@ const EMOJI := {
 	59: "💎",  # Magi-Stone
 	60: "🔫",  # Phas3r
 	61: "🎁",  # Arma Dio
+	62: "🛡️", # Parm Aegis
+	63: "🌀",  # Karoma's Mana
 }
 
 # Item type → color (mirrors level_up_screen.gd _color())
@@ -138,6 +140,8 @@ static func get_color(t: int) -> Color:
 		59: return Color(0.6, 0.4, 0.8)   # Magi-Stone
 		60: return Color(0.2, 0.9, 0.6)   # Phas3r
 		61: return Color(0.8, 0.2, 0.2)   # Arma Dio
+		62: return Color(0.7, 0.5, 0.9)   # Parm Aegis
+		63: return Color(0.3, 0.9, 0.7)   # Karoma's Mana
 	return Color.WHITE
 
 

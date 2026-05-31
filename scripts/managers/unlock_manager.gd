@@ -23,6 +23,8 @@ var _run_data: Dictionary = {
 	"found_items": [],
 	"destroyed_light_sources": 0,
 	"start_char_id": -1,
+	"weapons_acquired": [],
+	"collected_pickups": [],
 }
 
 var _persistent_stats: Dictionary = {
@@ -46,6 +48,8 @@ func _ready():
 	EventBus.weapon_upgraded.connect(_on_weapon_upgraded)
 	EventBus.item_evolved.connect(_on_item_evolved)
 	EventBus.light_source_destroyed.connect(_on_light_source_destroyed)
+	EventBus.pickup_collected.connect(_on_pickup_collected)
+	EventBus.stage_item_collected.connect(_on_stage_item_collected)
 
 
 # ── EventBus signal handlers ──
@@ -91,7 +95,10 @@ func _on_weapon_upgraded(weapon_type: int, new_level: int):
 	var prev = _persistent_stats["weapon_levels_reached"].get(weapon_type, 0)
 	if new_level > prev:
 		_persistent_stats["weapon_levels_reached"][weapon_type] = new_level
+	if new_level == 1 and not _run_data["weapons_acquired"].has(weapon_type):
+		_run_data["weapons_acquired"].append(weapon_type)
 	_run_check(UnlockTypes.ConditionType.WEAPON_AT_LEVEL)
+	_run_check(UnlockTypes.ConditionType.HAVE_WEAPONS_COUNT)
 
 
 func _on_item_evolved(weapon_type: int):
@@ -104,6 +111,19 @@ func _on_light_source_destroyed():
 	_run_data["destroyed_light_sources"] += 1
 	_persistent_stats["total_light_destroyed"] += 1
 	_run_check(UnlockTypes.ConditionType.DESTROY_LIGHT_SOURCES)
+
+
+func _on_pickup_collected(pickup_type: int):
+	if not _run_data["collected_pickups"].has(pickup_type):
+		_run_data["collected_pickups"].append(pickup_type)
+	_run_check(UnlockTypes.ConditionType.PICKUP_COLLECTED)
+
+
+func _on_stage_item_collected(item_type: int):
+	if not _persistent_stats["found_items_permanent"].has(item_type):
+		_persistent_stats["found_items_permanent"].append(item_type)
+	_run_check(UnlockTypes.ConditionType.ITEM_FOUND)
+	_save_data()
 
 
 # ── Direct-API methods (called from main.gd or managers) ──
@@ -140,6 +160,8 @@ func reset_run_state():
 		"found_items": [],
 		"destroyed_light_sources": 0,
 		"start_char_id": -1,
+		"weapons_acquired": [],
+		"collected_pickups": [],
 	}
 
 
@@ -218,6 +240,16 @@ func _condition_met(cond) -> bool:
 			return _run_data["start_char_id"] == cond.params.get("char_id", -1)
 		UnlockTypes.ConditionType.ALL_EVOLUTIONS:
 			return _run_data["evolved_weapons"].size() >= 6
+		UnlockTypes.ConditionType.HAVE_WEAPONS_COUNT:
+			return _run_data["weapons_acquired"].size() >= cond.params.get("min_count", 6)
+		UnlockTypes.ConditionType.PICKUP_COLLECTED:
+			var pickup_type_str = cond.params.get("pickup_type", "")
+			# Map string name to enum value
+			var pickup_types_map = {"vacuum": 6, "little_clover": 7}
+			var expected = pickup_types_map.get(pickup_type_str, -1)
+			if expected < 0:
+				return false
+			return _run_data["collected_pickups"].has(expected)
 	return false
 
 
@@ -261,7 +293,11 @@ func is_character_unlocked(char_id: int) -> bool:
 
 
 func is_weapon_unlocked(weapon_type: int) -> bool:
-	var key = DataRegistry.unlocks().get_unlock_id_for_item(weapon_type)
+	return is_item_unlocked(weapon_type)
+
+
+func is_item_unlocked(item_type: int) -> bool:
+	var key = DataRegistry.unlocks().get_unlock_id_for_item(item_type)
 	if key == "":
 		return true
 	if _completed.has(key):

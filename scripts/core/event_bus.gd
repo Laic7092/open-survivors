@@ -26,6 +26,8 @@ signal config_changed(key: String, value)
 signal weapon_upgraded(weapon_type: int, level: int)
 signal item_evolved(weapon_type: int)
 signal light_source_destroyed()
+signal pickup_collected(pickup_type: int)
+signal stage_item_collected(item_type: int)
 
 # ═══════════════════════════════════════════════
 #  运行时配置存储（替代 Engine.set_meta/get_meta）

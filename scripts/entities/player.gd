@@ -28,6 +28,9 @@ var duration_bonus: float = 0.0
 var speed_mult: float = 1.0
 var curse: float = 0.0
 var revivals: int = 0
+var invincible_duration: float = 0.3
+var charm: int = 0
+var gold_fever_duration_bonus: float = 0.0
 
 var _arcana_speed_override: float = 1.0
 var _arcana_area_override: float = 1.0
@@ -419,6 +422,14 @@ func get_curse() -> float:
 	return curse
 
 
+func get_gold_fever_duration_bonus() -> float:
+	return gold_fever_duration_bonus
+
+
+func get_charm() -> int:
+	return charm
+
+
 func get_greed_mult() -> float:
 	var base = 1.0
 	if PowerUpManager:
@@ -502,7 +513,7 @@ func _on_hurt(body: Node):
 		return
 	if body.has_method("get_contact_damage"):
 		health -= max(body.get_contact_damage() * (1.0 - armor), 1.0)
-		invincible = 0.3
+		invincible = invincible_duration
 		hurt.emit()
 		var dead = false
 		if health <= 0:
@@ -524,7 +535,7 @@ func _on_hurt_area(area: Area2D):
 	if area.has_method("get_projectile_damage"):
 		var dmg = area.get_projectile_damage()
 		health -= max(dmg * (1.0 - armor * 0.5), 1.0)
-		invincible = 0.3
+		invincible = invincible_duration
 		hurt.emit()
 		var dead = false
 		if health <= 0:

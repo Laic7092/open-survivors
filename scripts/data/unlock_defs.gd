@@ -57,6 +57,10 @@ class UnlockCondition:
 				return "Kill %d enemies in one run" % params.get("min_kills", 0)
 			ConditionType.CHAR_LEVEL:
 				return "Reach character level %d" % params.get("min_level", 0)
+			ConditionType.HAVE_WEAPONS_COUNT:
+				return "Have %d different weapons in one run" % params.get("min_count", 6)
+			ConditionType.PICKUP_COLLECTED:
+				return "Collect pickup: %s" % params.get("pickup_type", "?")
 			_:
 				return "Unknown condition"
 
@@ -584,5 +588,148 @@ static var _ALL_DEFS: Array = [
 		"item_50", UnlockableType.ITEM, 50,
 		[UnlockCondition.new(ConditionType.ALL_EVOLUTIONS, {})],
 		"item.candybox_name", "item.candybox_desc"
+	),
+
+	# ═══════════════════════════════════════════════════════
+	#  PASSIVE ITEMS
+	# ═══════════════════════════════════════════════════════
+
+	# Wings (3) — reach level 5
+	UnlockDef.new(
+		"item_3", UnlockableType.ITEM, 3,
+		[UnlockCondition.new(ConditionType.PLAYER_LEVEL, {"min_level": 5})],
+		"item.wings_name", "item.wings_desc"
+	),
+	# Spinach (4) — default unlocked
+	UnlockDef.new(
+		"item_4", UnlockableType.ITEM, 4,
+		[],
+		"item.spinach_name", "item.spinach_desc"
+	),
+	# Empty Tome — have 6 weapons in a run
+	UnlockDef.new(
+		"item_5", UnlockableType.ITEM, 5,
+		[UnlockCondition.new(ConditionType.HAVE_WEAPONS_COUNT, {"min_count": 6})],
+		"item.tome_name", "item.tome_desc"
+	),
+	# Hollow Heart — survive 1 min
+	UnlockDef.new(
+		"item_6", UnlockableType.ITEM, 6,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 60})],
+		"item.hollow_name", "item.hollow_desc"
+	),
+	# Candelabrador — Santa Water to level 4
+	UnlockDef.new(
+		"item_7", UnlockableType.ITEM, 7,
+		[UnlockCondition.new(ConditionType.WEAPON_AT_LEVEL, {"weapon_type": 18, "min_level": 4})],
+		"item.candel_name", "item.candel_desc"
+	),
+	# Crown — reach level 10
+	UnlockDef.new(
+		"item_8", UnlockableType.ITEM, 8,
+		[UnlockCondition.new(ConditionType.PLAYER_LEVEL, {"min_level": 10})],
+		"item.crown_name", "item.crown_desc"
+	),
+	# Pummarola — survive 5 min with Gennaro (char 3)
+	UnlockDef.new(
+		"item_9", UnlockableType.ITEM, 9,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 300, "char_id": 3})],
+		"item.pummarola_name", "item.pummarola_desc"
+	),
+	# Duplicator — Magic Wand to level 7
+	UnlockDef.new(
+		"item_13", UnlockableType.ITEM, 13,
+		[UnlockCondition.new(ConditionType.WEAPON_AT_LEVEL, {"weapon_type": 1, "min_level": 7})],
+		"item.duplicator_name", "item.duplicator_desc"
+	),
+	# Stone Mask — find and pick up
+	UnlockDef.new(
+		"item_14", UnlockableType.ITEM, 14,
+		[UnlockCondition.new(ConditionType.ITEM_FOUND, {"item_type": 14})],
+		"item.stonemask_name", "item.stonemask_desc"
+	),
+	# Attractorb — pick up a Vacuum
+	UnlockDef.new(
+		"item_15", UnlockableType.ITEM, 15,
+		[UnlockCondition.new(ConditionType.PICKUP_COLLECTED, {"pickup_type": "vacuum"})],
+		"item.attractorb_name", "item.attractorb_desc"
+	),
+	# Clover — pick up a Little Clover
+	UnlockDef.new(
+		"item_21", UnlockableType.ITEM, 21,
+		[UnlockCondition.new(ConditionType.PICKUP_COLLECTED, {"pickup_type": "little_clover"})],
+		"item.clover_name", "item.clover_desc"
+	),
+	# Spellbinder — Runetracer to level 7
+	UnlockDef.new(
+		"item_22", UnlockableType.ITEM, 22,
+		[UnlockCondition.new(ConditionType.WEAPON_AT_LEVEL, {"weapon_type": 19, "min_level": 7})],
+		"item.spellbinder_name", "item.spellbinder_desc"
+	),
+	# Armor — default unlocked
+	UnlockDef.new(
+		"item_23", UnlockableType.ITEM, 23,
+		[],
+		"item.armor_name", "item.armor_desc"
+	),
+	# Bracer — King Bible to level 4
+	UnlockDef.new(
+		"item_24", UnlockableType.ITEM, 24,
+		[UnlockCondition.new(ConditionType.WEAPON_AT_LEVEL, {"weapon_type": 17, "min_level": 4})],
+		"item.bracer_name", "item.bracer_desc"
+	),
+	# Skull O'Maniac — survive 30 min with Lama (char 6)
+	UnlockDef.new(
+		"item_25", UnlockableType.ITEM, 25,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800, "char_id": 6})],
+		"item.skull_name", "item.skull_desc"
+	),
+	# Tiragisú — survive 20 min with Krochi (char 10)
+	UnlockDef.new(
+		"item_26", UnlockableType.ITEM, 26,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1200, "char_id": 10})],
+		"item.tiragisu_name", "item.tiragisu_desc"
+	),
+	# Torrona's Box — 6 different evolutions in a run
+	UnlockDef.new(
+		"item_27", UnlockableType.ITEM, 27,
+		[UnlockCondition.new(ConditionType.ALL_EVOLUTIONS, {})],
+		"item.torrona_name", "item.torrona_desc"
+	),
+	# Silver Ring — Yellow Sign relic
+	UnlockDef.new(
+		"item_28", UnlockableType.ITEM, 28,
+		[UnlockCondition.new(ConditionType.RELIC_OWNED, {"relic_id": "yellow_sign"})],
+		"item.silver_ring_name", "item.silver_ring_desc"
+	),
+	# Gold Ring — Yellow Sign relic
+	UnlockDef.new(
+		"item_29", UnlockableType.ITEM, 29,
+		[UnlockCondition.new(ConditionType.RELIC_OWNED, {"relic_id": "yellow_sign"})],
+		"item.gold_ring_name", "item.gold_ring_desc"
+	),
+	# Metaglio Left — Yellow Sign relic
+	UnlockDef.new(
+		"item_30", UnlockableType.ITEM, 30,
+		[UnlockCondition.new(ConditionType.RELIC_OWNED, {"relic_id": "yellow_sign"})],
+		"item.metaglio_left_name", "item.metaglio_left_desc"
+	),
+	# Metaglio Right — Yellow Sign relic
+	UnlockDef.new(
+		"item_31", UnlockableType.ITEM, 31,
+		[UnlockCondition.new(ConditionType.RELIC_OWNED, {"relic_id": "yellow_sign"})],
+		"item.metaglio_right_name", "item.metaglio_right_desc"
+	),
+	# Parm Aegis — found in The Coop
+	UnlockDef.new(
+		"item_62", UnlockableType.ITEM, 62,
+		[UnlockCondition.new(ConditionType.ITEM_FOUND, {"item_type": 62})],
+		"item.parm_aegis_name", "item.parm_aegis_desc"
+	),
+	# Karoma's Mana — found in Westwoods
+	UnlockDef.new(
+		"item_63", UnlockableType.ITEM, 63,
+		[UnlockCondition.new(ConditionType.ITEM_FOUND, {"item_type": 63})],
+		"item.karomas_mana_name", "item.karomas_mana_desc"
 	),
 ]

@@ -82,6 +82,7 @@ func _collect():
 
 	if is_instance_valid(player) and player.has_method("apply_upgrade"):
 		player.apply_upgrade(item_type)
+		EventBus.stage_item_collected.emit(item_type)
 	else:
 		push_warning("StageItemPickup: player missing apply_upgrade method — item not collected")
 

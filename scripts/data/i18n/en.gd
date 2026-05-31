@@ -348,6 +348,8 @@ static func get_data() -> Dictionary:
 		"item.magi_stone_name": "Magi-Stone",
 		"item.phas3r_name": "Phas3r",
 		"item.arma_dio_name": "Arma Dio",
+		"item.parm_aegis_name": "Parm Aegis",
+		"item.karomas_mana_name": "Karoma's Mana",
 
 		"item.whip_desc": "Strike enemies in a wide arc",
 		"item.wand_desc": "Fire homing bolts at enemies",
@@ -413,6 +415,8 @@ static func get_data() -> Dictionary:
 		"item.magi_stone_desc": "Deals damage based on weapon level",
 		"item.phas3r_desc": "Creates thin damaging zones, high amount scaling",
 		"item.arma_dio_desc": "Select an additional passive item",
+		"item.parm_aegis_desc": "Increase invulnerability time after taking damage",
+		"item.karomas_mana_desc": "Increase enemy count and Gold Fever/Gold Finger duration",
 
 		"evo.whip_name": "Bloody Tear",
 		"evo.whip_desc": "Whip evolves into Bloody Tear\nHeals 20% of damage dealt",

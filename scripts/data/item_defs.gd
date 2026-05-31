@@ -183,22 +183,22 @@ const DATA := {
 	28: {
 		"name": "Silver Ring", "name_key": "item.silver_ring_name",
 		"desc": "+Duration, +Area", "desc_key": "item.silver_ring_desc",
-		"color": Color(0.6, 0.7, 0.9), "is_weapon": false, "max_level": 5,
+		"color": Color(0.6, 0.7, 0.9), "is_weapon": false, "max_level": 9,
 	},
 	29: {
 		"name": "Gold Ring", "name_key": "item.gold_ring_name",
 		"desc": "Curse enemies", "desc_key": "item.gold_ring_desc",
-		"color": Color(0.9, 0.8, 0.2), "is_weapon": false, "max_level": 5,
+		"color": Color(0.9, 0.8, 0.2), "is_weapon": false, "max_level": 9,
 	},
 	30: {
 		"name": "Metaglio Left", "name_key": "item.metaglio_left_name",
 		"desc": "+Recovery, +Max HP", "desc_key": "item.metaglio_left_desc",
-		"color": Color(0.5, 0.3, 0.8), "is_weapon": false, "max_level": 5,
+		"color": Color(0.5, 0.3, 0.8), "is_weapon": false, "max_level": 9,
 	},
 	31: {
 		"name": "Metaglio Right", "name_key": "item.metaglio_right_name",
 		"desc": "Curse enemies", "desc_key": "item.metaglio_right_desc",
-		"color": Color(0.8, 0.3, 0.5), "is_weapon": false, "max_level": 5,
+		"color": Color(0.8, 0.3, 0.5), "is_weapon": false, "max_level": 9,
 	},
 	# ── New Weapons ──
 	32: {
@@ -350,6 +350,17 @@ const DATA := {
 		"name": "Arma Dio", "name_key": "item.arma_dio_name",
 		"desc": "Select an additional passive item", "desc_key": "item.arma_dio_desc",
 		"color": Color(0.8, 0.2, 0.2), "evo_key": "arma_dio", "is_weapon": true, "max_level": 2,
+	},
+	# ── DLC Passives ──
+	62: {
+		"name": "Parm Aegis", "name_key": "item.parm_aegis_name",
+		"desc": "Increase invulnerability time after taking damage", "desc_key": "item.parm_aegis_desc",
+		"color": Color(0.7, 0.5, 0.9), "is_weapon": false, "max_level": 5,
+	},
+	63: {
+		"name": "Karoma's Mana", "name_key": "item.karomas_mana_name",
+		"desc": "Increase enemy count and Gold Fever/Gold Finger duration", "desc_key": "item.karomas_mana_desc",
+		"color": Color(0.3, 0.9, 0.7), "is_weapon": false, "max_level": 5,
 	},
 }
 

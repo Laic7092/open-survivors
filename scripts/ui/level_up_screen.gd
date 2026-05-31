@@ -78,11 +78,9 @@ func _generate_and_show():
 	var possible = DataRegistry.items().DATA.keys()
 	possible.shuffle()
 
-	# Filter out locked weapons
+	# Filter out locked items (both weapons and passives)
 	possible = possible.filter(func(t: int):
-		if not DataRegistry.items().is_weapon(t):
-			return true
-		return UnlockManager.is_weapon_unlocked(t)
+		return UnlockManager.is_item_unlocked(t)
 	)
 
 	# Gather evolution candidates from owned weapons

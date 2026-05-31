@@ -359,6 +359,8 @@ static func get_data() -> Dictionary:
 		"item.magi_stone_name": "魔石",
 		"item.phas3r_name": "相位者",
 		"item.arma_dio_name": "神圣武器盒",
+		"item.parm_aegis_name": "帕尔姆之盾",
+		"item.karomas_mana_name": "卡罗玛之力",
 
 		# ── Item Descriptions ──
 		"item.whip_desc": "前方大范围挥击",
@@ -425,6 +427,8 @@ static func get_data() -> Dictionary:
 		"item.magi_stone_desc": "基于武器等级造成固定伤害",
 		"item.phas3r_desc": "生成细长伤害区域,高数量成长",
 		"item.arma_dio_desc": "允许选择额外被动物品",
+		"item.parm_aegis_desc": "增加受到伤害后的无敌时间",
+		"item.karomas_mana_desc": "增加敌人数量和金 fever/金手指持续时间",
 
 		# ── Evolution Names & Descs ──
 		"evo.whip_name": "血泪",
