@@ -1,11 +1,13 @@
 extends RefCounted
-# Stage 19 — Tiny Bridge
+# Stage 19 — Tiny Bridge (challenge)
+# Wiki: https://vampire.survivors.wiki/w/Tiny_Bridge
+# wiki_id: TOWERBRIDGE, Type: Challenge
 
 static func get_data() -> Dictionary:
 	return {
 		"id": 19,
 		"name": "Tiny Bridge",
-		"desc": "A narrow crossing over a bottomless chasm.\n+30% Gold. Tight quarters.",
+		"desc": "A narrow crossing over a bottomless chasm.\nTwo opposing factions abruptly stopped fighting here.",
 		"time_limit": 1200.0,
 		"bg_color": Color(0.06, 0.14, 0.06),
 		"map_width": 2400,

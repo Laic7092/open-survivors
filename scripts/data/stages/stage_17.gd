@@ -5,8 +5,10 @@ static func get_data() -> Dictionary:
 	return {
 		"id": 17,
 		"name": "Astral Stair",
-		"desc": "An endless staircase through the cosmos.\n+25% Move Speed. Mystical pathways.",
-		"time_limit": 1800.0,
+		"wiki_id": "ASTRALSTAIR",
+		"type": "Challenge",
+		"desc": "An endless staircase through the cosmos.\n+25% Move Speed. Enemies empowered.",
+		"time_limit": 1200.0,
 		"bg_color": Color(0.02, 0.06, 0.18),
 		"map_width": 6400,
 		"map_height": 4800,

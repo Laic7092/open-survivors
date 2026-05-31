@@ -1,12 +1,14 @@
 extends RefCounted
-# Stage 20 — Westwoods
+# Stage 20 — Westwoods (challenge)
+# Wiki: https://vampire.survivors.wiki/w/Westwoods
+# wiki_id: EX_WESTWOODS, Type: Challenge
 
 static func get_data() -> Dictionary:
 	return {
 		"id": 20,
 		"name": "Westwoods",
-		"desc": "Ancient forest where secrets roam.\n+20% Luck. Random events.",
-		"time_limit": 1800.0,
+		"desc": "Greed's gone green. Arcane avarice is transforming these once serene woods into a ghoulish gambling den.\n+20% Luck. Random events.",
+		"time_limit": 1200.0,
 		"bg_color": Color(0.1, 0.16, 0.04),
 		"map_width": 4800,
 		"map_height": 3600,

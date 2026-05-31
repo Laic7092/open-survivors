@@ -9,7 +9,9 @@ extends RefCounted
 static func get_data() -> Dictionary:
 	return {
 		"id": 1,
+		"wiki_id": "LIBRARY",
 		"name": "Inlaid Library",
+		"type": "Normal",
 		"desc": "Halls of forbidden knowledge.\n+25% Move Speed. Narrow corridor.",
 
 		"time_limit": 1800.0,

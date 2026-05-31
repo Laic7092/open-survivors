@@ -1,11 +1,13 @@
 extends RefCounted
 # Stage 15 — Eudaimonia Machine (special)
+# Wiki: https://vampire.survivors.wiki/w/Eudaimonia_Machine
+# wiki_id: MACHINE, Type: Special
 
 static func get_data() -> Dictionary:
 	return {
 		"id": 15,
 		"name": "Eudaimonia Machine",
-		"desc": "A space between spaces.\n99 min limit. The culmination.",
+		"desc": "A space between spaces. The culmination of something, or simply another beginning?\nTag, you're it.",
 		"time_limit": 5940.0,
 		"bg_color": Color(0.14, 0.08, 0.02),
 		"map_width": 3000,

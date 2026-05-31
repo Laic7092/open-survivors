@@ -1,11 +1,13 @@
 extends RefCounted
 # Stage 12 — The Coop (bonus)
+# Wiki: https://vampire.survivors.wiki/w/The_Coop
+# wiki_id: COOP, Type: Bonus
 
 static func get_data() -> Dictionary:
 	return {
 		"id": 12,
 		"name": "The Coop",
-		"desc": "Farm where beasts learned cooperation.\n-65% XP. Stage grows over time.",
+		"desc": "A farm for fear itself, the beasts reared here have turned from tasty morsels to terrifying monsters after realising the deadly power of cooperation.",
 		"time_limit": 1200.0,
 		"bg_color": Color(0.08, 0.12, 0.04),
 		"map_width": 4000,
@@ -27,6 +29,7 @@ static func get_data() -> Dictionary:
 			"enemy_speed_bonus": 0.0, "enemy_hp_bonus": 1.0,
 		},
 		"stage_items": [
-			{"type": 12, "is_weapon": false, "pos": Vector2(0, 0)},
+			# Fire Wand — available after 5:00
+			{"type": 12, "is_weapon": true, "pos": Vector2(0, 0)},
 		],
 	}

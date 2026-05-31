@@ -1,10 +1,14 @@
 extends RefCounted
 # Stage 11 — The Lycaeum (bonus)
+# Vampire Survivors reference: https://vampire.survivors.wiki/w/The_Lycaeum
+# Beta content (Tides of the Foscari DLC)
 
 static func get_data() -> Dictionary:
 	return {
 		"id": 11,
+		"wiki_id": "EX_LYCAEUM",
 		"name": "The Lycaeum",
+		"type": "Bonus",
 		"desc": "School submerged beneath a sunlit lake.\n+20% Gold. Strange fish.",
 		"time_limit": 1200.0,
 		"bg_color": Color(0.04, 0.1, 0.16),

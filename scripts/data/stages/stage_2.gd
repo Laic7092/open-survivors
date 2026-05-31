@@ -5,6 +5,8 @@ static func get_data() -> Dictionary:
 	return {
 		"id": 2,
 		"name": "Il Molise",
+		"wiki_id": "MOLISE",
+		"type": "Bonus",
 		"desc": "Peaceful meadow hiding a secret.\n15 min limit. Enemies stay still.",
 		"time_limit": 900.0,
 		"bg_color": Color(0.06, 0.16, 0.04),

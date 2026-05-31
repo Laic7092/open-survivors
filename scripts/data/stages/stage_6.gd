@@ -5,6 +5,8 @@ static func get_data() -> Dictionary:
 	return {
 		"id": 6,
 		"name": "Moongolow",
+		"wiki_id": "SINKING",
+		"type": "Bonus",
 		"desc": "City swallowed by the sea.\n15 min limit. All passives available.",
 		"time_limit": 900.0,
 		"bg_color": Color(0.02, 0.04, 0.15),
@@ -47,4 +49,49 @@ static func get_data() -> Dictionary:
 				{"pos": Vector2(1500, -800), "size": Vector2(120, 120), "dps": 12.0},
 			],
 		},
+
+		# ── 波次定义（分钟级 — 15分钟限定） ──
+		"wave_defs": [
+			# 0:00 — Mixed start
+			{"time": 0,  "enemies": [{"id": "wraith", "count": 15}, {"id": "bat_s", "count": 15}], "enemy_minimum": 30, "interval": 0.8},
+			# 1:00 — +Zombie
+			{"time": 1,  "enemies": [{"id": "wraith", "count": 15}, {"id": "zombie", "count": 15}], "enemy_minimum": 30, "interval": 0.7},
+			# 2:00 — +Viper
+			{"time": 2,  "enemies": [{"id": "wraith", "count": 10}, {"id": "viper", "count": 20}, {"id": "zombie", "count": 15}], "enemy_minimum": 45, "interval": 0.6},
+			# 3:00 — +Skeleton + Mantichana
+			{"time": 3,  "enemies": [{"id": "viper", "count": 20}, {"id": "skeleton", "count": 15}], "enemy_minimum": 35, "interval": 0.6, "boss": "mantichana", "chest": true},
+			# 4:00 — +Golem
+			{"time": 4,  "enemies": [{"id": "viper", "count": 20}, {"id": "golem", "count": 10}, {"id": "skeleton", "count": 15}], "enemy_minimum": 45, "interval": 0.5},
+			# 5:00 — +Mantis + Glowing Bat
+			{"time": 5,  "enemies": [{"id": "golem", "count": 10}, {"id": "mantis", "count": 20}, {"id": "viper", "count": 15}], "enemy_minimum": 45, "interval": 0.5, "boss": "bat_g", "chest": true},
+			# 6:00 — Werewolf introduction
+			{"time": 6,  "enemies": [{"id": "golem", "count": 15}, {"id": "mantis", "count": 20}, {"id": "werewolf", "count": 5}], "enemy_minimum": 40, "interval": 0.3},
+			# 7:00 — Pre-Nightmare build-up + Arcana
+			{"time": 7,  "enemies": [{"id": "werewolf", "count": 15}, {"id": "golem", "count": 15}, {"id": "mantis", "count": 20}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true, "arcana": true},
+			# 8:00 — Nightmare boss (~7:30)
+			{"time": 8,  "enemies": [{"id": "werewolf", "count": 10}], "enemy_minimum": 10, "interval": 0.5, "boss": "nightmare", "chest": true},
+			# 9:00 — Post-boss wave
+			{"time": 9,  "enemies": [{"id": "werewolf", "count": 20}, {"id": "golem", "count": 15}], "enemy_minimum": 35, "interval": 0.2},
+			# 10:00 — Elite push + Glowing Bat
+			{"time": 10, "enemies": [{"id": "werewolf", "count": 25}, {"id": "mantis", "count": 20}, {"id": "golem", "count": 15}], "enemy_minimum": 60, "interval": 0.2, "boss": "bat_g", "chest": true},
+			# 11:00 — Big Mummy appears
+			{"time": 11, "enemies": [{"id": "werewolf", "count": 20}, {"id": "mummy_big", "count": 15}], "enemy_minimum": 35, "interval": 0.1},
+			# 12:00 — Second Nightmare
+			{"time": 12, "enemies": [{"id": "werewolf", "count": 30}, {"id": "mummy_big", "count": 15}], "enemy_minimum": 45, "interval": 0.1, "boss": "nightmare", "chest": true},
+			# 13:00 — Final build-up
+			{"time": 13, "enemies": [{"id": "werewolf", "count": 30}, {"id": "mummy_big", "count": 20}, {"id": "golem", "count": 20}], "enemy_minimum": 70, "interval": 0.1},
+			# 14:00 — Last wave
+			{"time": 14, "enemies": [{"id": "werewolf", "count": 40}, {"id": "mummy_big", "count": 20}], "enemy_minimum": 60, "interval": 0.05, "boss": "bat_g", "chest": true},
+			# 15:00 — The Reaper
+			{"time": 15, "enemies": [], "enemy_minimum": 1, "interval": 60.0, "boss": "reaper"},
+		],
+
+		# ── 地图事件 ──
+		"map_events": [
+			{"time": 2,  "type": "bat_swarm", "delay": 0.0, "chance": 1.0},
+			{"time": 5,  "type": "bat_swarm", "delay": 5.0, "chance": 0.7},
+			{"time": 7,  "type": "bat_swarm", "delay": 0.0, "chance": 1.0},
+			{"time": 10, "type": "bat_swarm", "delay": 0.0, "chance": 1.0},
+			{"time": 14, "type": "bat_swarm", "delay": 0.0, "chance": 1.0},
+		],
 	}

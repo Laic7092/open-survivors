@@ -17,11 +17,16 @@ var spawn_enemy_func: Callable  # func(type_id: int) -> Node2D
 
 # ── 敌人名称 → 类型 ID 映射 ──
 const ENEMY_NAME_MAP := {
+	# Mad Forest
 	"bat_r": 12, "bat_s": 11, "bat_g": 14, "bat_silver": 14, "bat_giant": 13,
 	"zombie": 8, "zombie_b": 8, "skeleton": 9, "skeleton_b": 9, "skeleton_r": 9,
 	"ghost": 10, "mudman": 15, "mudman_g": 16, "werewolf": 18, "werewolf_giant": 18,
 	"mantichana": 17, "mantichana_giant": 17, "mummy_big": 19, "mummy_giant": 19,
 	"flower_wall": 0, "venus": 20, "venus_blue_giant": 21, "reaper": 22,
+
+	# Dairy Plant / Gallo Tower / Cappella Magna / Moongolow
+	"wraith": 0, "viper": 1, "golem": 2, "mantis": 4, "nightmare": 5,
+	"giant_crab": 6, "trinacria": 7,
 
 	# Inlaid Library
 	"dust_elemental": 23, "musc_musc": 24, "big_musc_musc": 24,

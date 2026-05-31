@@ -1,11 +1,14 @@
 extends RefCounted
 # Stage 7 — Green Acres (challenge)
+# Vampire Survivors reference: https://vampire-survivors.fandom.com/wiki/Green_Acres
 
 static func get_data() -> Dictionary:
 	return {
 		"id": 7,
 		"name": "Green Acres",
-		"desc": "Realm of changing fate.\nRandom enemy waves. +50% Enemy HP.",
+		"wiki_id": "GREENACRES",
+		"type": "Challenge",
+		"desc": "A land of changing fate.\nRandom enemy waves. +50% Enemy HP.",
 		"time_limit": 1800.0,
 		"bg_color": Color(0.06, 0.18, 0.06),
 		"map_width": 6000,

@@ -4,8 +4,10 @@ extends RefCounted
 static func get_data() -> Dictionary:
 	return {
 		"id": 10,
+		"wiki_id": "WHITEOUT",
 		"name": "Whiteout",
-		"desc": "Arctic glacier.\n20 min limit. Fire weapons deal extra damage.",
+		"type": "Bonus",
+		"desc": "A treacherous blizzard has reduced the arctic tundra to a whiteout.\n20 min limit. Fire weapons deal extra damage.",
 		"time_limit": 1200.0,
 		"bg_color": Color(0.1, 0.12, 0.18),
 		"map_width": 5400,

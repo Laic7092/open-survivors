@@ -1,11 +1,13 @@
 extends RefCounted
 # Stage 13 — Space 54 (bonus)
+# Wiki: https://vampire.survivors.wiki/w/Space_54
+# wiki_id: SPAZIE, Type: Bonus
 
 static func get_data() -> Dictionary:
 	return {
 		"id": 13,
 		"name": "Space 54",
-		"desc": "Cosmic plane where space folds.\n+30% Gold. Dimensional chaos.",
+		"desc": "The 54th ritual is complete, and space itself has folded under the weight of an otherworldly will.\n+30% Gold. Dimensional chaos.",
 		"time_limit": 1200.0,
 		"bg_color": Color(0.02, 0.02, 0.14),
 		"map_width": 4000,

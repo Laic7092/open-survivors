@@ -1,11 +1,14 @@
 extends RefCounted
 # Stage 9 — Boss Rash (challenge)
+# Vampire Survivors reference: https://vampire.survivors.wiki/w/Boss_Rash
 
 static func get_data() -> Dictionary:
 	return {
 		"id": 9,
 		"name": "Boss Rash",
-		"desc": "The monsters want entertainment.\n15 min limit. All bosses, all the time.",
+		"desc": "The monsters want entertainment.\n15 minutes. All bosses. All the time.",
+		"wiki_id": "RASH",
+		"type": "Challenge",
 		"time_limit": 900.0,
 		"bg_color": Color(0.15, 0.02, 0.02),
 		"map_width": 5000,

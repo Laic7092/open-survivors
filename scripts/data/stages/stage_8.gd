@@ -1,11 +1,14 @@
 extends RefCounted
 # Stage 8 — The Bone Zone (challenge)
+# Vampire Survivors reference: https://vampire.survivors.wiki/w/The_Bone_Zone
 
 static func get_data() -> Dictionary:
 	return {
 		"id": 8,
 		"name": "The Bone Zone",
-		"desc": "Where the dead go to live.\nNo item drops. Enemies grow stronger.",
+		"wiki_id": "BONEZONE",
+		"type": "Challenge",
+		"desc": "In the Bone Zone, bones are everywhere.\nNo item drops. Enemies grow stronger.",
 		"time_limit": 1800.0,
 		"bg_color": Color(0.06, 0.04, 0.08),
 		"map_width": 5400,

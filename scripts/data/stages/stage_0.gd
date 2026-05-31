@@ -8,7 +8,10 @@ static func get_data() -> Dictionary:
 	return {
 		"id": 0,
 		"name": "Mad Forest",
-		"desc": "Once a thriving haven, now a dumping ground for evil.\nA vampire is said to be the root of this evil, but we can find only mayhem and roast chicken.",
+		"wiki_id": "FOREST",
+		"type": "Normal",
+		"tags": ["forest", "normal", "main_stage"],
+		"desc": "Once a thriving haven, now a dumping ground for evil. A vampire is said to be the root of this evil, but we can find only mayhem and roast chicken.",
 		"time_limit": 1800.0,
 		"bg_color": Color(0.04, 0.04, 0.10),
 		"map_width": 6400,

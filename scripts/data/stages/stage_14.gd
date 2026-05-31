@@ -5,7 +5,9 @@ static func get_data() -> Dictionary:
 	return {
 		"id": 14,
 		"name": "Bat Country",
-		"desc": "We can't stop here.\n-75% XP. Enemies hyper-scale over time.",
+		"wiki_id": "BATCOUNTRY",
+		"type": "Challenge",
+		"desc": "We can't stop here.",
 		"time_limit": 1200.0,
 		"bg_color": Color(0.04, 0.02, 0.06),
 		"map_width": 3200,

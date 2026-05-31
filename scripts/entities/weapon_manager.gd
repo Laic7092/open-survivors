@@ -98,31 +98,31 @@ func _make_emoji_node(emoji: String, sz: float) -> Node2D:
 
 const EVOLUTION_RECIPES = {
 	ItemTypes.Type.WHIP: {
-		"passive": ItemTypes.Type.SPINACH,
+		"passive": ItemTypes.Type.HOLLOW_HEART,
 		"passive_level": 5,
 		"name": "Bloody Tear",
 		"desc": "Whip evolves into Bloody Tear\nHeals 20% of damage dealt"
 	},
 	ItemTypes.Type.MAGIC_WAND: {
-		"passive": ItemTypes.Type.WINGS,
+		"passive": ItemTypes.Type.TOME,
 		"passive_level": 5,
 		"name": "Holy Wand",
 		"desc": "Magic Wand evolves into Holy Wand\nFires at super speed"
 	},
 	ItemTypes.Type.GARLIC: {
-		"passive": ItemTypes.Type.TOME,
+		"passive": ItemTypes.Type.PUMMAROLA,
 		"passive_level": 5,
 		"name": "Soul Eater",
 		"desc": "Garlic evolves into Soul Eater\nHeals 1 HP per kill"
 	},
 	ItemTypes.Type.KNIFE: {
-		"passive": ItemTypes.Type.CANDELABRADOR,
+		"passive": ItemTypes.Type.BRACER,
 		"passive_level": 5,
 		"name": "Thousand Edge",
 		"desc": "Knife evolves into Thousand Edge\nFires a spread of 3 blades"
 	},
 	ItemTypes.Type.AXE: {
-		"passive": ItemTypes.Type.HOLLOW_HEART,
+		"passive": ItemTypes.Type.CANDELABRADOR,
 		"passive_level": 5,
 		"name": "Death Spiral",
 		"desc": "Axe evolves into Death Spiral\nAxes orbit and return to you"
@@ -158,13 +158,13 @@ const EVOLUTION_RECIPES = {
 		"desc": "Runetracer evolves into NO FUTURE\nWalls of piercing lasers"
 	},
 	ItemTypes.Type.LIGHTNING_RING: {
-		"passive": ItemTypes.Type.SPINACH,
+		"passive": ItemTypes.Type.DUPLICATOR,
 		"passive_level": 5,
 		"name": "Thunder Loop",
 		"desc": "Lightning Ring evolves into Thunder Loop\nChain lightning"
 	},
 	ItemTypes.Type.PENTAGRAM: {
-		"passive": ItemTypes.Type.CLOVER,
+		"passive": ItemTypes.Type.CROWN,
 		"passive_level": 5,
 		"name": "Gorgeous Moon",
 		"desc": "Pentagram evolves into Gorgeous Moon\nLarger range, lower cooldown"
@@ -204,7 +204,7 @@ const EVOLUTION_RECIPES = {
 		"desc": "Gatti Amari evolves into Vicious Hunger\nCats pick up gold and items"
 	},
 	ItemTypes.Type.SONG_OF_MANA: {
-		"passive": ItemTypes.Type.TOME,
+		"passive": ItemTypes.Type.SKULL,
 		"passive_level": 5,
 		"name": "Mannajja",
 		"desc": "Song of Mana evolves into Mannajja\nTracking vines, full screen attack"
@@ -320,6 +320,29 @@ const EVOLUTION_RECIPES = {
 		"passive_level": 5,
 		"name": "Photonstorm",
 		"desc": "Phas3r evolves into Photonstorm\nPhoton laser storm"
+	},
+
+	# ── Legacy of the Moonspell ──
+	ItemTypes.Type.LA_ROBBA: {
+		"passive": ItemTypes.Type.SPELLBINDER,
+		"passive_level": 5,
+		"name": "Evolved La Robba",
+		"desc": "La Robba evolves\nMore projectiles, larger area"
+	},
+
+	ItemTypes.Type.GREATEST_JUBILEE: {
+		"passive": ItemTypes.Type.CROWN,
+		"passive_level": 5,
+		"name": "Evolved Jubilee",
+		"desc": "Greatest Jubilee evolves\nMore light source spawns"
+	},
+
+	# ── Tides of the Foscari ──
+	ItemTypes.Type.VICTORY_SWORD: {
+		"passive": ItemTypes.Type.TORRONA,
+		"passive_level": 5,
+		"name": "Sole Solution",
+		"desc": "Victory Sword evolves into Sole Solution\nMaximum sword damage"
 	},
 }
 

@@ -388,6 +388,36 @@ static func _load_types():
 			0.6, false,
 			3.0, 0.05, 0.0
 		),
+		# 33 — Scylla (many-headed hydra, mid-boss)
+		EnemyTypeData.new(
+			33, "Scylla",
+			150.0, 30.0, 22.0, 2.0, 20,
+			Color(0.2, 0.6, 0.3), Color(0.3, 0.8, 0.4), 2.5,
+			"hexagon", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.5, true,
+			4.0, 0.1, 0.05
+		),
+		# 34 — Slasher (fast melee skirmisher)
+		EnemyTypeData.new(
+			34, "Slasher",
+			18.0, 70.0, 14.0, 0.9, 4,
+			Color(0.7, 0.2, 0.2), Color(0.9, 0.3, 0.3), 1.5,
+			"triangle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.1, false,
+			1.0, 0.01, 0.0
+		),
+		# 35 — Trickster (erratic teleporting)
+		EnemyTypeData.new(
+			35, "Trickster",
+			22.0, 50.0, 12.0, 1.0, 5,
+			Color(0.5, 0.1, 0.5), Color(0.7, 0.2, 0.6), 2.0,
+			"diamond", "wavy",
+			false, 0.0, 0.0, 0.0,
+			0.2, false,
+			1.2, 0.02, 0.0
+		),
 	]
 
 	# Spawn weight overrides (lower = much rarer)
@@ -431,8 +461,82 @@ static func get_types_for_stage(stage_id: int, game_time: float) -> Array[int]:
 	var pool: Array[int] = []
 
 	match stage_id:
+		0:  # Mad Forest
+			if game_time < 300.0:
+				pool = [0, 1, 8, 9, 11]   # Wraith, Viper, Zombie, Skeleton, Bat
+			elif game_time < 600.0:
+				pool = [0, 1, 2, 8, 9, 10, 11, 12]  # +Golem, Ghost, RedBat
+			elif game_time < 900.0:
+				pool = [0, 1, 2, 4, 10, 11, 12, 15]  # +Mantis, Mudman
+			elif game_time < 1500.0:
+				pool = [0, 2, 4, 10, 11, 15, 16, 18]  # +GreenMudman, Werewolf
+			else:
+				pool = [0, 2, 4, 10, 15, 16, 18, 19]  # +BigMummy
+
+		1:  # Inlaid Library
+			if game_time < 300.0:
+				pool = [23, 24]           # Dust Elemental, Musc Musc
+			elif game_time < 600.0:
+				pool = [23, 24, 25, 26]    # +Medusa Head, Mummy
+			elif game_time < 900.0:
+				pool = [23, 24, 25, 26, 27, 28]  # +Lionhead, Dullahan
+			else:
+				pool = [23, 24, 25, 26, 27, 28, 29, 30, 31]  # +Witch, Elite, Skull
+
+		2:  # Il Molise
+			pool = [0, 1, 11]
+
+		3:  # Dairy Plant
+			if game_time < 600.0:
+				pool = [1, 8, 9, 15]
+			elif game_time < 900.0:
+				pool = [1, 8, 9, 15, 16, 18]
+			else:
+				pool = [1, 2, 9, 15, 16, 18, 19]
+
+		4:  # Gallo Tower
+			if game_time < 600.0:
+				pool = [0, 1, 2, 11, 15]
+			elif game_time < 900.0:
+				pool = [0, 2, 4, 15, 16, 18]
+			else:
+				pool = [2, 4, 15, 16, 18, 19]
+
+		5:  # Cappella Magna
+			if game_time < 600.0:
+				pool = [0, 2, 4, 15, 18]
+			elif game_time < 900.0:
+				pool = [2, 4, 15, 16, 18, 19]
+			else:
+				pool = [2, 4, 16, 18, 19]
+
+		6:  # Moongolow
+			pool = [0, 1, 2, 4, 8, 9, 11]
+
+		7, 8, 9, 10:
+			# Base game challenge/bonus stages
+			match stage_id:
+				7:  # Green Acres — random mix with all types
+					if game_time < 600.0:
+						pool = [0, 1, 2, 4, 8, 9, 10, 11, 12, 15]
+					else:
+						pool = [0, 1, 2, 4, 9, 10, 11, 15, 16, 18, 19]
+				8:  # The Bone Zone — skeleton/bone themed
+					if game_time < 600.0:
+						pool = [0, 9, 11, 26]  # Wraith, Skeleton, Bat, Mummy
+					else:
+						pool = [0, 9, 10, 11, 12, 18, 26]
+				9:  # Boss Rash — boss rush, mixed pool
+					pool = [2, 4, 5, 6, 7, 14, 17, 20, 21]
+				10: # Whiteout — arctic/chill theme
+					if game_time < 600.0:
+						pool = [0, 1, 4, 11]
+					else:
+						pool = [0, 1, 2, 4, 11, 15, 18]
+
 		_:
-			pool = [0, 1, 2, 3, 4]
+			# Fallback: basic pool for DLC / hyper stages
+			pool = [0, 1, 2, 4, 11, 15]
 
 	return pool
 
