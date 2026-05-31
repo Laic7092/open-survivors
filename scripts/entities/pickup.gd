@@ -50,6 +50,8 @@ var type: int = PickupType.CHICKEN:
 				queue_redraw()
 var player: Node2D
 var collected: bool = false
+var attracted: bool = false
+var attract_speed: float = 300.0
 var _rarity: float = 12.0
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")

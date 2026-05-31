@@ -50,9 +50,60 @@ static func calc_columns(viewport_w: float, item_w: float, gap: float = 16.0, ma
 # accent: 可选，边框强调色（默认淡金色）
 static func make_choice_button(content: Control, accent: Color = Color(0.7, 0.6, 0.1)) -> Button:
 	var btn = Button.new()
-	btn.custom_minimum_size = Vector2(0, 120)
-	style_button(btn, accent * 0.2, accent)
+	var content_h = max(content.custom_minimum_size.y, 80)
+	btn.custom_minimum_size = Vector2(0, content_h)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# 带内边距的卡片样式
+	var bg = accent * 0.15
+	var border = accent
+	border.a = 0.5
+	var normal = StyleBoxFlat.new()
+	normal.bg_color = bg
+	normal.border_color = border
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(8)
+	normal.content_margin_left = 10
+	normal.content_margin_right = 10
+	normal.content_margin_top = 6
+	normal.content_margin_bottom = 6
+	btn.add_theme_stylebox_override("normal", normal)
+	# hover: 亮一点
+	var hover = StyleBoxFlat.new()
+	hover.bg_color = Color(
+		min(bg.r + 0.08, 1.0),
+		min(bg.g + 0.08, 1.0),
+		min(bg.b + 0.08, 1.0),
+		min(bg.a + 0.05, 1.0)
+	)
+	hover.border_color = accent
+	hover.set_border_width_all(2)
+	hover.set_corner_radius_all(8)
+	hover.content_margin_left = 10
+	hover.content_margin_right = 10
+	hover.content_margin_top = 6
+	hover.content_margin_bottom = 6
+	btn.add_theme_stylebox_override("hover", hover)
+	# pressed: 更亮
+	var pressed = StyleBoxFlat.new()
+	pressed.bg_color = Color(
+		min(bg.r + 0.15, 1.0),
+		min(bg.g + 0.15, 1.0),
+		min(bg.b + 0.15, 1.0),
+		min(bg.a + 0.1, 1.0)
+	)
+	pressed.border_color = accent
+	pressed.border_color.a = 0.8
+	pressed.set_border_width_all(2)
+	pressed.set_corner_radius_all(8)
+	pressed.content_margin_left = 10
+	pressed.content_margin_right = 10
+	pressed.content_margin_top = 6
+	pressed.content_margin_bottom = 6
+	btn.add_theme_stylebox_override("pressed", pressed)
+	btn.add_theme_stylebox_override("disabled", normal)
+	# 内容填满按钮
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	btn.add_child(content)
 	return btn

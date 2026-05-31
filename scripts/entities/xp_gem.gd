@@ -46,30 +46,6 @@ func _pool_borrow(config: Dictionary = {}):
 	tier = config.get("tier", Tier.BLUE)
 
 
-var _throttle_offset: int = 0
-
-func _process(delta):
-	if is_instance_valid(player):
-		# Distribute throttled checks across frames — each gem checks on a different frame
-		if attracted or (Engine.get_frames_drawn() + _throttle_offset) % 4 == 0 or not _far_from_player():
-			var dist = global_position.distance_to(player.global_position)
-			if dist < player.pickup_range:
-				attracted = true
-	if attracted and is_instance_valid(player):
-		var dir = (player.global_position - global_position).normalized()
-		global_position += dir * attract_speed * delta
-
-
-var _player_last_check_pos: Vector2 = Vector2.ZERO
-func _far_from_player() -> bool:
-	if not is_instance_valid(player):
-		return true
-	var ppos = player.global_position
-	var dx = global_position.x - ppos.x
-	var dy = global_position.y - ppos.y
-	return (dx * dx + dy * dy) > 40000.0  # 200px^2
-
-
 func collect() -> int:
 	if collected:
 		return 0
@@ -82,7 +58,9 @@ func collect() -> int:
 
 func _on_body_entered(body: Node):
 	if body == player:
-		collect()
+		var val = collect()
+		if val > 0:
+			player.add_xp(val)
 
 
 func _return_to_pool():

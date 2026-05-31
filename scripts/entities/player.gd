@@ -44,7 +44,7 @@ var curse: float = 0.0            # 诅咒 (Wiki: 0%)
 var projectile_bonus: int = 0     # 额外弹数 (Wiki: Amount 0)
 
 # ── 拾取范围 ──
-var pickup_range: float = 60.0    # 吸引范围 px (Wiki: Magnet)
+var pickup_range: float = 80.0    # 吸引范围 px (Wiki: Magnet)
 var magnet_level: int = 0          # Magnet 被动等级
 
 # ── 其他 ──
@@ -79,8 +79,6 @@ var weapon_manager
 var passive_inventory
 
 var hurtbox: Area2D
-var collect_area: Area2D
-var _collect_shape_ref: CollisionShape2D
 
 var _ft_scene = preload("res://scenes/floating_text.tscn")
 
@@ -109,17 +107,7 @@ func _ready():
 	hurtbox.body_entered.connect(_on_hurt)
 	hurtbox.area_entered.connect(_on_hurt_area)
 
-	collect_area = Area2D.new()
-	collect_area.name = "CollectArea"
-	collect_area.collision_mask = CollisionLayers.XP_GEM
-	var cs = CollisionShape2D.new()
-	var cc = CircleShape2D.new()
-	cc.radius = pickup_range
-	cs.shape = cc
-	collect_area.add_child(cs)
-	add_child(collect_area)
-	_collect_shape_ref = cs
-	collect_area.area_entered.connect(_on_collect_area)
+
 
 	health = max_health
 	var debug_weapons = EventBus.get_config("debug_starting_weapons", [])
@@ -162,8 +150,7 @@ func _process(delta):
 		if health != old:
 			health_changed.emit(health, max_health)
 	weapon_manager.process(delta)
-	if magnet_level > 0:
-		_magnet_pull(delta)
+	_attract_gems(delta)
 	_mark_visual_dirty_if_needed()
 
 
@@ -337,7 +324,7 @@ func recalculate_stats():
 	projectile_bonus = 0
 	revivals = 0
 	magnet_level = 0
-	pickup_range = 60.0
+	pickup_range = 80.0
 	charm = 0
 	invincible_duration = 0.3
 	gold_fever_duration_bonus = 0.0
@@ -382,12 +369,6 @@ func recalculate_stats():
 	area_mult *= _arcana_area_mult
 	speed_mult *= _arcana_speed_mult
 	duration_mult *= _arcana_duration_mult
-	
-	# Magnet: 更新碰撞形状
-	if _collect_shape_ref and _collect_shape_ref.shape:
-		var circle = _collect_shape_ref.shape as CircleShape2D
-		if circle:
-			circle.radius = pickup_range
 	
 	# 血量变更通知
 	if max_health != old_max or health > max_health:
@@ -536,11 +517,6 @@ func heal(amount: float):
 const LevelUpService = preload("res://scripts/core/level_up_service.gd")
 
 
-func _on_collect_area(area: Area2D):
-	if area.has_method("collect"):
-		add_xp(area.collect())
-
-
 func add_xp(value: int):
 	if ArcanaManager and ArcanaManager.has_effect("no_xp"):
 		return
@@ -558,28 +534,35 @@ func add_xp(value: int):
 	xp_changed.emit(xp, xp_to_next)
 
 
-# ── Magnet ───────────────────────────────────────────────────────────
+var _attract_skip: int = 0
 
-var _magnet_frame_skip: int = 0
-
-func _magnet_pull(delta: float):
-	# Throttle to every 3rd frame — magnet effect doesn't need per-frame precision
-	_magnet_frame_skip += 1
-	if _magnet_frame_skip % 3 != 0:
-		return
-	var magnet_range = 80.0 + 50.0 * magnet_level
-	var pull_speed = 300.0 + 80.0 * magnet_level
-	var gems = get_tree().get_nodes_in_group("gems")
-	var player_pos = global_position
-	var range_sq = magnet_range * magnet_range
-	for g in gems:
-		if not is_instance_valid(g) or g.collected:
-			continue
-		var dist = player_pos.distance_squared_to(g.global_position)
-		if dist < range_sq:
-			if not g.attracted:
+func _attract_gems(delta: float):
+	# 节流：每 10 帧扫描一次，标记范围内的 gem/pickup
+	_attract_skip += 1
+	if _attract_skip % 10 == 0:
+		var pos = global_position
+		var range_sq = pickup_range * pickup_range
+		for g in get_tree().get_nodes_in_group("gems"):
+			if not is_instance_valid(g) or g.collected or g.attracted:
+				continue
+			if (pos - g.global_position).length_squared() < range_sq:
 				g.attracted = true
-			g.attract_speed = max(g.attract_speed, pull_speed)
+		for p in get_tree().get_nodes_in_group("pickups"):
+			if not is_instance_valid(p) or p.collected or p.attracted:
+				continue
+			if (pos - p.global_position).length_squared() < range_sq:
+				p.attracted = true
+	
+	# 每帧：已被标记的持续飞行
+	var pos = global_position
+	for g in get_tree().get_nodes_in_group("gems"):
+		if not is_instance_valid(g) or g.collected or not g.attracted:
+			continue
+		g.global_position += (pos - g.global_position).normalized() * 300.0 * delta
+	for p in get_tree().get_nodes_in_group("pickups"):
+		if not is_instance_valid(p) or p.collected or not p.attracted:
+			continue
+		p.global_position += (pos - p.global_position).normalized() * 300.0 * delta
 
 
 # ── Hurt / Health ────────────────────────────────────────────────────

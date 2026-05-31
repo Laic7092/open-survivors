@@ -84,26 +84,20 @@ func show_choices(p):
 
 
 func _create_ui():
-	_panel = Panel.new()
-	_panel.anchor_left = 0.0
-	_panel.anchor_top = 0.0
-	_panel.anchor_right = 1.0
-	_panel.anchor_bottom = 1.0
-	_panel.theme_type_variation = &"OverlayPanel"
-	add_child(_panel)
-
+	# 使用 Size 和 position 替代 anchor/offset（更可靠）
 	var vp = get_viewport().get_visible_rect().size
 	var panel_w = mini(800, vp.x - 40)
 	var panel_h = mini(480, vp.y - 40)
+	
+	_panel = Panel.new()
+	_panel.theme_type_variation = &"OverlayPanel"
+	_panel.position = Vector2.ZERO
+	_panel.size = vp
+	add_child(_panel)
+
 	var vb = VBoxContainer.new()
-	vb.anchor_left = 0.5
-	vb.anchor_top = 0.5
-	vb.anchor_right = 0.5
-	vb.anchor_bottom = 0.5
-	vb.offset_left = -panel_w / 2
-	vb.offset_top = -panel_h / 2
-	vb.offset_right = panel_w / 2
-	vb.offset_bottom = panel_h / 2
+	vb.position = Vector2(vp.x * 0.5 - panel_w * 0.5, vp.y * 0.5 - panel_h * 0.5)
+	vb.size = Vector2(panel_w, panel_h)
 	_panel.add_child(vb)
 
 	_title = Label.new()
@@ -111,7 +105,8 @@ func _create_ui():
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title.add_theme_font_size_override("font_size", 36)
 	_title.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2))
-	_title.custom_minimum_size = Vector2(0, 50)
+	_title.custom_minimum_size = Vector2(panel_w, 50)
+	_title.size_flags_horizontal = Control.SIZE_FILL
 	vb.add_child(_title)
 
 	var sp = Control.new()
@@ -121,7 +116,8 @@ func _create_ui():
 	_container = HBoxContainer.new()
 	_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	_container.add_theme_constant_override("separation", 20)
-	_container.size = Vector2(panel_w, 280)
+	_container.size_flags_horizontal = Control.SIZE_FILL
+	_container.size_flags_vertical = Control.SIZE_EXPAND
 	vb.add_child(_container)
 
 	# ── Skip / Reroll / Banish 按钮栏 ──
@@ -130,6 +126,8 @@ func _create_ui():
 	_button_bar.add_theme_constant_override("separation", 12)
 	var has_any_action = _rerolls_left > 0 or _skips_left > 0 or _banishes_left > 0
 	_button_bar.visible = has_any_action
+	_button_bar.size_flags_horizontal = Control.SIZE_FILL
+	_button_bar.custom_minimum_size = Vector2(0, 44)
 	vb.add_child(_button_bar)
 
 	if _rerolls_left > 0:
@@ -174,47 +172,76 @@ func _render_choices():
 
 # ── 普通道具选项 ──
 func _add_item_choice(c):
-	var vb2 = VBoxContainer.new()
-	vb2.custom_minimum_size = Vector2(190, 220)
-	vb2.alignment = BoxContainer.ALIGNMENT_CENTER
-
-	var icon_node = IconGenerator.make_icon_node(c.item_type, 40)
-	icon_node.custom_minimum_size = Vector2(40, 40)
-	icon_node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	vb2.add_child(icon_node)
-
+	var item_name = I18N.t(DataRegistry.items().item_name_key(c.item_type), c.label)
+	var item_desc = I18N.t(DataRegistry.items().item_desc_key(c.item_type), DataRegistry.items().item_desc(c.item_type))
 	var lv_txt = I18N.t("levelup.new") if c.is_new else I18N.t("levelup.level") % [c.level_before, c.level_after]
-	var desc = DataRegistry.items().item_desc(c.item_type)
 
-	# 名称
-	var l1 = Label.new()
-	l1.text = c.label
-	l1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l1.add_theme_font_size_override("font_size", 22)
-	l1.add_theme_color_override("font_color", c.color)
-	vb2.add_child(l1)
+	# ── 卡片内容 ──
+	var vb2 = VBoxContainer.new()
+	vb2.custom_minimum_size = Vector2(160, 140)
+	vb2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vb2.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vb2.add_theme_constant_override("separation", 1)
+	# 所有子节点不拦截鼠标
+	vb2.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# 等级
-	var l2 = Label.new()
-	l2.text = lv_txt
-	l2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l2.add_theme_font_size_override("font_size", 14)
-	l2.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	vb2.add_child(l2)
+	# ── 顶栏：图标 + 名称 ──
+	var header = HBoxContainer.new()
+	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	self._set_children_ignore(header)
+	var icon_node = IconGenerator.make_icon_node(c.item_type, 24)
+	icon_node.custom_minimum_size = Vector2(24, 24)
+	header.add_child(icon_node)
+	var nm = Label.new()
+	nm.text = item_name
+	nm.add_theme_font_size_override("font_size", 16)
+	nm.add_theme_color_override("font_color", c.color)
+	nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(nm)
+	vb2.add_child(header)
 
-	# 描述
-	var l3 = Label.new()
-	l3.text = desc
-	l3.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l3.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l3.add_theme_font_size_override("font_size", 12)
-	l3.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-	vb2.add_child(l3)
+	# ── 分隔线 1 ──
+	var sep1 = ColorRect.new()
+	sep1.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sep1.color = Color(0.9, 0.8, 0.2, 0.12)
+	sep1.custom_minimum_size = Vector2(0, 1)
+	sep1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vb2.add_child(sep1)
 
-	var btn = UiUtils.make_choice_button(vb2)
-	var item_type = c.item_type
-	btn.pressed.connect(func(): _on_item_choice(item_type))
-	_container.add_child(vb2)
+	# ── 等级 ──
+	var lv_lbl = Label.new()
+	lv_lbl.text = lv_txt
+	lv_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lv_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lv_lbl.add_theme_font_size_override("font_size", 13)
+	lv_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	lv_lbl.custom_minimum_size = Vector2(0, 20)
+	vb2.add_child(lv_lbl)
+
+	# ── 分隔线 2 ──
+	var sep2 = ColorRect.new()
+	sep2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sep2.color = Color(0.9, 0.8, 0.2, 0.12)
+	sep2.custom_minimum_size = Vector2(0, 1)
+	sep2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vb2.add_child(sep2)
+
+	# ── 描述 ──
+	var desc_lbl = Label.new()
+	desc_lbl.text = item_desc
+	desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc_lbl.add_theme_font_size_override("font_size", 11)
+	desc_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	desc_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vb2.add_child(desc_lbl)
+
+	# ── 包装为可点击卡片（自带 hover 效果） ──
+	var btn = UiUtils.make_choice_button(vb2, c.color)
+	btn.pressed.connect(func(): _on_item_choice(c.item_type))
+	_container.add_child(btn)
 
 
 # ── 进化选项 ──
@@ -330,7 +357,7 @@ func _add_limit_break_choice(c):
 	total_label.add_theme_font_size_override("font_size", 10)
 	vb2.add_child(total_label)
 
-	var btn = UiUtils.make_choice_button(vb2)
+	var btn = UiUtils.make_choice_button(vb2, Color(0.5, 0.7, 1.0))
 	var wt = c.item_type
 	var opt_ref = opt.duplicate()
 	btn.pressed.connect(func():
@@ -339,7 +366,7 @@ func _add_limit_break_choice(c):
 			limit_break_selected.emit(wt, opt_ref)
 			upgrade_selected.emit(wt)
 	)
-	_container.add_child(vb2)
+	_container.add_child(btn)
 
 
 # ── 金币选项 ──
@@ -370,10 +397,10 @@ func _add_gold_choice(c):
 	l2.add_theme_color_override("font_color", Color(0.8, 0.8, 0.6))
 	vb2.add_child(l2)
 
-	var btn = UiUtils.make_choice_button(vb2)
+	var btn = UiUtils.make_choice_button(vb2, Color(0.9, 0.8, 0.1))
 	var amt = c.gold_amount
 	btn.pressed.connect(func(): _on_gold_choice(amt))
-	_container.add_child(vb2)
+	_container.add_child(btn)
 
 
 # ── Floor Chicken 选项 ──
@@ -404,10 +431,10 @@ func _add_chicken_choice(c):
 	l2.add_theme_color_override("font_color", Color(0.8, 0.8, 0.6))
 	vb2.add_child(l2)
 
-	var btn = UiUtils.make_choice_button(vb2)
+	var btn = UiUtils.make_choice_button(vb2, Color(0.3, 1.0, 0.3))
 	var amt = c.chicken_amount
 	btn.pressed.connect(func(): _on_chicken_choice(amt))
-	_container.add_child(vb2)
+	_container.add_child(btn)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -510,6 +537,14 @@ func _on_banish():
 #  UI 辅助
 # ═══════════════════════════════════════════════════════════════════
 
+# 递归设置子节点不拦截鼠标
+static func _set_children_ignore(node: Control):
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for c in node.get_children():
+		if c is Control:
+			_set_children_ignore(c)
+
+
 func _clear_container():
 	if _container:
 		for c in _container.get_children():
@@ -531,7 +566,6 @@ func _clear():
 	_skip_btn = null
 	_banish_btn = null
 	_button_bar = null
-	_current_choices.clear()
 
 
 # ── Limit Break stat 名称映射 ──

@@ -160,14 +160,10 @@ func _get_scene_path(obj: Node) -> String:
 
 # ── 向后兼容方法（委托给 _pool_borrow） ──
 
-var _gem_throttle_counter: int = 0
-
 func borrow_gem() -> Node:
 	var gem = borrow(_SCENE_GEM)
 	if gem.has_method("_pool_borrow"):
 		gem._pool_borrow()
-	gem._throttle_offset = _gem_throttle_counter
-	_gem_throttle_counter = (_gem_throttle_counter + 1) % 4
 	return gem
 
 

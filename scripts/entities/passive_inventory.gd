@@ -63,7 +63,7 @@ func recalculate(player):
 				player.greed_mult = 0.10 * lv
 			ItemTypes.Type.MAGNET:
 				player.magnet_level = lv
-				player.pickup_range = 60.0 + 20.0 * lv
+				player.pickup_range = 80.0 + 20.0 * lv
 			ItemTypes.Type.CLOVER:
 				# Wiki: Luck +10%/lv
 				player.luck = 0.10 * lv
