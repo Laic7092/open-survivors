@@ -44,6 +44,36 @@ func _register_behaviors():
 	_behaviors[ItemTypes.Type.SANTA_WATER] = load(dir + "santa_water.gd")
 	_behaviors[ItemTypes.Type.RUNETRACER] = load(dir + "runetracer.gd")
 	_behaviors[ItemTypes.Type.LIGHTNING_RING] = load(dir + "lightning_ring.gd")
+	_behaviors[ItemTypes.Type.PENTAGRAM] = load(dir + "pentagram.gd")
+	_behaviors[ItemTypes.Type.PEACHONE] = load(dir + "peachone.gd")
+	_behaviors[ItemTypes.Type.EBONY_WINGS] = load(dir + "ebony_wings.gd")
+	_behaviors[ItemTypes.Type.PHIERA_DER_TUPHELLO] = load(dir + "phiera_der_tuphello.gd")
+	_behaviors[ItemTypes.Type.EIGHT_THE_SPARROW] = load(dir + "eight_the_sparrow.gd")
+	_behaviors[ItemTypes.Type.GATTI_AMARI] = load(dir + "gatti_amari.gd")
+	_behaviors[ItemTypes.Type.SONG_OF_MANA] = load(dir + "song_of_mana.gd")
+	_behaviors[ItemTypes.Type.SHADOW_PINION] = load(dir + "shadow_pinion.gd")
+	_behaviors[ItemTypes.Type.CLOCK_LANCET] = load(dir + "clock_lancet.gd")
+	_behaviors[ItemTypes.Type.LAUREL] = load(dir + "laurel.gd")
+	_behaviors[ItemTypes.Type.VENTO_SACRO] = load(dir + "vento_sacro.gd")
+	_behaviors[ItemTypes.Type.BONE] = load(dir + "bone.gd")
+	_behaviors[ItemTypes.Type.CHERRY_BOMB] = load(dir + "cherry_bomb.gd")
+	_behaviors[ItemTypes.Type.CARRELLO] = load(dir + "carrello.gd")
+	_behaviors[ItemTypes.Type.CELESTIAL_DUSTING] = load(dir + "celestial_dusting.gd")
+	_behaviors[ItemTypes.Type.LA_ROBBA] = load(dir + "la_robba.gd")
+	_behaviors[ItemTypes.Type.GREATEST_JUBILEE] = load(dir + "greatest_jubilee.gd")
+	_behaviors[ItemTypes.Type.BRACELET] = load(dir + "bracelet.gd")
+	_behaviors[ItemTypes.Type.CANDYBOX] = load(dir + "candybox.gd")
+	_behaviors[ItemTypes.Type.VICTORY_SWORD] = load(dir + "victory_sword.gd")
+	_behaviors[ItemTypes.Type.FLAMES_OF_MISSPELL] = load(dir + "flames_of_misspell.gd")
+	_behaviors[ItemTypes.Type.PAKO_BATTILIAR] = load(dir + "pako_battiliar.gd")
+	_behaviors[ItemTypes.Type.AMMO_APPALATE] = load(dir + "ammo_appalate.gd")
+	_behaviors[ItemTypes.Type.CHAOS_RUNE] = load(dir + "chaos_rune.gd")
+	_behaviors[ItemTypes.Type.GLASS_FANDANGO] = load(dir + "glass_fandango.gd")
+	_behaviors[ItemTypes.Type.SANTA_JAVELIN] = load(dir + "santa_javelin.gd")
+	_behaviors[ItemTypes.Type.GAZE_OF_GAEA] = load(dir + "gaze_of_gaea.gd")
+	_behaviors[ItemTypes.Type.MAGI_STONE] = load(dir + "magi_stone.gd")
+	_behaviors[ItemTypes.Type.PHAS3R] = load(dir + "phas3r.gd")
+	_behaviors[ItemTypes.Type.ARMA_DIO] = load(dir + "arma_dio.gd")
 
 
 func _get_enemies() -> Array:
@@ -136,6 +166,164 @@ const EVOLUTION_RECIPES = {
 		"name": "Thunder Loop",
 		"desc": "Lightning Ring evolves into Thunder Loop\nChain lightning"
 	},
+	ItemTypes.Type.PENTAGRAM: {
+		"passive": ItemTypes.Type.CLOVER,
+		"passive_level": 5,
+		"name": "Gorgeous Moon",
+		"desc": "Pentagram evolves into Gorgeous Moon\nLarger range, lower cooldown"
+	},
+	ItemTypes.Type.PEACHONE: {
+		"passive": ItemTypes.Type.EBONY_WINGS,
+		"passive_level": 7,
+		"need_weapon": ItemTypes.Type.EBONY_WINGS,
+		"name": "Vandalier",
+		"desc": "Peachone + Ebony Wings evolve into Vandalier\nDual orbiting allies"
+	},
+	ItemTypes.Type.EBONY_WINGS: {
+		"passive": ItemTypes.Type.PEACHONE,
+		"passive_level": 7,
+		"need_weapon": ItemTypes.Type.PEACHONE,
+		"name": "Vandalier",
+		"desc": "Peachone + Ebony Wings evolve into Vandalier\nDual orbiting allies"
+	},
+	ItemTypes.Type.PHIERA_DER_TUPHELLO: {
+		"passive": ItemTypes.Type.EIGHT_THE_SPARROW,
+		"passive_level": 7,
+		"need_weapon": ItemTypes.Type.EIGHT_THE_SPARROW,
+		"name": "Phieraggi",
+		"desc": "Phiera + Eight evolve into Phieraggi\nUltra piercing attack"
+	},
+	ItemTypes.Type.EIGHT_THE_SPARROW: {
+		"passive": ItemTypes.Type.PHIERA_DER_TUPHELLO,
+		"passive_level": 7,
+		"need_weapon": ItemTypes.Type.PHIERA_DER_TUPHELLO,
+		"name": "Phieraggi",
+		"desc": "Phiera + Eight evolve into Phieraggi\nUltra piercing attack"
+	},
+	ItemTypes.Type.GATTI_AMARI: {
+		"passive": ItemTypes.Type.STONE_MASK,
+		"passive_level": 5,
+		"name": "Vicious Hunger",
+		"desc": "Gatti Amari evolves into Vicious Hunger\nCats pick up gold and items"
+	},
+	ItemTypes.Type.SONG_OF_MANA: {
+		"passive": ItemTypes.Type.TOME,
+		"passive_level": 5,
+		"name": "Mannajja",
+		"desc": "Song of Mana evolves into Mannajja\nTracking vines, full screen attack"
+	},
+	ItemTypes.Type.SHADOW_PINION: {
+		"passive": ItemTypes.Type.WINGS,
+		"passive_level": 5,
+		"name": "Valkyrie Turner",
+		"desc": "Shadow Pinion evolves into Valkyrie Turner\nEnhanced shadow strikes"
+	},
+	ItemTypes.Type.CLOCK_LANCET: {
+		"passive": ItemTypes.Type.METAGLIO_LEFT,
+		"passive_level": 5,
+		"need_weapon": ItemTypes.Type.LAUREL,
+		"need_weapon_level": 7,
+		"name": "Infinite Corridor",
+		"desc": "Clock Lancet + Laurel evolve into Infinite Corridor\nTime manipulation"
+	},
+	ItemTypes.Type.LAUREL: {
+		"passive": ItemTypes.Type.METAGLIO_RIGHT,
+		"passive_level": 5,
+		"need_weapon": ItemTypes.Type.CLOCK_LANCET,
+		"need_weapon_level": 7,
+		"name": "Crimson Shroud",
+		"desc": "Laurel + Clock Lancet evolve into Crimson Shroud\nDamage reflection"
+	},
+	ItemTypes.Type.VENTO_SACRO: {
+		"passive": ItemTypes.Type.BRACER,
+		"passive_level": 5,
+		"name": "Fuwalafuwaloo",
+		"desc": "Vento Sacro evolves into Fuwalafuwaloo\nAlways at full power"
+	},
+	ItemTypes.Type.BONE: {
+		"passive": ItemTypes.Type.ARMOR,
+		"passive_level": 5,
+		"name": "Anima of Mortaccio",
+		"desc": "Bone evolves into Anima of Mortaccio\nBones bounce more"
+	},
+	ItemTypes.Type.CHERRY_BOMB: {
+		"passive": ItemTypes.Type.TIRAGISU,
+		"passive_level": 5,
+		"name": "Yatta Daikarin",
+		"desc": "Cherry Bomb evolves into Yatta Daikarin\nBigger explosions"
+	},
+	ItemTypes.Type.CARRELLO: {
+		"passive": ItemTypes.Type.SPELLBINDER,
+		"passive_level": 5,
+		"name": "Carozza!",
+		"desc": "Carréllo evolves into Carozza!\nMore bouncing projectiles"
+	},
+	ItemTypes.Type.CELESTIAL_DUSTING: {
+		"passive": ItemTypes.Type.DUPLICATOR,
+		"passive_level": 5,
+		"name": "Profusione D'Amore",
+		"desc": "Celestial Dusting evolves into Profusione D'Amore\nRapid fire love burst"
+	},
+	ItemTypes.Type.BRACELET: {
+		"passive": ItemTypes.Type.CROWN,
+		"passive_level": 5,
+		"name": "Bi-Bracelet",
+		"desc": "Bracelet evolves into Bi-Bracelet\nDual bracelet attack"
+	},
+	ItemTypes.Type.FLAMES_OF_MISSPELL: {
+		"passive": ItemTypes.Type.SPINACH,
+		"passive_level": 5,
+		"name": "Ashes of Muspell",
+		"desc": "Flames of Misspell evolves into Ashes of Muspell\nInfernal blaze"
+	},
+	ItemTypes.Type.PAKO_BATTILIAR: {
+		"passive": ItemTypes.Type.HOLLOW_HEART,
+		"passive_level": 5,
+		"name": "Mazo Familiar",
+		"desc": "Pako Battiliar evolves into Mazo Familiar\nMore counterattacks"
+	},
+	ItemTypes.Type.AMMO_APPALATE: {
+		"passive": ItemTypes.Type.CANDELABRADOR,
+		"passive_level": 5,
+		"name": "Gunastrophe",
+		"desc": "Ammo Appalate evolves into Gunastrophe\nUnlimited ammo"
+	},
+	ItemTypes.Type.CHAOS_RUNE: {
+		"passive": ItemTypes.Type.SKULL,
+		"passive_level": 5,
+		"name": "Wicked Ruler",
+		"desc": "Chaos Rune evolves into Wicked Ruler\nChaotic rune storm"
+	},
+	ItemTypes.Type.GLASS_FANDANGO: {
+		"passive": ItemTypes.Type.SPELLBINDER,
+		"passive_level": 5,
+		"name": "Celestial Voulge",
+		"desc": "Glass Fandango evolves into Celestial Voulge\nCelestial ice storm"
+	},
+	ItemTypes.Type.SANTA_JAVELIN: {
+		"passive": ItemTypes.Type.BRACER,
+		"passive_level": 5,
+		"name": "Seraphic Cry",
+		"desc": "Santa Javelin evolves into Seraphic Cry\nHoming javelins"
+	},
+	ItemTypes.Type.GAZE_OF_GAEA: {
+		"passive": ItemTypes.Type.CLOVER,
+		"passive_level": 5,
+		"name": "Embrace of Gaea",
+		"desc": "Gaze of Gaea evolves into Embrace of Gaea\nNature's wrath"
+	},
+	ItemTypes.Type.MAGI_STONE: {
+		"passive": ItemTypes.Type.TOME,
+		"passive_level": 5,
+		"name": "Kyra-Stones",
+		"desc": "Magi-Stone evolves into Kyra-Stones\nMore magical stones"
+	},
+	ItemTypes.Type.PHAS3R: {
+		"passive": ItemTypes.Type.DUPLICATOR,
+		"passive_level": 5,
+		"name": "Photonstorm",
+		"desc": "Phas3r evolves into Photonstorm\nPhoton laser storm"
+	},
 }
 
 
@@ -162,7 +350,7 @@ func _can_fire(w: WeaponState) -> bool:
 		return false
 	var ppos = _player.global_position
 
-	if w.type == ItemTypes.Type.GARLIC:
+	if w.type == ItemTypes.Type.GARLIC or w.type == ItemTypes.Type.PENTAGRAM or w.type == ItemTypes.Type.LAUREL or w.type == ItemTypes.Type.PAKO_BATTILIAR:
 		return true
 
 	var range_limit: float
@@ -215,6 +403,27 @@ func process(delta: float):
 				var radius = p.get_meta("orbit_radius", 60.0)
 				p.global_position = _player.global_position + Vector2(cos(angle), sin(angle)) * radius
 			i -= 1
+	_update_bird_orbits(delta)
+
+
+func _update_bird_orbits(delta: float):
+	var all_birds = []
+	if has_meta("peachone_birds"):
+		all_birds += get_meta("peachone_birds")
+	if has_meta("ebony_birds"):
+		all_birds += get_meta("ebony_birds")
+	if all_birds.is_empty():
+		return
+	for p in all_birds:
+		if not is_instance_valid(p):
+			continue
+		var angle = p.get_meta("orbit_angle", 0.0)
+		var clockwise = p.get_meta("clockwise", true)
+		var speed = p.get_meta("orbit_speed", 2.0)
+		angle += delta * speed * (1.0 if clockwise else -1.0)
+		p.set_meta("orbit_angle", angle)
+		var radius = p.get_meta("orbit_radius", 60.0)
+		p.global_position = _player.global_position + Vector2(cos(angle), sin(angle)) * radius
 
 
 func fire_weapon(w: WeaponState):
@@ -252,8 +461,28 @@ func can_evolve(weapon_type: int) -> bool:
 	if not w or w.level < w.max_level or w.evolved:
 		return false
 	var recipe = EVOLUTION_RECIPES[weapon_type]
-	var passive_lv = _player.passive_inventory.get_level(recipe["passive"])
-	return passive_lv >= recipe["passive_level"]
+	var passive_type = recipe["passive"]
+	var ok = false
+	var passive_lv = _player.passive_inventory.get_level(passive_type)
+	if passive_lv > 0:
+		ok = passive_lv >= recipe["passive_level"]
+	else:
+		var other_w = _find_weapon(passive_type)
+		ok = other_w != null and other_w.level >= recipe["passive_level"]
+	if not ok:
+		return false
+	if recipe.has("need_weapon"):
+		var need = recipe["need_weapon"]
+		var need_w = _find_weapon(need)
+		var need_lv = recipe.get("need_weapon_level", 7)
+		if not need_w or need_w.level < need_lv:
+			return false
+	if recipe.has("need_passive"):
+		var need_p = recipe["need_passive"]
+		var need_lv = recipe.get("need_passive_level", 5)
+		if _player.passive_inventory.get_level(need_p) < need_lv:
+			return false
+	return true
 
 
 func evolve_weapon(weapon_type: int):
@@ -262,7 +491,22 @@ func evolve_weapon(weapon_type: int):
 		return
 	w.evolve()
 	var recipe = EVOLUTION_RECIPES[weapon_type]
-	_player.passive_inventory.remove(recipe["passive"])
+	var passive_type = recipe["passive"]
+	if _player.passive_inventory.get_level(passive_type) > 0:
+		_player.passive_inventory.remove(passive_type)
+	else:
+		var other_w = _find_weapon(passive_type)
+		if other_w:
+			other_w.evolved = true
+			other_w.max_level = w.max_level
+	if recipe.has("need_weapon"):
+		var need = recipe["need_weapon"]
+		var need_w = _find_weapon(need)
+		if need_w:
+			need_w.evolved = true
+	if recipe.has("need_passive"):
+		var need_p = recipe["need_passive"]
+		_player.passive_inventory.remove(need_p)
 	_player.recalculate_stats()
 	var evo_name = I18N.t("evo." + _evo_name_key(weapon_type) + "_name")
 	_player.show_floating_text("⚡ " + evo_name + " ⚡", Color(0.9, 0.7, 0.1), 22)
@@ -282,6 +526,34 @@ static func _evo_name_key(weapon_type: int) -> String:
 		ItemTypes.Type.SANTA_WATER: return "santa_water"
 		ItemTypes.Type.RUNETRACER: return "runetracer"
 		ItemTypes.Type.LIGHTNING_RING: return "lightning_ring"
+		ItemTypes.Type.PENTAGRAM: return "pentagram"
+		ItemTypes.Type.PEACHONE: return "peachone"
+		ItemTypes.Type.EBONY_WINGS: return "ebony_wings"
+		ItemTypes.Type.PHIERA_DER_TUPHELLO: return "phiera"
+		ItemTypes.Type.EIGHT_THE_SPARROW: return "eight"
+		ItemTypes.Type.GATTI_AMARI: return "gatti_amari"
+		ItemTypes.Type.SONG_OF_MANA: return "song_of_mana"
+		ItemTypes.Type.SHADOW_PINION: return "shadow_pinion"
+		ItemTypes.Type.CLOCK_LANCET: return "clock_lancet"
+		ItemTypes.Type.LAUREL: return "laurel"
+		ItemTypes.Type.VENTO_SACRO: return "vento_sacro"
+		ItemTypes.Type.BONE: return "bone"
+		ItemTypes.Type.CHERRY_BOMB: return "cherry_bomb"
+		ItemTypes.Type.CARRELLO: return "carrello"
+		ItemTypes.Type.CELESTIAL_DUSTING: return "celestial_dusting"
+		ItemTypes.Type.LA_ROBBA: return "la_robba"
+		ItemTypes.Type.GREATEST_JUBILEE: return "greatest_jubilee"
+		ItemTypes.Type.BRACELET: return "bracelet"
+		ItemTypes.Type.VICTORY_SWORD: return "victory_sword"
+		ItemTypes.Type.FLAMES_OF_MISSPELL: return "flames_of_misspell"
+		ItemTypes.Type.PAKO_BATTILIAR: return "pako_battiliar"
+		ItemTypes.Type.AMMO_APPALATE: return "ammo_appalate"
+		ItemTypes.Type.CHAOS_RUNE: return "chaos_rune"
+		ItemTypes.Type.GLASS_FANDANGO: return "glass_fandango"
+		ItemTypes.Type.SANTA_JAVELIN: return "santa_javelin"
+		ItemTypes.Type.GAZE_OF_GAEA: return "gaze_of_gaea"
+		ItemTypes.Type.MAGI_STONE: return "magi_stone"
+		ItemTypes.Type.PHAS3R: return "phas3r"
 	return "whip"
 
 

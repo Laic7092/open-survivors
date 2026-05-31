@@ -15,13 +15,25 @@ enum Type {
 	BRACER = 24, SKULL = 25, TIRAGISU = 26,
 	TORRONA = 27, SILVER_RING = 28, GOLD_RING = 29,
 	METAGLIO_LEFT = 30, METAGLIO_RIGHT = 31,
-	# PENTAGRAM = 32, SONG_OF_MANA = 33, GATTI_AMARI = 34,
-	# PHIERA_DER_TUPHELLO = 35, EIGHT_THE_SPARROW = 36, VICTORY_SWORD = 37,
+	PENTAGRAM = 32, PEACHONE = 33, EBONY_WINGS = 34,
+	PHIERA_DER_TUPHELLO = 35, EIGHT_THE_SPARROW = 36,
+	GATTI_AMARI = 37, SONG_OF_MANA = 38, SHADOW_PINION = 39,
+	CLOCK_LANCET = 40, LAUREL = 41, VENTO_SACRO = 42,
+	BONE = 43, CHERRY_BOMB = 44, CARRELLO = 45,
+	CELESTIAL_DUSTING = 46, LA_ROBBA = 47,
+	GREATEST_JUBILEE = 48, BRACELET = 49, CANDYBOX = 50,
+	VICTORY_SWORD = 51, FLAMES_OF_MISSPELL = 52,
+	PAKO_BATTILIAR = 53, AMMO_APPALATE = 54,
+	CHAOS_RUNE = 55, GLASS_FANDANGO = 56, SANTA_JAVELIN = 57,
+	GAZE_OF_GAEA = 58, MAGI_STONE = 59, PHAS3R = 60,
+	ARMA_DIO = 61,
 }
 
 const WEAPON_TYPES: Array[int] = [
 	0, 1, 2, 10, 11, 12, 16, 17, 18, 19, 20,
-	# 32, 33, 34, 35, 36, 37,
+	32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
+	43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
+	54, 55, 56, 57, 58, 59, 60, 61,
 ]
 
 # { type: { name, name_key, desc, desc_key, color, evo_key } }
@@ -189,36 +201,156 @@ const DATA := {
 		"color": Color(0.8, 0.3, 0.5), "is_weapon": false, "max_level": 5,
 	},
 	# ── New Weapons ──
-#	32: {
-#		"name": "Pentagram", "name_key": "item.pentagram_name",
-#		"desc": "Removes all enemies and items from the screen at a fixed interval", "desc_key": "item.pentagram_desc",
-#		"color": Color(0.6, 0.1, 0.9), "evo_key": "pentagram", "is_weapon": true, "max_level": 9,
-#	},
-#	33: {
-#		"name": "Song of Mana", "name_key": "item.song_of_mana_name",
-#		"desc": "Summon damaging vines along the vertical axis", "desc_key": "item.song_of_mana_desc",
-#		"color": Color(0.2, 0.8, 0.3), "evo_key": "song_of_mana", "is_weapon": true, "max_level": 9,
-#	},
-#	34: {
-#		"name": "Gatti Amari", "name_key": "item.gatti_amari_name",
-#		"desc": "Cats scurry around, attacking and collecting", "desc_key": "item.gatti_amari_desc",
-#		"color": Color(0.9, 0.5, 0.2), "evo_key": "gatti_amari", "is_weapon": true, "max_level": 9,
-#	},
-#	35: {
-#		"name": "Phiera Der Tuphello", "name_key": "item.phiera_name",
-#		"desc": "Fires piercing projectiles in facing direction", "desc_key": "item.phiera_desc",
-#		"color": Color(0.3, 0.3, 0.7), "evo_key": "phiera", "is_weapon": true, "max_level": 9,
-#	},
-#	36: {
-#		"name": "Eight The Sparrow", "name_key": "item.eight_name",
-#		"desc": "Fires three-way spread shots", "desc_key": "item.eight_desc",
-#		"color": Color(0.7, 0.3, 0.4), "evo_key": "eight", "is_weapon": true, "max_level": 9,
-#	},
-#	37: {
-#		"name": "Victory Sword", "name_key": "item.victory_sword_name",
-#		"desc": "Swings a mighty sword that grows with each swing", "desc_key": "item.victory_sword_desc",
-#		"color": Color(0.9, 0.8, 0.6), "evo_key": "victory_sword", "is_weapon": true, "max_level": 9,
-#	},
+	32: {
+		"name": "Pentagram", "name_key": "item.pentagram_name",
+		"desc": "Removes all enemies and items from the screen at a fixed interval", "desc_key": "item.pentagram_desc",
+		"color": Color(0.6, 0.1, 0.9), "evo_key": "pentagram", "is_weapon": true, "max_level": 9,
+	},
+	33: {
+		"name": "Peachone", "name_key": "item.peachone_name",
+		"desc": "Flying ally circles clockwise around you", "desc_key": "item.peachone_desc",
+		"color": Color(0.9, 0.5, 0.3), "evo_key": "peachone", "is_weapon": true, "max_level": 9,
+	},
+	34: {
+		"name": "Ebony Wings", "name_key": "item.ebony_wings_name",
+		"desc": "Flying ally circles counter-clockwise around you", "desc_key": "item.ebony_wings_desc",
+		"color": Color(0.3, 0.3, 0.7), "evo_key": "ebony_wings", "is_weapon": true, "max_level": 9,
+	},
+	35: {
+		"name": "Phiera Der Tuphello", "name_key": "item.phiera_name",
+		"desc": "Fires piercing projectiles in facing direction", "desc_key": "item.phiera_desc",
+		"color": Color(0.3, 0.3, 0.7), "evo_key": "phiera", "is_weapon": true, "max_level": 9,
+	},
+	36: {
+		"name": "Eight The Sparrow", "name_key": "item.eight_name",
+		"desc": "Fires three-way spread shots", "desc_key": "item.eight_desc",
+		"color": Color(0.7, 0.3, 0.4), "evo_key": "eight", "is_weapon": true, "max_level": 9,
+	},
+	37: {
+		"name": "Gatti Amari", "name_key": "item.gatti_amari_name",
+		"desc": "Cats scurry around, attacking and collecting", "desc_key": "item.gatti_amari_desc",
+		"color": Color(0.9, 0.5, 0.2), "evo_key": "gatti_amari", "is_weapon": true, "max_level": 9,
+	},
+	38: {
+		"name": "Song of Mana", "name_key": "item.song_of_mana_name",
+		"desc": "Summon damaging vines along the vertical axis", "desc_key": "item.song_of_mana_desc",
+		"color": Color(0.2, 0.8, 0.3), "evo_key": "song_of_mana", "is_weapon": true, "max_level": 9,
+	},
+	39: {
+		"name": "Shadow Pinion", "name_key": "item.shadow_pinion_name",
+		"desc": "Leave damaging shadows while moving, strike when stopping", "desc_key": "item.shadow_pinion_desc",
+		"color": Color(0.4, 0.2, 0.6), "evo_key": "shadow_pinion", "is_weapon": true, "max_level": 9,
+	},
+	40: {
+		"name": "Clock Lancet", "name_key": "item.clock_lancet_name",
+		"desc": "Chance to freeze enemies in time", "desc_key": "item.clock_lancet_desc",
+		"color": Color(0.6, 0.8, 1.0), "evo_key": "clock_lancet", "is_weapon": true, "max_level": 8,
+	},
+	41: {
+		"name": "Laurel", "name_key": "item.laurel_name",
+		"desc": "Temporary invincibility shield", "desc_key": "item.laurel_desc",
+		"color": Color(0.2, 0.9, 0.4), "evo_key": "laurel", "is_weapon": true, "max_level": 8,
+	},
+	42: {
+		"name": "Vento Sacro", "name_key": "item.vento_sacro_name",
+		"desc": "Stronger while moving, can crit", "desc_key": "item.vento_sacro_desc",
+		"color": Color(0.3, 0.8, 0.8), "evo_key": "vento_sacro", "is_weapon": true, "max_level": 9,
+	},
+	43: {
+		"name": "Bone", "name_key": "item.bone_name",
+		"desc": "Throw bouncing projectiles", "desc_key": "item.bone_desc",
+		"color": Color(0.8, 0.8, 0.7), "evo_key": "bone", "is_weapon": true, "max_level": 9,
+	},
+	44: {
+		"name": "Cherry Bomb", "name_key": "item.cherry_bomb_name",
+		"desc": "Throw bouncing bombs that may explode", "desc_key": "item.cherry_bomb_desc",
+		"color": Color(0.9, 0.2, 0.2), "evo_key": "cherry_bomb", "is_weapon": true, "max_level": 9,
+	},
+	45: {
+		"name": "Carréllo", "name_key": "item.carrello_name",
+		"desc": "Throw bouncing projectiles that scale with amount", "desc_key": "item.carrello_desc",
+		"color": Color(0.2, 0.6, 0.9), "evo_key": "carrello", "is_weapon": true, "max_level": 9,
+	},
+	46: {
+		"name": "Celestial Dusting", "name_key": "item.celestial_dusting_name",
+		"desc": "Throws projectiles, movespeed reduces cooldown", "desc_key": "item.celestial_dusting_desc",
+		"color": Color(0.7, 0.5, 0.9), "evo_key": "celestial_dusting", "is_weapon": true, "max_level": 9,
+	},
+	47: {
+		"name": "La Robba", "name_key": "item.la_robba_name",
+		"desc": "Generates bouncing projectiles", "desc_key": "item.la_robba_desc",
+		"color": Color(0.6, 0.2, 0.8), "evo_key": "la_robba", "is_weapon": true, "max_level": 9,
+	},
+	48: {
+		"name": "Greatest Jubilee", "name_key": "item.greatest_jubilee_name",
+		"desc": "Chance to spawn light sources", "desc_key": "item.greatest_jubilee_desc",
+		"color": Color(0.9, 0.8, 0.1), "evo_key": "greatest_jubilee", "is_weapon": true, "max_level": 10,
+	},
+	49: {
+		"name": "Bracelet", "name_key": "item.bracelet_name",
+		"desc": "Fires projectiles at random enemies", "desc_key": "item.bracelet_desc",
+		"color": Color(0.7, 0.3, 0.6), "evo_key": "bracelet", "is_weapon": true, "max_level": 7,
+	},
+	50: {
+		"name": "Candybox", "name_key": "item.candybox_name",
+		"desc": "Choose any unlocked base weapon", "desc_key": "item.candybox_desc",
+		"color": Color(0.9, 0.3, 0.7), "evo_key": "candybox", "is_weapon": true, "max_level": 2,
+	},
+	51: {
+		"name": "Victory Sword", "name_key": "item.victory_sword_name",
+		"desc": "Swings a mighty sword that grows with each swing", "desc_key": "item.victory_sword_desc",
+		"color": Color(0.9, 0.8, 0.6), "evo_key": "victory_sword", "is_weapon": true, "max_level": 13,
+	},
+	52: {
+		"name": "Flames of Misspell", "name_key": "item.flames_of_misspell_name",
+		"desc": "Emit a cone of flames", "desc_key": "item.flames_of_misspell_desc",
+		"color": Color(0.9, 0.3, 0.1), "evo_key": "flames_of_misspell", "is_weapon": true, "max_level": 9,
+	},
+	53: {
+		"name": "Pako Battiliar", "name_key": "item.pako_battiliar_name",
+		"desc": "May counterattack when taking damage", "desc_key": "item.pako_battiliar_desc",
+		"color": Color(0.4, 0.2, 0.4), "evo_key": "pako_battiliar", "is_weapon": true, "max_level": 9,
+	},
+	54: {
+		"name": "Ammo Appalate", "name_key": "item.ammo_appalate_name",
+		"desc": "Aims at enemies in faced direction, stores shots", "desc_key": "item.ammo_appalate_desc",
+		"color": Color(0.5, 0.7, 0.3), "evo_key": "ammo_appalate", "is_weapon": true, "max_level": 9,
+	},
+	55: {
+		"name": "Chaos Rune", "name_key": "item.chaos_rune_name",
+		"desc": "Speed and duration affect hit count", "desc_key": "item.chaos_rune_desc",
+		"color": Color(0.7, 0.1, 0.7), "evo_key": "chaos_rune", "is_weapon": true, "max_level": 9,
+	},
+	56: {
+		"name": "Glass Fandango", "name_key": "item.glass_fandango_name",
+		"desc": "Stronger while moving and against frozen enemies", "desc_key": "item.glass_fandango_desc",
+		"color": Color(0.5, 0.8, 0.9), "evo_key": "glass_fandango", "is_weapon": true, "max_level": 9,
+	},
+	57: {
+		"name": "Santa Javelin", "name_key": "item.santa_javelin_name",
+		"desc": "Duration affects amount, can crit", "desc_key": "item.santa_javelin_desc",
+		"color": Color(0.8, 0.6, 0.1), "evo_key": "santa_javelin", "is_weapon": true, "max_level": 9,
+	},
+	58: {
+		"name": "Gaze of Gaea", "name_key": "item.gaze_of_gaea_name",
+		"desc": "May disarm enemies", "desc_key": "item.gaze_of_gaea_desc",
+		"color": Color(0.3, 0.7, 0.3), "evo_key": "gaze_of_gaea", "is_weapon": true, "max_level": 9,
+	},
+	59: {
+		"name": "Magi-Stone", "name_key": "item.magi_stone_name",
+		"desc": "Deals damage based on weapon level", "desc_key": "item.magi_stone_desc",
+		"color": Color(0.6, 0.4, 0.8), "evo_key": "magi_stone", "is_weapon": true, "max_level": 9,
+	},
+	60: {
+		"name": "Phas3r", "name_key": "item.phas3r_name",
+		"desc": "Creates thin damaging zones, high amount scaling", "desc_key": "item.phas3r_desc",
+		"color": Color(0.2, 0.9, 0.6), "evo_key": "phas3r", "is_weapon": true, "max_level": 9,
+	},
+	61: {
+		"name": "Arma Dio", "name_key": "item.arma_dio_name",
+		"desc": "Select an additional passive item", "desc_key": "item.arma_dio_desc",
+		"color": Color(0.8, 0.2, 0.2), "evo_key": "arma_dio", "is_weapon": true, "max_level": 2,
+	},
 }
 
 

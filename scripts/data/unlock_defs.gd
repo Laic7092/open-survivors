@@ -35,6 +35,28 @@ class UnlockCondition:
 				return "Reach level %d in a run" % params.get("min_level", 0)
 			ConditionType.RELIC_OWNED:
 				return "Collect relic: %s" % params.get("relic_id", "?")
+			ConditionType.SURVIVE_CHAR_TIME:
+				var t = params.get("min_time", 0) / 60
+				var char_id = params.get("char_id", -1)
+				if char_id >= 0:
+					return "Survive %d min with char %d" % [t, char_id]
+				return "Survive %d min" % t
+			ConditionType.TOTAL_KILLS:
+				return "Accumulate %d total kills" % params.get("min_kills", 0)
+			ConditionType.WEAPON_AT_LEVEL:
+				return "Upgrade weapon %d to level %d" % [params.get("weapon_type", 0), params.get("min_level", 0)]
+			ConditionType.ITEM_FOUND:
+				return "Find item %d" % params.get("item_type", 0)
+			ConditionType.DESTROY_LIGHT_SOURCES:
+				return "Destroy %d light sources" % params.get("count", 0)
+			ConditionType.START_WITH_CHAR:
+				return "Start a run with character %d" % params.get("char_id", 0)
+			ConditionType.ALL_EVOLUTIONS:
+				return "Evolve all weapons in a run"
+			ConditionType.RUN_KILLS:
+				return "Kill %d enemies in one run" % params.get("min_kills", 0)
+			ConditionType.CHAR_LEVEL:
+				return "Reach character level %d" % params.get("min_level", 0)
 			_:
 				return "Unknown condition"
 
@@ -89,6 +111,12 @@ static func get_unlock_id_for_arcana(arcana_id: int) -> String:
 static func get_unlock_id_for_stage(stage_id: int) -> String:
 	for d in _ALL_DEFS:
 		if d.unlock_type == UnlockableType.STAGE and d.target_id == stage_id:
+			return d.id
+	return ""
+
+static func get_unlock_id_for_item(item_id: int) -> String:
+	for d in _ALL_DEFS:
+		if d.unlock_type == UnlockableType.ITEM and d.target_id == item_id:
 			return d.id
 	return ""
 
@@ -369,5 +397,192 @@ static var _ALL_DEFS: Array = [
 		"char_11", UnlockableType.CHARACTER, 11,
 		[],
 		"char.11_name", "char.11_desc", "character"
+	),
+
+	# ═══════════════════════════════════════════════════════
+	#  ITEMS (weapons)
+	# ═══════════════════════════════════════════════════════
+	# Default-unlocked weapons have empty conditions array.
+	# Conditioned weapons require ALL conditions to be met.
+
+	# Pentagram — default unlocked
+	UnlockDef.new(
+		"item_32", UnlockableType.ITEM, 32,
+		[],
+		"item.pentagram_name", "item.pentagram_desc"
+	),
+	# Peachone — default unlocked
+	UnlockDef.new(
+		"item_33", UnlockableType.ITEM, 33,
+		[],
+		"item.peachone_name", "item.peachone_desc"
+	),
+	# Ebony Wings — default unlocked
+	UnlockDef.new(
+		"item_34", UnlockableType.ITEM, 34,
+		[],
+		"item.ebony_wings_name", "item.ebony_wings_desc"
+	),
+	# Phiera Der Tuphello — default unlocked
+	UnlockDef.new(
+		"item_35", UnlockableType.ITEM, 35,
+		[],
+		"item.phiera_name", "item.phiera_desc"
+	),
+	# Eight The Sparrow — default unlocked
+	UnlockDef.new(
+		"item_36", UnlockableType.ITEM, 36,
+		[],
+		"item.eight_name", "item.eight_desc"
+	),
+	# Gatti Amari — default unlocked
+	UnlockDef.new(
+		"item_37", UnlockableType.ITEM, 37,
+		[],
+		"item.gatti_amari_name", "item.gatti_amari_desc"
+	),
+	# Song of Mana — default unlocked
+	UnlockDef.new(
+		"item_38", UnlockableType.ITEM, 38,
+		[],
+		"item.song_of_mana_name", "item.song_of_mana_desc"
+	),
+	# Shadow Pinion — default unlocked
+	UnlockDef.new(
+		"item_39", UnlockableType.ITEM, 39,
+		[],
+		"item.shadow_pinion_name", "item.shadow_pinion_desc"
+	),
+	# Bracelet — default unlocked
+	UnlockDef.new(
+		"item_49", UnlockableType.ITEM, 49,
+		[],
+		"item.bracelet_name", "item.bracelet_desc"
+	),
+	# Clock Lancet — survive 30 min
+	UnlockDef.new(
+		"item_40", UnlockableType.ITEM, 40,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.clock_lancet_name", "item.clock_lancet_desc"
+	),
+	# Laurel — survive 30 min
+	UnlockDef.new(
+		"item_41", UnlockableType.ITEM, 41,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.laurel_name", "item.laurel_desc"
+	),
+	# Vento Sacro — survive 30 min
+	UnlockDef.new(
+		"item_42", UnlockableType.ITEM, 42,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.vento_sacro_name", "item.vento_sacro_desc"
+	),
+	# Bone — survive 30 min
+	UnlockDef.new(
+		"item_43", UnlockableType.ITEM, 43,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.bone_name", "item.bone_desc"
+	),
+	# Greatest Jubilee — survive 30 min
+	UnlockDef.new(
+		"item_48", UnlockableType.ITEM, 48,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.greatest_jubilee_name", "item.greatest_jubilee_desc"
+	),
+	# Victory Sword — survive 30 min
+	UnlockDef.new(
+		"item_51", UnlockableType.ITEM, 51,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.victory_sword_name", "item.victory_sword_desc"
+	),
+	# Glass Fandango — survive 30 min
+	UnlockDef.new(
+		"item_56", UnlockableType.ITEM, 56,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.glass_fandango_name", "item.glass_fandango_desc"
+	),
+	# Santa Javelin — survive 30 min
+	UnlockDef.new(
+		"item_57", UnlockableType.ITEM, 57,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.santa_javelin_name", "item.santa_javelin_desc"
+	),
+	# Gaze of Gaea — survive 30 min
+	UnlockDef.new(
+		"item_58", UnlockableType.ITEM, 58,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.gaze_of_gaea_name", "item.gaze_of_gaea_desc"
+	),
+	# Magi Stone — survive 30 min
+	UnlockDef.new(
+		"item_59", UnlockableType.ITEM, 59,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 1800})],
+		"item.magi_stone_name", "item.magi_stone_desc"
+	),
+	# Phas3r — survive 15 min with She-Mush (char 6)
+	UnlockDef.new(
+		"item_60", UnlockableType.ITEM, 60,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 900, "char_id": 6})],
+		"item.phas3r_name", "item.phas3r_desc"
+	),
+	# Cherry Bomb — survive 15 min with Lama (char 2)
+	UnlockDef.new(
+		"item_44", UnlockableType.ITEM, 44,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 900, "char_id": 2})],
+		"item.cherry_bomb_name", "item.cherry_bomb_desc"
+	),
+	# Carrello — survive 15 min with Pugnala (char 3)
+	UnlockDef.new(
+		"item_45", UnlockableType.ITEM, 45,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 900, "char_id": 3})],
+		"item.carrello_name", "item.carrello_desc"
+	),
+	# Celestial Dusting — survive 15 min with Poppea (char 4)
+	UnlockDef.new(
+		"item_46", UnlockableType.ITEM, 46,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 900, "char_id": 4})],
+		"item.celestial_dusting_name", "item.celestial_dusting_desc"
+	),
+	# La Robba — survive 15 min with Concetta (char 5)
+	UnlockDef.new(
+		"item_47", UnlockableType.ITEM, 47,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 900, "char_id": 5})],
+		"item.la_robba_name", "item.la_robba_desc"
+	),
+	# Flames of Misspell — survive 15 min with Avatar (char 7)
+	UnlockDef.new(
+		"item_52", UnlockableType.ITEM, 52,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 900, "char_id": 7})],
+		"item.flames_of_misspell_name", "item.flames_of_misspell_desc"
+	),
+	# Pako Battiliar — survive 15 min with O'Soul (char 8)
+	UnlockDef.new(
+		"item_53", UnlockableType.ITEM, 53,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 900, "char_id": 8})],
+		"item.pako_battiliar_name", "item.pako_battiliar_desc"
+	),
+	# Ammo Appalate — survive 15 min with Zi'Assunta (char 9)
+	UnlockDef.new(
+		"item_54", UnlockableType.ITEM, 54,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 900, "char_id": 9})],
+		"item.ammo_appalate_name", "item.ammo_appalate_desc"
+	),
+	# Chaos Rune — survive 15 min with Sigma (char 10)
+	UnlockDef.new(
+		"item_55", UnlockableType.ITEM, 55,
+		[UnlockCondition.new(ConditionType.SURVIVE_CHAR_TIME, {"min_time": 900, "char_id": 10})],
+		"item.chaos_rune_name", "item.chaos_rune_desc"
+	),
+	# Arma Dio — total kills 10000
+	UnlockDef.new(
+		"item_61", UnlockableType.ITEM, 61,
+		[UnlockCondition.new(ConditionType.TOTAL_KILLS, {"min_kills": 10000})],
+		"item.arma_dio_name", "item.arma_dio_desc"
+	),
+	# Candybox — all evolutions collected in a run
+	UnlockDef.new(
+		"item_50", UnlockableType.ITEM, 50,
+		[UnlockCondition.new(ConditionType.ALL_EVOLUTIONS, {})],
+		"item.candybox_name", "item.candybox_desc"
 	),
 ]

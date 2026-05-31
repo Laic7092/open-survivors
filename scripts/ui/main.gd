@@ -48,6 +48,11 @@ func _ready():
 	Engine.time_scale = 1.0
 	game_state = GameState.new()
 	add_child(game_state)
+
+	# Notify unlock manager that run started
+	var char_data = EventBus.get_config("selected_character", null)
+	var char_id = char_data.get("id", 0) if char_data else 0
+	_lazy_unlock_manager().on_run_started(char_id)
 	
 	var stage_data = EventBus.get_config("selected_stage", null)
 	if stage_data != null:
@@ -224,6 +229,10 @@ func _process(delta):
 	game_state.game_time += delta
 	game_state.update_difficulty(delta)
 	
+	# Unlock manager: game time tracking — update every ~1s for survivable checks
+	if _frame_count % 60 == 0:
+		_lazy_unlock_manager().on_game_time_updated(game_state.game_time)
+	
 	if not EventBus.get_config("endless_mode", false) and game_state.game_time >= game_state.stage_time_limit:
 		_on_stage_complete()
 		return
@@ -272,6 +281,7 @@ func _on_enemy_died(enemy: Node2D):
 	if not is_instance_valid(enemy):
 		return
 	game_state.add_kill()
+	_lazy_unlock_manager().on_kill()
 	
 	if game_state.wave_active and enemy.is_wave_enemy:
 		game_state.wave_alive -= 1
@@ -431,6 +441,7 @@ func _on_player_died():
 	get_tree().paused = true
 	if player:
 		_lazy_unlock_manager().on_run_ended(player.level)
+	_lazy_unlock_manager().on_game_time_updated(game_state.game_time)
 	AudioManager.stop_bgm()
 	AudioManager.play_sfx("game_over")
 	PowerUpManager.end_run(true)
@@ -444,6 +455,7 @@ func _on_stage_complete():
 	AudioManager.stop_bgm()
 	AudioManager.play_sfx("evolution")
 	_lazy_unlock_manager().on_stage_cleared(game_state._stage_id)
+	_lazy_unlock_manager().on_game_time_updated(game_state.game_time)
 	if player:
 		_lazy_unlock_manager().on_run_ended(player.level)
 	var gold_bonus = 500
@@ -460,12 +472,16 @@ func _on_stage_complete():
 func _on_upgrade_selected(upgrade_type: int):
 	get_tree().paused = false
 	player.apply_upgrade(upgrade_type)
+	# Notify unlock manager about weapon level
+	var lv = player.get_weapon_level(upgrade_type)
+	_lazy_unlock_manager().on_weapon_upgraded(upgrade_type, lv)
 	_level_up_screen.hide_screen()
 
 
 func _on_evolution_selected(weapon_type: int):
 	get_tree().paused = false
 	player.evolve_weapon(weapon_type)
+	_lazy_unlock_manager().on_evolution(weapon_type)
 	_level_up_screen.hide_screen()
 
 

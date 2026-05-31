@@ -320,11 +320,7 @@ func recalculate_stats():
 
 
 func apply_upgrade(t: int):
-	var is_weapon = t in [
-		UpgradeType.WHIP, UpgradeType.MAGIC_WAND, UpgradeType.GARLIC,
-		UpgradeType.KNIFE, UpgradeType.AXE, UpgradeType.FIRE_WAND,
-		UpgradeType.CROSS, UpgradeType.KING_BIBLE, UpgradeType.SANTA_WATER,
-		UpgradeType.RUNETRACER, UpgradeType.LIGHTNING_RING]
+	var is_weapon = DataRegistry.items().is_weapon(t)
 	if is_weapon:
 		weapon_manager.add_or_upgrade(t)
 	else:

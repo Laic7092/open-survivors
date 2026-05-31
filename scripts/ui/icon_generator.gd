@@ -42,11 +42,35 @@ const EMOJI := {
 	30: "🔮",  # Metaglio Left
 	31: "⚗️", # Metaglio Right
 	32: "⭐",  # Pentagram
-	33: "🎵",  # Song of Mana
-	34: "🐱",  # Gatti Amari
+	33: "🐦",  # Peachone
+	34: "🐦‍⬛", # Ebony Wings
 	35: "🔫",  # Phiera Der Tuphello
 	36: "🔫",  # Eight The Sparrow
-	37: "🗡️", # Victory Sword
+	37: "🐱",  # Gatti Amari
+	38: "🎵",  # Song of Mana
+	39: "🌑",  # Shadow Pinion
+	40: "⏰",  # Clock Lancet
+	41: "🌿",  # Laurel
+	42: "💨",  # Vento Sacro
+	43: "🦴",  # Bone
+	44: "🍒",  # Cherry Bomb
+	45: "🚗",  # Carréllo
+	46: "✨",  # Celestial Dusting
+	47: "🌀",  # La Robba
+	48: "🎉",  # Greatest Jubilee
+	49: "📿",  # Bracelet
+	50: "🍬",  # Candybox
+	51: "🗡️", # Victory Sword
+	52: "🔥",  # Flames of Misspell
+	53: "🦇",  # Pako Battiliar
+	54: "🎯",  # Ammo Appalate
+	55: "🔮",  # Chaos Rune
+	56: "❄️", # Glass Fandango
+	57: "🔱",  # Santa Javelin
+	58: "👁️", # Gaze of Gaea
+	59: "💎",  # Magi-Stone
+	60: "🔫",  # Phas3r
+	61: "🎁",  # Arma Dio
 }
 
 # Item type → color (mirrors level_up_screen.gd _color())
@@ -85,11 +109,35 @@ static func get_color(t: int) -> Color:
 		30: return Color(0.5, 0.3, 0.8)   # Metaglio Left
 		31: return Color(0.8, 0.3, 0.5)   # Metaglio Right
 		32: return Color(0.6, 0.1, 0.9)   # Pentagram
-		33: return Color(0.2, 0.8, 0.3)   # Song of Mana
-		34: return Color(0.9, 0.5, 0.2)   # Gatti Amari
+		33: return Color(0.9, 0.5, 0.3)   # Peachone
+		34: return Color(0.3, 0.3, 0.7)   # Ebony Wings
 		35: return Color(0.3, 0.3, 0.7)   # Phiera Der Tuphello
 		36: return Color(0.7, 0.3, 0.4)   # Eight The Sparrow
-		37: return Color(0.9, 0.8, 0.6)   # Victory Sword
+		37: return Color(0.9, 0.5, 0.2)   # Gatti Amari
+		38: return Color(0.2, 0.8, 0.3)   # Song of Mana
+		39: return Color(0.4, 0.2, 0.6)   # Shadow Pinion
+		40: return Color(0.6, 0.8, 1.0)   # Clock Lancet
+		41: return Color(0.2, 0.9, 0.4)   # Laurel
+		42: return Color(0.3, 0.8, 0.8)   # Vento Sacro
+		43: return Color(0.8, 0.8, 0.7)   # Bone
+		44: return Color(0.9, 0.2, 0.2)   # Cherry Bomb
+		45: return Color(0.2, 0.6, 0.9)   # Carréllo
+		46: return Color(0.7, 0.5, 0.9)   # Celestial Dusting
+		47: return Color(0.6, 0.2, 0.8)   # La Robba
+		48: return Color(0.9, 0.8, 0.1)   # Greatest Jubilee
+		49: return Color(0.7, 0.3, 0.6)   # Bracelet
+		50: return Color(0.9, 0.3, 0.7)   # Candybox
+		51: return Color(0.9, 0.8, 0.6)   # Victory Sword
+		52: return Color(0.9, 0.3, 0.1)   # Flames of Misspell
+		53: return Color(0.4, 0.2, 0.4)   # Pako Battiliar
+		54: return Color(0.5, 0.7, 0.3)   # Ammo Appalate
+		55: return Color(0.7, 0.1, 0.7)   # Chaos Rune
+		56: return Color(0.5, 0.8, 0.9)   # Glass Fandango
+		57: return Color(0.8, 0.6, 0.1)   # Santa Javelin
+		58: return Color(0.3, 0.7, 0.3)   # Gaze of Gaea
+		59: return Color(0.6, 0.4, 0.8)   # Magi-Stone
+		60: return Color(0.2, 0.9, 0.6)   # Phas3r
+		61: return Color(0.8, 0.2, 0.2)   # Arma Dio
 	return Color.WHITE
 
 
