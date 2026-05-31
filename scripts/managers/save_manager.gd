@@ -198,9 +198,8 @@ func _apply_slot_to_managers(_slot_id: String):
 		RelicManager._load_data()
 	if ArcanaManager and ArcanaManager.has_method("load_unlock_data"):
 		ArcanaManager.load_unlock_data()
-	var um = EventBus.get_unlock_manager() if EventBus else null
-	if um and um.has_method("_load_data"):
-		um._load_data()
+	if UnlockManager:
+		UnlockManager._load_data()
 
 
 # Save current manager state into the current slot
@@ -227,10 +226,9 @@ func save_current_slot():
 	if ArcanaManager:
 		slot["unlocked_arcanas"] = ArcanaManager.get_unlocked()
 	
-	var um = EventBus.get_unlock_manager() if EventBus else null
-	if um:
-		slot["completed_unlocks"] = um.get_completed()
-		slot["seen_unlocks"] = um.get_seen()
+	if UnlockManager:
+		slot["completed_unlocks"] = UnlockManager.get_completed()
+		slot["seen_unlocks"] = UnlockManager.get_seen()
 	
 	_save()
 

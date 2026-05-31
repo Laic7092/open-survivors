@@ -27,6 +27,7 @@ EnemyRegistry="*res://scripts/managers/enemy_registry.gd"
 ObjectPoolManager="*res://scripts/managers/object_pool_manager.gd"
 DataRegistry="*res://scripts/core/data_registry.gd"
 EventBus="*res://scripts/core/event_bus.gd"
+UnlockManager="*res://scripts/managers/unlock_manager.gd"
 
 [display]
 

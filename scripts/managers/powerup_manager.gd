@@ -49,7 +49,6 @@ var unlocked_hyper: int = 0
 var unlocked_chars: int = 1
 var run_gold: int = 0
 var run_rerolls: int = 0
-var unlocked_weapons: int = 0
 
 
 func _ready():
@@ -65,7 +64,6 @@ func _save_data():
 	SaveManager.set_section("unlocked_stages", unlocked_stages)
 	SaveManager.set_section("unlocked_hyper", unlocked_hyper)
 	SaveManager.set_section("unlocked_chars", unlocked_chars)
-	SaveManager.set_section("unlocked_weapons", unlocked_weapons)
 
 
 func _load_data():
@@ -82,7 +80,6 @@ func _load_data():
 	unlocked_stages = SaveManager.get_section("unlocked_stages", 1)
 	unlocked_hyper = SaveManager.get_section("unlocked_hyper", 0)
 	unlocked_chars = SaveManager.get_section("unlocked_chars", 1)
-	unlocked_weapons = SaveManager.get_section("unlocked_weapons", 0)
 	for id in POWERUPS:
 		if not levels.has(id):
 			levels[id] = 0
@@ -169,15 +166,6 @@ func has_unlocked_character(char_id: int) -> bool:
 	return (unlocked_chars & (1 << char_id)) != 0
 
 
-func unlock_weapon(weapon_type: int):
-	unlocked_weapons |= (1 << weapon_type)
-	_save_data()
-
-
-func has_unlocked_weapon(weapon_type: int) -> bool:
-	return (unlocked_weapons & (1 << weapon_type)) != 0
-
-
 func buy_character(char_id: int, cost: int) -> bool:
 	if has_unlocked_character(char_id):
 		return false
@@ -186,9 +174,8 @@ func buy_character(char_id: int, cost: int) -> bool:
 	gold -= cost
 	unlock_character(char_id)
 	_save_data()
-	var um = EventBus.get_unlock_manager() if EventBus else null
-	if um:
-		um.purchase_unlock("char_" + str(char_id))
+	if UnlockManager:
+		UnlockManager.purchase_unlock("char_" + str(char_id))
 	return true
 
 

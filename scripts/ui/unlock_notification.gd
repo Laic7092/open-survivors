@@ -18,7 +18,7 @@ func _ready():
 
 
 func check_and_show():
-	var new_unlocks = _lazy_unlock_manager().get_newly_unlocked()
+	var new_unlocks = UnlockManager.get_newly_unlocked()
 	if new_unlocks.is_empty():
 		return
 
@@ -146,7 +146,7 @@ func _show_notification():
 
 
 func _on_dismiss():
-	_lazy_unlock_manager().mark_all_seen()
+	UnlockManager.mark_all_seen()
 	visible = false
 	_clear()
 	dismissed.emit()
@@ -160,6 +160,8 @@ func _type_color(ut: int) -> Color:
 			return Color(0.9, 0.7, 0.2)
 		UnlockTypes.UnlockableType.CHARACTER:
 			return Color(0.3, 0.5, 0.9)
+		UnlockTypes.UnlockableType.ITEM:
+			return Color(0.8, 0.3, 0.6)
 	return Color.WHITE
 
 
@@ -171,20 +173,11 @@ func _type_name(ut: int) -> String:
 			return I18N.t("unlock.type_arcana")
 		UnlockTypes.UnlockableType.CHARACTER:
 			return I18N.t("unlock.type_character")
+		UnlockTypes.UnlockableType.ITEM:
+			return I18N.t("unlock.type_item")
 	return ""
 
 
 func _clear():
 	for c in get_children():
 		c.queue_free()
-
-
-# UnlockManager 延迟加载
-var _unlock_manager: Node = null
-
-func _lazy_unlock_manager() -> Node:
-	if _unlock_manager == null:
-		_unlock_manager = load("res://scripts/managers/unlock_manager.gd").new()
-		add_child(_unlock_manager)
-		EventBus.register_unlock_manager(_unlock_manager)
-	return _unlock_manager

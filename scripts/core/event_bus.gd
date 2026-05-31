@@ -22,6 +22,11 @@ signal relic_collected(relic_id: String)
 signal arcana_activated(arcana_id: int)
 signal config_changed(key: String, value)
 
+# Unlock system events
+signal weapon_upgraded(weapon_type: int, level: int)
+signal item_evolved(weapon_type: int)
+signal light_source_destroyed()
+
 # ═══════════════════════════════════════════════
 #  运行时配置存储（替代 Engine.set_meta/get_meta）
 # ═══════════════════════════════════════════════
@@ -66,16 +71,3 @@ func set_mode_flags(hurry: bool, hyper: bool, endless: bool, alt_music: bool, ar
 
 func is_mode_enabled(mode: String) -> bool:
 	return get_config(mode + "_mode", false) or false
-
-
-# ═══════════════════════════════════════════════════════════
-#  延迟加载管理器注册表
-# ═══════════════════════════════════════════════════════════
-
-var _unlock_manager_ref: Node = null
-
-func register_unlock_manager(node: Node):
-	_unlock_manager_ref = node
-
-func get_unlock_manager() -> Node:
-	return _unlock_manager_ref

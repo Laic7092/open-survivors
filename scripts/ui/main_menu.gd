@@ -75,14 +75,13 @@ func _refresh_text():
 # ═══════════════════════════════════════════════════════════
 
 func _check_new_unlocks():
-	var um = _lazy_unlock_manager()
 	if _unlock_notif and _unlock_notif.has_method("check_and_show"):
 		_unlock_notif.check_and_show()
 	call_deferred("_add_unlock_badges")
 
 
 func _add_unlock_badges():
-	if not _lazy_unlock_manager().has_new_unlocks():
+	if not UnlockManager.has_new_unlocks():
 		return
 	_clear_badges()
 	_add_badge_to_button(_start_btn, Color(0.9, 0.2, 0.2))
@@ -224,17 +223,6 @@ func _resolution_text() -> String:
 	var w = I18N.resolution.x
 	var h = I18N.resolution.y
 	return "%dx%d" % [w, h]
-
-
-# UnlockManager 延迟加载
-var _unlock_manager: Node = null
-
-func _lazy_unlock_manager() -> Node:
-	if _unlock_manager == null:
-		_unlock_manager = load("res://scripts/managers/unlock_manager.gd").new()
-		add_child(_unlock_manager)
-		EventBus.register_unlock_manager(_unlock_manager)
-	return _unlock_manager
 
 
 func play_menu_music():

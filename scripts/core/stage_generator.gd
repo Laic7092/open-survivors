@@ -675,10 +675,7 @@ func _on_breakable_destroyed(pos: Vector2):
 	if idx >= 0:
 		obstacle_positions.remove_at(idx)
 		obstacle_removed.emit(pos)
-	# Notify unlock manager
-	var um = EventBus.get_unlock_manager() if EventBus else null
-	if um:
-		um.on_destroy_light_source()
+	EventBus.light_source_destroyed.emit()
 
 
 func _get_or_create_prop_manager() -> Node:

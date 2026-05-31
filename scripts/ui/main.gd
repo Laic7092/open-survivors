@@ -52,7 +52,7 @@ func _ready():
 	# Notify unlock manager that run started
 	var char_data = EventBus.get_config("selected_character", null)
 	var char_id = char_data.get("id", 0) if char_data else 0
-	_lazy_unlock_manager().on_run_started(char_id)
+	UnlockManager.on_run_started(char_id)
 	
 	var stage_data = EventBus.get_config("selected_stage", null)
 	if stage_data != null:
@@ -141,7 +141,6 @@ func _ready():
 	
 	# ── 重置运行时状态 ──
 	PowerUpManager.reset_run_gold()
-	_lazy_unlock_manager().reset_run_state()
 	ArcanaManager.deactivate_all()
 	
 	# ── HUD 信号连接 + 初始同步 ──
@@ -151,7 +150,7 @@ func _ready():
 	call_deferred("start_game_music")
 	
 	if RelicManager.has_relic("randomazzo"):
-		_lazy_unlock_manager().on_relic_collected("randomazzo")
+		UnlockManager.on_relic_collected("randomazzo")
 	
 	call_deferred("_deferred_setup")
 	
@@ -231,7 +230,7 @@ func _process(delta):
 	
 	# Unlock manager: game time tracking — update every ~1s for survivable checks
 	if _frame_count % 60 == 0:
-		_lazy_unlock_manager().on_game_time_updated(game_state.game_time)
+		UnlockManager.on_game_time_updated(game_state.game_time)
 	
 	if not EventBus.get_config("endless_mode", false) and game_state.game_time >= game_state.stage_time_limit:
 		_on_stage_complete()
@@ -281,13 +280,14 @@ func _on_enemy_died(enemy: Node2D):
 	if not is_instance_valid(enemy):
 		return
 	game_state.add_kill()
-	_lazy_unlock_manager().on_kill()
+	var is_boss = enemy.has_method("get_is_boss") and enemy.get_is_boss()
+	var enemy_type = enemy.enemy_type_id if "enemy_type_id" in enemy else -1
+	EventBus.enemy_killed.emit(enemy_type, enemy.global_position, is_boss)
 	
 	if game_state.wave_active and enemy.is_wave_enemy:
 		game_state.wave_alive -= 1
 	
 	var is_arcana_boss = enemy.has_meta("arcana_boss") and enemy.get_meta("arcana_boss")
-	var is_boss = enemy.has_method("get_is_boss") and enemy.get_is_boss()
 	
 	# 掉落物（委托给 SpawnManager）
 	spawn_manager.spawn_enemy_drops(enemy)
@@ -296,7 +296,7 @@ func _on_enemy_died(enemy: Node2D):
 	if is_arcana_boss:
 		call_deferred("_show_arcana_chest_pick")
 	if is_boss:
-		_lazy_unlock_manager().on_boss_defeated(game_state._stage_id)
+		UnlockManager.on_boss_defeated(game_state._stage_id)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -425,7 +425,7 @@ func _update_interaction_prompt(every_n: Callable):
 # ═══════════════════════════════════════════════════════════
 
 func _on_player_leveled_up():
-	_lazy_unlock_manager().on_player_leveled_up(player.level)
+	EventBus.player_leveled_up.emit(player.level)
 	ArcanaManager.on_player_level_up(player, player.level)
 	get_tree().paused = true
 	_level_up_screen.show_choices(player)
@@ -439,9 +439,8 @@ func _on_player_died():
 	game_state.set_game_over()
 	camera_ctrl.shake(12.0, 0.5)
 	get_tree().paused = true
-	if player:
-		_lazy_unlock_manager().on_run_ended(player.level)
-	_lazy_unlock_manager().on_game_time_updated(game_state.game_time)
+	UnlockManager.on_game_time_updated(game_state.game_time)
+	EventBus.game_over.emit(game_state.total_kills, player.level if player else 0, game_state.game_time)
 	AudioManager.stop_bgm()
 	AudioManager.play_sfx("game_over")
 	PowerUpManager.end_run(true)
@@ -454,10 +453,10 @@ func _on_stage_complete():
 	game_state.set_stage_complete()
 	AudioManager.stop_bgm()
 	AudioManager.play_sfx("evolution")
-	_lazy_unlock_manager().on_stage_cleared(game_state._stage_id)
-	_lazy_unlock_manager().on_game_time_updated(game_state.game_time)
+	UnlockManager.on_game_time_updated(game_state.game_time)
+	EventBus.stage_completed.emit(game_state._stage_id, game_state.game_time)
 	if player:
-		_lazy_unlock_manager().on_run_ended(player.level)
+		EventBus.game_over.emit(game_state.total_kills, player.level, game_state.game_time)
 	var gold_bonus = 500
 	var total_gold = PowerUpManager.run_gold + gold_bonus
 	PowerUpManager.add_run_gold(gold_bonus)
@@ -472,16 +471,15 @@ func _on_stage_complete():
 func _on_upgrade_selected(upgrade_type: int):
 	get_tree().paused = false
 	player.apply_upgrade(upgrade_type)
-	# Notify unlock manager about weapon level
 	var lv = player.get_weapon_level(upgrade_type)
-	_lazy_unlock_manager().on_weapon_upgraded(upgrade_type, lv)
+	EventBus.weapon_upgraded.emit(upgrade_type, lv)
 	_level_up_screen.hide_screen()
 
 
 func _on_evolution_selected(weapon_type: int):
 	get_tree().paused = false
 	player.evolve_weapon(weapon_type)
-	_lazy_unlock_manager().on_evolution(weapon_type)
+	EventBus.item_evolved.emit(weapon_type)
 	_level_up_screen.hide_screen()
 
 
@@ -650,14 +648,3 @@ func get_map_prop(key: String):
 		"map_width": return game_state.map_width if game_state else 3200.0
 		"map_height": return game_state.map_height if game_state else 2400.0
 	return null
-
-
-# UnlockManager 延迟加载
-var _unlock_manager: Node = null
-
-func _lazy_unlock_manager() -> Node:
-	if _unlock_manager == null:
-		_unlock_manager = load("res://scripts/managers/unlock_manager.gd").new()
-		add_child(_unlock_manager)
-		EventBus.register_unlock_manager(_unlock_manager)
-	return _unlock_manager

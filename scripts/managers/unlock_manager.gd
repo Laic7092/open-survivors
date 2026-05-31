@@ -1,6 +1,7 @@
 extends Node
 # UnlockManager — autoload singleton
 # Central condition engine for all unlocks.
+# Subscribes to EventBus signals; no manual wiring needed.
 # Persistence delegated to SaveManager.
 
 signal unlock_occurred(unlock_id: String, unlock_type: int)
@@ -9,14 +10,12 @@ signal run_stat_updated(key: String, value)
 signal persistent_stat_updated(key: String, value)
 
 const UnlockTypes = preload("res://scripts/data/unlock_types.gd")
-# Unlock data loaded lazily via DataRegistry
 
 var _completed: Dictionary = {}
 var _newly_unlocked: Array = []
 var _run_level: int = 0
 var _cleared_stages: Dictionary = {}
 
-# Per-run tracking (resets each run)
 var _run_data: Dictionary = {
 	"survive_time": 0.0,
 	"run_kills": 0,
@@ -26,12 +25,11 @@ var _run_data: Dictionary = {
 	"start_char_id": -1,
 }
 
-# Persistent cross-run tracking
 var _persistent_stats: Dictionary = {
 	"total_kills": 0,
 	"total_light_destroyed": 0,
 	"max_survive_time": 0.0,
-	"weapon_levels_reached": {},  # weapon_type -> max_level
+	"weapon_levels_reached": {},
 	"found_items_permanent": [],
 }
 
@@ -39,17 +37,79 @@ var _persistent_stats: Dictionary = {
 func _ready():
 	process_mode = PROCESS_MODE_WHEN_PAUSED
 	_load_data()
+	EventBus.stage_completed.connect(_on_stage_completed)
+	EventBus.game_over.connect(_on_game_over)
+	EventBus.player_leveled_up.connect(_on_player_leveled_up)
+	EventBus.enemy_killed.connect(_on_enemy_killed)
+	EventBus.relic_collected.connect(_on_relic_collected)
+	EventBus.boss_spawned.connect(_on_boss_spawned)
+	EventBus.weapon_upgraded.connect(_on_weapon_upgraded)
+	EventBus.item_evolved.connect(_on_item_evolved)
+	EventBus.light_source_destroyed.connect(_on_light_source_destroyed)
 
 
-# ── Event handlers ──
+# ── EventBus signal handlers ──
 
-func on_stage_cleared(stage_id: int):
+func _on_stage_completed(stage_id: int, _time: float):
 	_cleared_stages[stage_id] = true
 	_run_check(UnlockTypes.ConditionType.STAGE_CLEARED)
 
 
-func on_relic_collected(relic_id: String):
+func _on_game_over(_kills: int, level: int, _time: float):
+	if level > _run_level:
+		_run_level = level
+		_run_check(UnlockTypes.ConditionType.PLAYER_LEVEL)
+	_harden_run_stats()
+
+
+func _on_player_leveled_up(level: int):
+	if level > _run_level:
+		_run_level = level
+		_run_check(UnlockTypes.ConditionType.PLAYER_LEVEL)
+		_run_check(UnlockTypes.ConditionType.CHAR_LEVEL)
+
+
+func _on_enemy_killed(enemy_type: int, position: Vector2, is_boss: bool):
+	_run_data["run_kills"] += 1
+	_persistent_stats["total_kills"] += 1
+	run_stat_updated.emit("run_kills", _run_data["run_kills"])
+	persistent_stat_updated.emit("total_kills", _persistent_stats["total_kills"])
+	_run_check(UnlockTypes.ConditionType.RUN_KILLS)
+	_run_check(UnlockTypes.ConditionType.TOTAL_KILLS)
+
+
+
+func _on_relic_collected(relic_id: String):
 	_run_check(UnlockTypes.ConditionType.RELIC_OWNED)
+
+
+func _on_boss_spawned(_boss_type: int):
+	pass  # boss hyper unlock handled by direct on_boss_defeated call
+
+
+func _on_weapon_upgraded(weapon_type: int, new_level: int):
+	var prev = _persistent_stats["weapon_levels_reached"].get(weapon_type, 0)
+	if new_level > prev:
+		_persistent_stats["weapon_levels_reached"][weapon_type] = new_level
+	_run_check(UnlockTypes.ConditionType.WEAPON_AT_LEVEL)
+
+
+func _on_item_evolved(weapon_type: int):
+	if not _run_data["evolved_weapons"].has(weapon_type):
+		_run_data["evolved_weapons"].append(weapon_type)
+	_run_check(UnlockTypes.ConditionType.ALL_EVOLUTIONS)
+
+
+func _on_light_source_destroyed():
+	_run_data["destroyed_light_sources"] += 1
+	_persistent_stats["total_light_destroyed"] += 1
+	_run_check(UnlockTypes.ConditionType.DESTROY_LIGHT_SOURCES)
+
+
+# ── Direct-API methods (called from main.gd or managers) ──
+
+func on_relic_collected(relic_id: String):
+	_on_relic_collected(relic_id)
 
 
 func on_boss_defeated(stage_id: int):
@@ -57,27 +117,17 @@ func on_boss_defeated(stage_id: int):
 		PowerUpManager.unlock_hyper(stage_id)
 
 
-func on_player_leveled_up(new_level: int):
-	if new_level > _run_level:
-		_run_level = new_level
-		_run_check(UnlockTypes.ConditionType.PLAYER_LEVEL)
-		_run_check(UnlockTypes.ConditionType.CHAR_LEVEL)
+func on_run_started(char_id: int):
+	reset_run_state()
+	_run_data["start_char_id"] = char_id
 
 
-func on_run_ended(level: int):
-	if level > _run_level:
-		_run_level = level
-		_run_check(UnlockTypes.ConditionType.PLAYER_LEVEL)
-	_harden_run_stats()
-
-
-func purchase_unlock(unlock_id: String) -> bool:
-	if _completed.has(unlock_id):
-		return false
-	var def = DataRegistry.unlocks().get_def(unlock_id)
-	if def == null:
-		return false
-	return _execute_unlock(def)
+func on_game_time_updated(time_seconds: float):
+	if time_seconds > _run_data["survive_time"]:
+		_run_data["survive_time"] = time_seconds
+		if time_seconds > _persistent_stats["max_survive_time"]:
+			_persistent_stats["max_survive_time"] = time_seconds
+		_run_check(UnlockTypes.ConditionType.SURVIVE_CHAR_TIME)
 
 
 func reset_run_state():
@@ -93,56 +143,13 @@ func reset_run_state():
 	}
 
 
-# ── New event handlers ──
-
-func on_kill(enemy_type: int = -1):
-	_run_data["run_kills"] += 1
-	_persistent_stats["total_kills"] += 1
-	run_stat_updated.emit("run_kills", _run_data["run_kills"])
-	persistent_stat_updated.emit("total_kills", _persistent_stats["total_kills"])
-	_run_check(UnlockTypes.ConditionType.RUN_KILLS)
-	_run_check(UnlockTypes.ConditionType.TOTAL_KILLS)
-
-
-func on_weapon_upgraded(weapon_type: int, new_level: int):
-	var prev = _persistent_stats["weapon_levels_reached"].get(weapon_type, 0)
-	if new_level > prev:
-		_persistent_stats["weapon_levels_reached"][weapon_type] = new_level
-	_run_check(UnlockTypes.ConditionType.WEAPON_AT_LEVEL)
-
-
-func on_item_found(item_type: int):
-	if not _run_data["found_items"].has(item_type):
-		_run_data["found_items"].append(item_type)
-	if not _persistent_stats["found_items_permanent"].has(item_type):
-		_persistent_stats["found_items_permanent"].append(item_type)
-	_run_check(UnlockTypes.ConditionType.ITEM_FOUND)
-
-
-func on_destroy_light_source():
-	_run_data["destroyed_light_sources"] += 1
-	_persistent_stats["total_light_destroyed"] += 1
-	_run_check(UnlockTypes.ConditionType.DESTROY_LIGHT_SOURCES)
-
-
-func on_evolution(weapon_type: int):
-	if not _run_data["evolved_weapons"].has(weapon_type):
-		_run_data["evolved_weapons"].append(weapon_type)
-	_run_check(UnlockTypes.ConditionType.ALL_EVOLUTIONS)
-
-
-func on_run_started(char_id: int):
-	reset_run_state()
-	_run_data["start_char_id"] = char_id
-	_run_check(UnlockTypes.ConditionType.START_WITH_CHAR)
-
-
-func on_game_time_updated(time_seconds: float):
-	if time_seconds > _run_data["survive_time"]:
-		_run_data["survive_time"] = time_seconds
-		if time_seconds > _persistent_stats["max_survive_time"]:
-			_persistent_stats["max_survive_time"] = time_seconds
-		_run_check(UnlockTypes.ConditionType.SURVIVE_CHAR_TIME)
+func purchase_unlock(unlock_id: String) -> bool:
+	if _completed.has(unlock_id):
+		return false
+	var def = DataRegistry.unlocks().get_def(unlock_id)
+	if def == null:
+		return false
+	return _execute_unlock(def)
 
 
 # ── Condition checking ──
@@ -227,16 +234,11 @@ func _execute_unlock(defn) -> bool:
 		UnlockTypes.UnlockableType.CHARACTER:
 			pass
 		UnlockTypes.UnlockableType.ITEM:
-			if PowerUpManager:
-				PowerUpManager.unlock_weapon(defn.target_id)
+			pass  # _completed is the single source of truth
 	if not _newly_unlocked.has(uid):
 		_newly_unlocked.append(uid)
 	unlock_occurred.emit(uid, defn.unlock_type)
 	return true
-
-
-func _harden_run_stats():
-	_save_data()
 
 
 # ── Query API ──
@@ -259,8 +261,6 @@ func is_character_unlocked(char_id: int) -> bool:
 
 
 func is_weapon_unlocked(weapon_type: int) -> bool:
-	if PowerUpManager and PowerUpManager.has_unlocked_weapon(weapon_type):
-		return true
 	var key = DataRegistry.unlocks().get_unlock_id_for_item(weapon_type)
 	if key == "":
 		return true
@@ -327,7 +327,6 @@ func _save_data():
 			seen.append(uid)
 	SaveManager.set_section("seen_unlocks", seen)
 
-	# Save persistent stats
 	SaveManager.set_section("unlock_persistent_stats", _persistent_stats.duplicate(true))
 
 
@@ -343,8 +342,11 @@ func _load_data():
 		if not seen.has(uid):
 			_newly_unlocked.append(uid)
 
-	# Load persistent stats
 	var saved = SaveManager.get_section("unlock_persistent_stats", {})
 	if saved:
 		for k in saved:
 			_persistent_stats[k] = saved[k]
+
+
+func _harden_run_stats():
+	_save_data()

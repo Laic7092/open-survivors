@@ -78,14 +78,12 @@ func _generate_and_show():
 	var possible = DataRegistry.items().DATA.keys()
 	possible.shuffle()
 
-	# Filter out locked weapons (only if UnlockManager exists)
-	var um = EventBus.get_unlock_manager() if EventBus else null
-	if um:
-		possible = possible.filter(func(t: int):
-			if not DataRegistry.items().is_weapon(t):
-				return true
-			return um.is_weapon_unlocked(t)
-		)
+	# Filter out locked weapons
+	possible = possible.filter(func(t: int):
+		if not DataRegistry.items().is_weapon(t):
+			return true
+		return UnlockManager.is_weapon_unlocked(t)
+	)
 
 	# Gather evolution candidates from owned weapons
 	var evolutions: Array[int] = []
@@ -120,23 +118,22 @@ func _generate_and_show():
 
 	if chosen.is_empty():
 		# If no valid choices from filtering, try including locked weapons as fallback
-		if um:
-			possible = DataRegistry.items().DATA.keys()
-			possible.shuffle()
-			for p in possible:
-				if chosen.size() >= 3:
-					break
-				if _is_weapon(p) and evolutions.has(p):
+		possible = DataRegistry.items().DATA.keys()
+		possible.shuffle()
+		for p in possible:
+			if chosen.size() >= 3:
+				break
+			if _is_weapon(p) and evolutions.has(p):
+				continue
+			var lv = player_ref.get_weapon_level(p) if _is_weapon(p) else player_ref.get_passive_level(p)
+			var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else DataRegistry.items().item_max_level(p)
+			if lv == 0:
+				if _is_weapon(p) and player_ref.weapon_manager.weapons.size() >= MAX_WEAPONS:
 					continue
-				var lv = player_ref.get_weapon_level(p) if _is_weapon(p) else player_ref.get_passive_level(p)
-				var max_lv = player_ref.get_weapon_max_level(p) if _is_weapon(p) else DataRegistry.items().item_max_level(p)
-				if lv == 0:
-					if _is_weapon(p) and player_ref.weapon_manager.weapons.size() >= MAX_WEAPONS:
-						continue
-					if _is_passive(p) and player_ref.passive_inventory.size() >= MAX_PASSIVES:
-						continue
-				if lv < max_lv:
-					chosen.append(p)
+				if _is_passive(p) and player_ref.passive_inventory.size() >= MAX_PASSIVES:
+					continue
+			if lv < max_lv:
+				chosen.append(p)
 
 	if chosen.is_empty():
 		# If all slots maxed, offer an owned weapon upgrade anyway
