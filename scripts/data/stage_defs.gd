@@ -29,7 +29,7 @@ static func _init_meta():
 	_meta_cache = [
 		{ "id": 0, "type": "Normal",    "bg_color": Color(0.04, 0.04, 0.10), "time_limit": 1800.0, "move_speed_mod": 1.1, "gold_mod": 1.0, "unlock_req": "",                   "stage_items": [] },
 		{ "id": 1, "type": "Normal",    "bg_color": Color(0.08, 0.02, 0.12), "time_limit": 1800.0, "move_speed_mod": 1.25,"gold_mod": 1.0, "unlock_req": "clear_stage_0",    "stage_items": [] },
-		{ "id": 2, "type": "Bonus",     "bg_color": Color(0.06, 0.16, 0.04), "time_limit": 900.0,  "move_speed_mod": 1.0, "gold_mod": 1.0, "unlock_req": "clear_stage_1",    "stage_items": [] },
+		{ "id": 2, "type": "Bonus",     "bg_color": Color(0.06, 0.16, 0.04), "time_limit": 900.0,  "move_speed_mod": 1.25, "gold_mod": 1.0, "unlock_req": "hyper_any_stage",  "stage_items": [] },
 		{ "id": 3, "type": "Normal",    "bg_color": Color(0.08, 0.06, 0.16), "time_limit": 1800.0, "move_speed_mod": 1.25,"gold_mod": 1.2, "unlock_req": "clear_stage_2",    "stage_items": [] },
 		{ "id": 4, "type": "Normal",    "bg_color": Color(0.12, 0.02, 0.18), "time_limit": 1800.0, "move_speed_mod": 1.25,"gold_mod": 1.3, "unlock_req": "clear_stage_3",    "stage_items": [] },
 		{ "id": 5, "type": "Normal",    "bg_color": Color(0.18, 0.04, 0.06), "time_limit": 1800.0, "move_speed_mod": 1.4, "gold_mod": 1.4, "unlock_req": "clear_stage_4",    "stage_items": [] },
@@ -43,11 +43,11 @@ static func _init_meta():
 		{ "id": 13,"type": "Bonus",     "bg_color": Color(0.02, 0.02, 0.14), "time_limit": 1200.0, "move_speed_mod": 1.25,"gold_mod": 1.3, "unlock_req": "reach_level_55", "stage_items": [] },
 		{ "id": 14,"type": "Challenge", "bg_color": Color(0.04, 0.02, 0.06), "time_limit": 1200.0, "move_speed_mod": 1.25,"gold_mod": 1.3, "unlock_req": "reach_level_65", "stage_items": [] },
 		{ "id": 15,"type": "Special",   "bg_color": Color(0.14, 0.08, 0.02), "time_limit": 5940.0, "move_speed_mod": 1.0, "gold_mod": 2.0, "unlock_req": "relic_yellow_sign","stage_items": [] },
-		{ "id": 16,"type": "Hidden",    "bg_color": Color(0.08, 0.02, 0.16), "time_limit": 300.0,  "move_speed_mod": 1.0, "gold_mod": 3.0, "unlock_req": "relic_yellow_sign","stage_items": [] },
-		{ "id": 17,"type": "Challenge", "bg_color": Color(0.02, 0.06, 0.18), "time_limit": 1200.0, "move_speed_mod": 1.25,"gold_mod": 1.5, "unlock_req": "reach_level_65", "stage_items": [] },
-		{ "id": 18,"type": "Challenge", "bg_color": Color(0.16, 0.08, 0.02), "time_limit": 1200.0, "move_speed_mod": 1.2, "gold_mod": 1.6, "unlock_req": "reach_level_70", "stage_items": [] },
-		{ "id": 19,"type": "Challenge", "bg_color": Color(0.06, 0.14, 0.06), "time_limit": 1200.0, "move_speed_mod": 1.0, "gold_mod": 1.3, "unlock_req": "reach_level_75", "stage_items": [] },
-		{ "id": 20,"type": "Challenge", "bg_color": Color(0.1, 0.16, 0.04),  "time_limit": 1200.0, "move_speed_mod": 1.3, "gold_mod": 1.5, "unlock_req": "reach_level_80", "stage_items": [] },
+		{ "id": 16,"type": "Hidden",    "bg_color": Color(0.08, 0.02, 0.16), "time_limit": 120.0,  "move_speed_mod": 1.25, "gold_mod": 3.0, "unlock_req": "relic_yellow_sign","stage_items": [] },
+		{ "id": 17,"type": "Challenge", "bg_color": Color(0.02, 0.06, 0.18), "time_limit": 1200.0, "move_speed_mod": 1.25,"gold_mod": 1.5, "unlock_req": "inverse_stage_0","stage_items": [] },
+		{ "id": 18,"type": "Challenge", "bg_color": Color(0.16, 0.08, 0.02), "time_limit": 1200.0, "move_speed_mod": 1.25,"gold_mod": 1.6, "unlock_req": "inverse_stage_3","stage_items": [] },
+		{ "id": 19,"type": "Challenge", "bg_color": Color(0.06, 0.14, 0.06), "time_limit": 1200.0, "move_speed_mod": 1.25,"gold_mod": 1.3, "unlock_req": "inverse_stage_4","stage_items": [] },
+		{ "id": 20,"type": "Challenge", "bg_color": Color(0.1, 0.16, 0.04),  "time_limit": 1200.0, "move_speed_mod": 1.25,"gold_mod": 1.5, "unlock_req": "inverse_stage_5","stage_items": [] },
 	]
 
 

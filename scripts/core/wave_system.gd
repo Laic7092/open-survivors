@@ -17,35 +17,100 @@ var spawn_enemy_func: Callable  # func(type_id: int) -> Node2D
 
 # ── 敌人名称 → 类型 ID 映射 ──
 const ENEMY_NAME_MAP := {
-	# Mad Forest
+	# ── Mad Forest (stage 0) ──
 	"bat_r": 12, "bat_s": 11, "bat_g": 14, "bat_silver": 14, "bat_giant": 13,
 	"zombie": 8, "zombie_b": 8, "skeleton": 9, "skeleton_b": 9, "skeleton_r": 9,
 	"ghost": 10, "mudman": 15, "mudman_g": 16, "werewolf": 18, "werewolf_giant": 18,
 	"mantichana": 17, "mantichana_giant": 17, "mummy_big": 19, "mummy_giant": 19,
-	"flower_wall": 0, "venus": 20, "venus_blue_giant": 21, "reaper": 22,
-
-	# Dairy Plant / Gallo Tower / Cappella Magna / Moongolow
+	"flower_wall": 116, "venus": 20, "venus_blue_giant": 21, "reaper": 22,
 	"wraith": 0, "viper": 1, "golem": 2, "mantis": 4, "nightmare": 5,
-	"giant_crab": 6, "trinacria": 7,
 
-	# Inlaid Library
+	# ── Inlaid Library (stage 1) ──
 	"dust_elemental": 23, "musc_musc": 24, "big_musc_musc": 24,
-	"testa_di_mano": 28, "mummy": 26, "medusa_head": 25,
-	"big_sneaky_head": 25, "aggressive_sneaky_head": 25, "lionhead": 27,
+	"testa_di_mano": 28, "mummy": 26,
+	"sneaky_head": 25, "medusa_head": 25, "big_sneaky_head": 39,
+	"aggressive_sneaky_head": 39, "lionhead": 27,
 	"dullahan": 28, "silver_bat": 14, "apprentice_witch": 29,
-	"elite_dullahan": 30, "undead_witch": 30, "glowing_skull": 31, "giant_medusa": 32,
+	"elite_dullahan": 30,
+	"undead_witch": 40, "undead_sassy_witch": 41,
+	"glowing_skull": 31, "giant_medusa": 32,
+	"sigra_rossi": 36, "hag": 37, "nesufritto": 38, "nesuferit": 38,
+	"merdusa": 39, "harzia": 115,
 
-	# Inlaid Library bosses
-	"colossal_musc_musc": 5, "colossal_lionhead": 17, "colossal_sneaky_head": 20,
-	"colossal_dust_elemental": 2, "queen_medusa": 20, "master_witch": 5,
-	"nesuferit": 21, "hag": 21,
+	# ── Dairy Plant (stage 3) ──
+	"milk_elemental": 42, "merman": 43,
+	"lizard_pawn": 44, "twin_snakes": 45, "lizard_rook": 46,
+	"twin_demons": 47, "jellyfish": 48, "skeleton_ninja": 49,
+	"lost_twin": 50, "melone": 51, "minotaur": 52, "mignotaur": 53,
+	"archon_lancia": 54, "archon_ascia": 55, "skelewing": 56,
+	"tritont": 57, "gallotrice": 58, "big_golem": 59, "sword_guardian": 60,
+	"giant_crab": 6,
+
+	# ── Gallo Tower (stage 4) ──
+	"bloodbath": 61, "skullino": 62, "skulorosso": 63,
+	"scarleton": 64, "dragon_shrimp": 65, "poltergeist": 66,
+	"impefinger": 67, "ghiavolo": 68, "undead_mage": 69,
+	"archon_spada": 70, "archon_disco": 71,
+	"manticore": 72, "meat_golem": 73, "trinacria": 7,
+
+	# ── Moongolow (stage 6) ──
+	"serpentvine": 74, "garlic": 75, "nightshade": 76,
+	"sigra_blu": 77, "non_giant_crab": 78,
+
+	# ── Cappella Magna (stage 5) ──
+	"tetrabrachia": 79, "archon_fiamma": 80, "succubus": 81,
+	"archon_rame": 82, "demon_priest": 83, "fallen_cherub": 84,
+	"fallen_cherubbello": 85, "fallen_throne": 86, "archon_oro": 87,
+	"demon_beast": 88, "archdemon": 89, "stage_killer": 90,
+	"reaper_trainee": 91, "unknown": 92,
+
+	# ── Il Molise (stage 2) ──
+	"molisano_base": 93, "molisano_secco": 94, "molisano_bello": 95,
+	"molisano_grosso": 96, "molisano_giallo": 97, "molisano_rosso": 98,
+	"molisano_fagiolo": 99, "molisano_vecchio": 100, "molisano_anfora": 101,
+	"big_molisano": 102,
+	# Legacy aliases (old naming from before wiki correction)
+	"sad_molisano": 93, "happy_molisano": 94, "cute_molisano": 95,
+	"dead_molisano": 97, "old_molisano": 100,
+
+	# ── The Bone Zone (stage 8) ──
+	"twin_skulls": 103, "skullone": 104, "skeleton_panther": 105,
+	"giant_skeleton": 106, "skeletone": 107, "sketamari": 108,
+
+	# ── Whiteout (stage 10) ──
+	"bambaman": 109, "miragellos": 110, "menta_elemental": 111,
+	"madd_onna": 112, "kizzune": 113,
+
+	# ── Special / Boss enemies ──
+	"stalker": 114, "drowner": 115, "maddener": 116, "ender": 117,
+	"directer": 118, "moongolow_atlantean": 119,
+
+	# ── Legacy / alternative names (mapped to correct new IDs) ──
+	"colossal_musc_musc": 24,  # Large Musc Musc (same type, difficulty scales)
+	"colossal_lionhead": 27,
+	"colossal_sneaky_head": 39,
+	"colossal_dust_elemental": 23,
+	"queen_medusa": 39,
+	"master_witch": 40,
 }
 
 # ── 事件类型 → 敌人名称映射 ──
 const EVENT_ENEMY_MAP := {
-	"shade_bomb": "dust_elemental", "medusa_wall": "medusa_head",
-	"medusa_swarm": "medusa_head", "skull_swarm": "glowing_skull",
-	"bat_swarm": "bat_s", "flower_wall": "flower_wall", "ghost_swarm": "ghost",
+	"shade_bomb": "sigra_rossi",
+	"medusa_wall": "sneaky_head",
+	"medusa_swarm": "sneaky_head",
+	"skull_swarm": "glowing_skull",
+	"bat_swarm": "bat_s",
+	"flower_wall": "flower_wall",
+	"ghost_swarm": "ghost",
+	"twin_skull_swarm": "twin_skulls",
+	"skeleton_swarm": "skeleton",
+	"jellyfish_swarm": "jellyfish",
+	"milk_swarm": "milk_elemental",
+	"merman_swarm": "merman",
+	"dragon_swarm": "dragon_shrimp",
+	"poltergeist_roulette": "poltergeist",
+	"skeleton_ninja_swarm": "skeleton_ninja",
 }
 
 # ── 内部状态 ──
@@ -266,7 +331,10 @@ func _trigger_map_event(ev: Dictionary):
 
 	var count = ev.get("count", 1)
 	var total = ev.get("total", count)
-	var enemy_name = EVENT_ENEMY_MAP.get(ev_type, "")
+	# Allow explicit "unit" field to specify enemy, fallback to event type lookup
+	var enemy_name = ev.get("unit", "")
+	if enemy_name.is_empty():
+		enemy_name = EVENT_ENEMY_MAP.get(ev_type, "")
 	var type_id = _resolve_enemy_id(enemy_name)
 	if type_id < 0:
 		push_warning("WaveSystem: unknown event type '%s', no enemy mapped" % ev_type)

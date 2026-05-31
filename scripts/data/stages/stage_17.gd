@@ -1,5 +1,7 @@
 extends RefCounted
-# Stage 17 — Astral Stair
+# Stage 17 — Astral Stair (challenge)
+# Wiki: https://vampire.survivors.wiki/w/Astral_Stair
+# Wave data sourced from wiki wave table.
 
 static func get_data() -> Dictionary:
 	return {
@@ -7,26 +9,98 @@ static func get_data() -> Dictionary:
 		"name": "Astral Stair",
 		"wiki_id": "ASTRALSTAIR",
 		"type": "Challenge",
-		"desc": "An endless staircase through the cosmos.\n+25% Move Speed. Enemies empowered.",
+		"desc": "A highway used to reach other worlds and dimensions.\nEnemies grow stronger over time. Red/Blue weapon alignment.",
 		"time_limit": 1200.0,
 		"bg_color": Color(0.02, 0.06, 0.18),
 		"map_width": 6400,
 		"map_height": 4800,
 		"move_speed_mod": 1.25,
-		"enemy_speed_mod": 1.3,
-		"gold_mod": 1.5,
-		"luck_mod": 0.1,
-		"enemy_hp_mod": 1.3,
+		"enemy_speed_mod": 1.25,
+		"enemy_speed_per_min": 0.1,
+		"gold_mod": 1.3,
+		"luck_mod": 0.0,
+		"enemy_hp_mod": 1.0,
+		"enemy_hp_per_min": 0.1,
+		"starting_spawns": 50,
 		"spawn_base_interval": 0.45,
 		"spawn_min_interval": 0.1,
 		"spawn_ramp_time": 22.0,
 		"wave_size_interval": 22.0,
 		"difficulty_ramp_time": 45.0,
-		"unlock_req": "reach_level_65",
+		"unlock_req": "reach_level_80_inverse_library",
 		"hyper_unlock": "default",
 		"hyper_mods": {
-			"move_speed_bonus": 0.8, "gold_mult": 1.5,
-			"enemy_speed_bonus": 0.0, "enemy_hp_bonus": 0.5,
+			"move_speed_bonus": 0.65,
+			"gold_mult": 1.8,
+			"enemy_speed_bonus": 0.0,
+			"enemy_hp_bonus": 0.0,
+			"starting_spawns": 50,
 		},
 		"stage_items": [],
+		"interactables": {
+			"chests": [
+				{"pos": Vector2(-2500, -1500)},
+				{"pos": Vector2(2500, 1500)},
+			],
+			"fountains": [
+				{"pos": Vector2(0, 0), "heal_pct": 0.40},
+			],
+			"breakable_density": 0.0002,
+			"breakable_hp": 20.0,
+			"hazards": [
+				{"pos": Vector2(-2000, 500), "size": Vector2(150, 100), "dps": 15.0},
+				{"pos": Vector2(2000, -1000), "size": Vector2(120, 120), "dps": 18.0},
+			],
+			"boosts": [
+				{"pos": Vector2(-1000, 1000), "type": "speed", "amount": 0.5, "size": Vector2(80, 80)},
+				{"pos": Vector2(1000, -1000), "type": "might", "amount": 0.3, "size": Vector2(80, 80)},
+			],
+		},
+		"wave_defs": [
+			{"time": 0,  "enemies": [{"id": "wraith", "count": 30}], "enemy_minimum": 30, "interval": 0.3},
+			{"time": 1,  "enemies": [{"id": "wraith", "count": 40}], "enemy_minimum": 40, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 2,  "enemies": [{"id": "wraith", "count": 25}, {"id": "mudman", "count": 25}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 3,  "enemies": [{"id": "ghost", "count": 50}], "enemy_minimum": 50, "interval": 0.3, "boss": "mummy_big", "chest": true},
+			{"time": 4,  "enemies": [{"id": "mummy", "count": 25}, {"id": "ghost", "count": 25}], "enemy_minimum": 50, "interval": 0.3},
+			{"time": 5,  "enemies": [{"id": "mummy", "count": 50}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true, "arcana": true},
+			{"time": 6,  "enemies": [{"id": "ghost", "count": 50}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 7,  "enemies": [{"id": "ghost", "count": 25}, {"id": "skullino", "count": 25}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 8,  "enemies": [{"id": "skullino", "count": 50}], "enemy_minimum": 50, "interval": 0.3},
+			{"time": 9,  "enemies": [{"id": "skullino", "count": 25}, {"id": "ghost", "count": 25}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 10, "enemies": [{"id": "mudman", "count": 50}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true, "arcana": true},
+			{"time": 11, "enemies": [{"id": "mudman", "count": 50}], "enemy_minimum": 50, "interval": 0.3},
+			{"time": 12, "enemies": [{"id": "mudman", "count": 25}, {"id": "ghost", "count": 25}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 13, "enemies": [{"id": "ghost", "count": 40}], "enemy_minimum": 40, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 14, "enemies": [{"id": "ghost", "count": 20}, {"id": "big_golem", "count": 20}], "enemy_minimum": 40, "interval": 0.3},
+			{"time": 15, "enemies": [{"id": "big_golem", "count": 40}], "enemy_minimum": 40, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 16, "enemies": [{"id": "mummy_big", "count": 10}, {"id": "mummy", "count": 10}, {"id": "mudman", "count": 10}, {"id": "skullino", "count": 10}, {"id": "wraith", "count": 10}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 17, "enemies": [{"id": "ghost", "count": 50}, {"id": "mummy_big", "count": 50}], "enemy_minimum": 100, "interval": 0.3},
+			{"time": 18, "enemies": [{"id": "ghost", "count": 25}, {"id": "mudman", "count": 25}], "enemy_minimum": 50, "interval": 0.3, "boss": "bat_g", "chest": true},
+			{"time": 19, "enemies": [{"id": "bat_g", "count": 2}], "enemy_minimum": 2, "interval": 5.0},
+			{"time": 20, "enemies": [], "enemy_minimum": 1, "interval": 10.0, "boss": "reaper"},
+		],
+		"map_events": [
+			{"time": 2,  "type": "medusa_wall", "delay": 0.0, "chance": 1.0},
+			{"time": 5,  "type": "medusa_swarm", "delay": 0.0, "chance": 0.7, "repeats": 5},
+			{"time": 9,  "type": "shade_bomb", "delay": 0.0, "chance": 1.0},
+			{"time": 10, "type": "shooting_star", "delay": 0.0, "chance": 0.9, "repeats": 25},
+			{"time": 13, "type": "shade_bomb", "delay": 0.0, "chance": 0.5, "repeats": 25},
+			{"time": 17, "type": "shade_bomb", "delay": 0.0, "chance": 0.5, "repeats": 25},
+		],
+		"decor_config": {
+			"background_pattern": "solid",
+			"decor_elements": [
+				{"type": "dot", "count": 50, "size_min": 2, "size_max": 5,
+				 "color": Color(0.02, 0.06, 0.20), "alpha_min": 0.15, "alpha_max": 0.35, "z": -49},
+				{"type": "dot", "count": 15, "size_min": 1, "size_max": 3,
+				 "color": Color(0.3, 0.5, 0.9), "alpha_min": 0.3, "alpha_max": 0.6, "z": -45},
+			],
+			"props": {
+				"colors": [
+					Color(0.04, 0.10, 0.25),
+					Color(0.06, 0.12, 0.28),
+					Color(0.10, 0.04, 0.18),
+				],
+			},
+		},
 	}

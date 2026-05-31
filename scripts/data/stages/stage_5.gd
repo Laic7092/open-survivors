@@ -131,4 +131,20 @@ static func get_data() -> Dictionary:
 			{"time": 29, "type": "bat_swarm", "delay": 0.0, "chance": 1.0},
 			{"time": 29, "type": "bat_swarm", "delay": 15.0, "chance": 1.0},
 		],
+		"decor_config": {
+			"background_pattern": "solid",
+			"decor_elements": [
+				{"type": "dot", "count": 40, "size_min": 2, "size_max": 5,
+				 "color": Color(0.20, 0.04, 0.08), "alpha_min": 0.15, "alpha_max": 0.35, "z": -49},
+				{"type": "dot", "count": 10, "size_min": 1, "size_max": 3,
+				 "color": Color(0.9, 0.2, 0.2), "alpha_min": 0.3, "alpha_max": 0.5, "z": -45},
+			],
+			"props": {
+				"colors": [
+					Color(0.25, 0.06, 0.10),
+					Color(0.30, 0.08, 0.12),
+					Color(0.18, 0.04, 0.06),
+				],
+			},
+		},
 	}
