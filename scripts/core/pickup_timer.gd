@@ -104,7 +104,7 @@ func _emit_nduja_fire():
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if is_instance_valid(e) and area.global_position.distance_to(e.global_position) < 24.0:
 			if e.has_method("take_damage"):
-				var dmg = 10.0 * (player.damage_mult if player.has_method("get_curse") else 1.0)
+				var dmg = 10.0 * (player.might if player.has_method("get_curse") else 1.0)
 				e.take_damage(dmg, player.global_position)
 	var fb = preload("res://scripts/entities/fireball_node.gd").new()
 	fb.fb_size = 8.0

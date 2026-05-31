@@ -1,6 +1,6 @@
 static func fire(w, weapon_manager, player, get_enemies):
 	AudioManager.play_sfx("wpn_bible")
-	var base_dmg = w.damage * player.damage_mult
+	var base_dmg = w.damage * player.might
 	var level_scaled = base_dmg * (1.0 + w.level * 0.5)
 	var area = w.area * player.area_mult
 	var count = weapon_manager.get_projectile_count(w.type)

@@ -43,3 +43,16 @@ static func calc_columns(viewport_w: float, item_w: float, gap: float = 16.0, ma
 	var available = viewport_w - margin * 2
 	var cols = max(1, int(available / (item_w + gap)))
 	return mini(cols, max_cols)
+
+
+# 创建升级选择按钮（包含内容容器，统一样式）
+# content: VBoxContainer 作为按钮内容子节点
+# accent: 可选，边框强调色（默认淡金色）
+static func make_choice_button(content: Control, accent: Color = Color(0.7, 0.6, 0.1)) -> Button:
+	var btn = Button.new()
+	btn.custom_minimum_size = Vector2(0, 120)
+	style_button(btn, accent * 0.2, accent)
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	btn.add_child(content)
+	return btn

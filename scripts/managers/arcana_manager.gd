@@ -178,9 +178,9 @@ func process_time_effects(delta: float, player, game_time: float):
 						var cycle = sin(_cycle_time * TAU / 10.0)
 						player.set_area_mult_override(1.0 + cycle * 0.25)
 				"cycle_duration":
-					if player and player.has_method("set_duration_bonus_override"):
+					if player and player.has_method("set_duration_mult_override"):
 						var cycle = sin(_cycle_time * TAU / 10.0)
-						player.set_duration_bonus_override(cycle * 0.5)
+						player.set_duration_mult_override(1.0 + cycle * 0.5)
 				"cycle_stats":
 					var phase = fmod(_cycle_time, 20.0) / 20.0
 					if phase < 0.25:

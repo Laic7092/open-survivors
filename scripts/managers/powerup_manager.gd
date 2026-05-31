@@ -49,6 +49,9 @@ var unlocked_hyper: int = 0
 var unlocked_chars: int = 1
 var run_gold: int = 0
 var run_rerolls: int = 0
+var run_skips: int = 0
+var run_banishes: int = 0
+var _big_coin_bags_collected: int = 0  # 累计大金币袋数
 
 
 func _ready():
@@ -195,6 +198,61 @@ func add_reroll(amount: int):
 	run_rerolls += amount
 
 
+# ── Reroll / Skip / Banish per-run tracking ──
+
+func init_run_actions():
+	## 从 PowerUp 等级初始化每局可用次数
+	var bonuses = get_stat_bonuses()
+	run_rerolls = bonuses.get("reroll_uses", 0)
+	run_skips = bonuses.get("skip_uses", 0)
+	run_banishes = bonuses.get("banish_uses", 0)
+
+
+func get_rerolls_remaining() -> int:
+	return run_rerolls
+
+
+func get_skips_remaining() -> int:
+	return run_skips
+
+
+func get_banishes_remaining() -> int:
+	return run_banishes
+
+
+func use_reroll() -> bool:
+	if run_rerolls > 0:
+		run_rerolls -= 1
+		return true
+	return false
+
+
+func use_skip() -> bool:
+	if run_skips > 0:
+		run_skips -= 1
+		return true
+	return false
+
+
+func use_banish() -> bool:
+	if run_banishes > 0:
+		run_banishes -= 1
+		return true
+	return false
+
+
+func add_big_coin_bag():
+	_big_coin_bags_collected += 1
+
+
+func get_big_coin_bags_collected() -> int:
+	return _big_coin_bags_collected
+
+
+func is_always_chicken_unlocked() -> bool:
+	return _big_coin_bags_collected >= 100
+
+
 func end_run(save_run: bool = true):
 	if save_run and run_gold > 0:
 		var bonuses = get_stat_bonuses()
@@ -209,6 +267,9 @@ func end_run(save_run: bool = true):
 func reset_run_gold():
 	run_gold = 0
 	run_rerolls = 0
+	run_skips = 0
+	run_banishes = 0
+	_big_coin_bags_collected = 0
 	run_gold_changed.emit(run_gold)
 
 

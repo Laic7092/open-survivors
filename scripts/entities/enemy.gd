@@ -23,6 +23,21 @@ var _drop_gold_chance: float = 0.0
 var _drop_chest_chance: float = 0.0
 var is_wave_enemy: bool = false
 
+# ── Resistances (从 EnemyDefs 复制) ──
+var _freeze_resist: float = 0.0
+var _instant_kill_resistant: bool = false
+var _debuff_resistant: bool = false
+
+# ── Special flags (从 EnemyDefs 复制) ──
+var _has_hp_x_level: bool = false
+var _has_three_lives: bool = false
+var _is_fixed_direction: bool = false
+var _ignores_collision: bool = false
+var _is_self_destruct: bool = false
+
+# ── Three-lives state ──
+var _lives_remaining: int = 1
+
 # ── Runtime stats (scaled from base) ──
 var player: Node2D
 var game_state: Node = null
@@ -48,9 +63,13 @@ var _wavy_time: float = 0.0
 const CULL_DIST_SQ: float = 1000.0 * 1000.0  # ~1000px max processing range
 var _culled: bool = false
 
-# ── Freeze state (Orologion pickup) ──
+# ── Freeze state ──
 var _frozen: bool = false
 var _freeze_timer: float = 0.0
+
+# ── Debuff state (Mannajja slow / Garlic debuff) ──
+var _debuff_slow: float = 0.0      # slow multiplier (0.0 = no slow, 0.5 = half speed)
+var _debuff_timer: float = 0.0
 
 
 # ── Helper: read current stage mods from GameState (single source of truth) ──
@@ -60,6 +79,18 @@ func _get_speed_mod() -> float:
 
 func _get_curse_level() -> int:
 	return game_state.curse_level if game_state else 0
+
+
+# 获取相机视野矩形（用于 Boss 传送回屏幕）
+func _get_camera_bounds() -> Rect2:
+	var cam = get_viewport().get_camera_2d() if is_inside_tree() else null
+	if not cam:
+		return Rect2()
+	var vp = get_viewport().get_visible_rect().size
+	var cam_pos = cam.global_position
+	var half_w = vp.x * 0.5 / cam.zoom.x
+	var half_h = vp.y * 0.5 / cam.zoom.y
+	return Rect2(cam_pos.x - half_w, cam_pos.y - half_h, half_w * 2, half_h * 2)
 
 # ── Scene references ──
 var _proj_scene = preload("res://scenes/enemy_projectile.tscn")
@@ -103,6 +134,19 @@ func _copy_type_data():
 	_drop_gold_chance = t.drop_gold_chance
 	_drop_chest_chance = t.drop_chest_chance
 
+	# Resistances
+	_freeze_resist = t.freeze_resist
+	_instant_kill_resistant = t.instant_kill_resistant
+	_debuff_resistant = t.debuff_resistant
+
+	# Special flags
+	_has_hp_x_level = t.has_hp_x_level
+	_has_three_lives = t.has_three_lives
+	_is_fixed_direction = t.is_fixed_direction
+	_ignores_collision = t.ignores_collision
+	_is_self_destruct = t.is_self_destruct
+	_lives_remaining = 3 if t.has_three_lives else 1
+
 
 func _scale_difficulty(diff: float):
 	var t = DataRegistry.enemies().get_type(enemy_type_id)
@@ -124,11 +168,50 @@ func _scale_difficulty(diff: float):
 	if _is_boss:
 		health *= 3.0
 		max_health = health
+	
+	# ═══ HP x Level: 生成时按玩家等级乘算血量（对齐 VS Wiki）═══
+	if _has_hp_x_level and is_instance_valid(player):
+		var lv_factor = max(player.level, 1)
+		health *= lv_factor
+		max_health = health
 
 
 # Public — kept for backward compat; delegates to set_enemy_type(0, diff)
 func scale_difficulty(diff: float):
 	set_enemy_type(0, diff)
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Instant Kill / Debuff API
+# ═══════════════════════════════════════════════════════════════════
+
+# 即死攻击（Pentagram / Gorgeous Moon / Rosary）
+func instant_kill() -> bool:
+	if _instant_kill_resistant:
+		return false  # 抵抗即死
+	# 直接扣血量到 0
+	take_damage(max_health * 10, Vector2.ZERO)
+	return true
+
+
+# 施加 debuff（Garlic 抗性降低 / Mannajja 减速）
+# 如果敌人 debuff_resistant，则免疫
+func apply_debuff(type: String, value: float, duration: float) -> bool:
+	if _debuff_resistant:
+		return false
+	match type:
+		"slow":
+			_debuff_slow = max(_debuff_slow, value)
+			_debuff_timer = max(_debuff_timer, duration)
+		"knockback_resist_reduce":
+			# 暂时降低击退抗性
+			_knockback_resist = max(0.0, _knockback_resist - value)
+			# 用 custom_state 存回退值
+			set_meta("kb_resist_reduce", value)
+			set_meta("kb_resist_reduce_timer", duration)
+		_:
+			return false
+	return true
 
 
 func _physics_process(delta):
@@ -143,6 +226,22 @@ func _physics_process(delta):
 		move_and_slide()
 		return
 
+	# Debuff timer decay
+	if _debuff_timer > 0:
+		_debuff_timer -= delta
+		if _debuff_timer <= 0:
+			_debuff_slow = 0.0
+	# Knockback resist reduction timer
+	if has_meta("kb_resist_reduce_timer"):
+		var t = get_meta("kb_resist_reduce_timer") - delta
+		if t <= 0:
+			var reduce = get_meta("kb_resist_reduce", 0.0)
+			_knockback_resist = min(1.0, _knockback_resist + reduce)
+			remove_meta("kb_resist_reduce")
+			remove_meta("kb_resist_reduce_timer")
+		else:
+			set_meta("kb_resist_reduce_timer", t)
+
 	# Visibility culling: skip full AI for distant enemies
 	var dist_sq = global_position.distance_squared_to(player.global_position)
 	if dist_sq > CULL_DIST_SQ:
@@ -150,6 +249,25 @@ func _physics_process(delta):
 			_culled = true
 			collision_layer = 0
 			collision_mask = 0
+		# ═══ Boss: 不因远离消失，传回屏幕（对齐 VS Wiki）═══
+		if _is_boss:
+			_culled = false
+			collision_layer = CollisionLayers.ENEMY
+			collision_mask = 0
+			# 传回玩家附近
+			var bounds = _get_camera_bounds()
+			if bounds != Rect2():
+				var margin = 60.0
+				var side = randi() % 4
+				match side:
+					0: global_position = Vector2(randf_range(bounds.position.x + margin, bounds.position.x + bounds.size.x - margin), bounds.position.y - margin)
+					1: global_position = Vector2(randf_range(bounds.position.x + margin, bounds.position.x + bounds.size.x - margin), bounds.position.y + bounds.size.y + margin)
+					2: global_position = Vector2(bounds.position.x - margin, randf_range(bounds.position.y + margin, bounds.position.y + bounds.size.y - margin))
+					3: global_position = Vector2(bounds.position.x + bounds.size.x + margin, randf_range(bounds.position.y + margin, bounds.position.y + bounds.size.y - margin))
+				velocity = Vector2.ZERO
+				move_and_slide()
+				_update_ranged(delta)
+				return
 		# Throttle culled enemies to every 4th frame — they're far offscreen
 		if Engine.get_frames_drawn() % 4 != 0:
 			return
@@ -182,14 +300,31 @@ func _physics_process(delta):
 		_update_ranged(delta)
 		return
 
+	# 应用 debuff 减速
+	var effective_speed_mod = speed_mod
+	if _debuff_slow > 0.0:
+		effective_speed_mod = speed_mod * (1.0 - _debuff_slow)
+
+	# Ignores collision: 不与其他敌人碰撞
+	if _ignores_collision:
+		collision_mask = 0  # 穿透其他敌人
+	else:
+		collision_mask = CollisionLayers.ENEMY if has_meta("enemy_collision") else 0
+
 	# Behavior dispatch
 	match _behavior:
 		"wavy":
-			_behavior_wavy(delta, speed_mod)
+			if _is_fixed_direction:
+				_behavior_fixed_wavy(delta, effective_speed_mod)
+			else:
+				_behavior_wavy(delta, effective_speed_mod)
 		"stationary":
 			_behavior_stationary(delta)
 		_:
-			_behavior_chase(delta, speed_mod)
+			if _is_fixed_direction:
+				_behavior_fixed_chase(delta, effective_speed_mod)
+			else:
+				_behavior_chase(delta, effective_speed_mod)
 
 	# Apply knockback on top
 	velocity += knockback_velocity
@@ -204,8 +339,30 @@ func _behavior_chase(_delta: float, speed_mod: float = 1.0):
 	velocity = dir * move_speed * speed_mod
 
 
+# Fixed Direction: 直线移动（初始方向固定）
+func _behavior_fixed_chase(_delta: float, speed_mod: float = 1.0):
+	# 首次运行时记录初始方向
+	if not has_meta("fixed_dir"):
+		var dir = (player.global_position - global_position).normalized()
+		set_meta("fixed_dir", dir)
+	var dir = get_meta("fixed_dir")
+	velocity = dir * move_speed * speed_mod
+
+
 func _behavior_wavy(delta: float, speed_mod: float = 1.0):
 	var dir = (player.global_position - global_position).normalized()
+	var perp = dir.rotated(PI / 2.0)
+	_wavy_time += delta
+	var wave_amp = 60.0 * speed_mod
+	var wave = perp * sin(_wavy_time * 4.0) * wave_amp
+	velocity = dir * move_speed * speed_mod + wave
+
+
+# Fixed Direction + Wavy: 直线移动 + 波形偏移
+func _behavior_fixed_wavy(delta: float, speed_mod: float = 1.0):
+	if not has_meta("fixed_dir"):
+		set_meta("fixed_dir", Vector2.DOWN)
+	var dir = get_meta("fixed_dir")
 	var perp = dir.rotated(PI / 2.0)
 	_wavy_time += delta
 	var wave_amp = 60.0 * speed_mod
@@ -274,15 +431,95 @@ func take_damage(amount: float, source_pos: Vector2 = Vector2.ZERO):
 
 
 func freeze(duration: float):
+	# Freeze resistance: 如果抵抗值高于 0, 只有武器 freeze_chance > resist 才生效
+	# Orologion (5s freeze) 无视抗性
+	if _freeze_resist > 0 and duration < 5.0:
+		# 如果 duration < 5s（非 Orologion），按抗性衰减
+		var effective_duration = duration * (1.0 - _freeze_resist)
+		if effective_duration <= 0.1:
+			return  # 完全免疫
+		duration = effective_duration
 	_frozen = true
 	_freeze_timer = duration
 
 
 func die():
+	# ═══ Three Lives: 复活两次后再真正死亡 ═══
+	if _has_three_lives and _lives_remaining > 1:
+		_lives_remaining -= 1
+		# 复活：恢复 100% HP，重置冰冻和减速
+		health = max_health
+		_frozen = false
+		_debuff_slow = 0.0
+		_debuff_timer = 0.0
+		hit_flash_time = 0.0
+		modulate = Color(1.0, 1.0, 1.0, 1.0)
+		# 复活视觉反馈
+		if is_inside_tree() and ObjectPoolManager:
+			ObjectPoolManager.spawn_ft(get_parent(),
+				global_position + Vector2(randf_range(-10, 10), -20),
+				"✧ REVIVE ✧", Color(0.5, 0.8, 1.0), 18)
+		AudioManager.play_sfx("enemy_revive")
+		return
+
+	# ═══ Self-destruct: 死亡时爆炸 ═══
+	if _is_self_destruct and is_inside_tree():
+		_explode()
+
 	died.emit()
 	if EnemyRegistry:
 		EnemyRegistry.unregister(self)
 	queue_free()
+
+
+func _explode():
+	# 自爆：对附近敌人和玩家造成伤害
+	if not is_inside_tree():
+		return
+	var radius = 60.0 * scale.x
+	var dmg = contact_damage * 2.0
+	# 伤害范围内的敌人
+	var enemies = EnemyRegistry.get_all() if EnemyRegistry else []
+	for e in enemies:
+		if not is_instance_valid(e) or e == self:
+			continue
+		if global_position.distance_to(e.global_position) < radius:
+			if e.has_method("take_damage"):
+				e.take_damage(dmg, Vector2.ZERO)
+	# 伤害玩家
+	if is_instance_valid(player):
+		var dist = global_position.distance_to(player.global_position)
+		if dist < radius:
+			var dmg_to_player = dmg * 0.3  # 对玩家衰减
+			if player.has_method("take_damage_direct"):
+				player.take_damage_direct(dmg_to_player)
+			elif player.has_method("_on_hurt"):
+				player._on_hurt(self)
+	# 爆炸视觉
+	_spawn_explosion_fx(radius, Color(0.9, 0.4, 0.05))
+	AudioManager.play_sfx("explosion")
+
+
+func _spawn_explosion_fx(radius: float, color: Color):
+	# 简易爆炸效果
+	var explosion = Node2D.new()
+	explosion.global_position = global_position
+	get_parent().add_child(explosion)
+	
+	var circle = ColorRect.new()
+	circle.color = color
+	circle.size = Vector2(radius * 2, radius * 2)
+	circle.position = Vector2(-radius, -radius)
+	circle.material = null
+	explosion.add_child(circle)
+	
+	var tw = create_tween()
+	tw.tween_property(circle, "modulate:a", 0.0, 0.3).from(0.6)
+	tw.parallel().tween_property(circle, "scale", Vector2(0.3, 0.3), 0.3).from(Vector2(1.0, 1.0))
+	tw.finished.connect(func():
+		if is_instance_valid(explosion):
+			explosion.queue_free()
+	)
 
 
 func _spawn_death_burst():

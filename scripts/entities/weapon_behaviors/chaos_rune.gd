@@ -2,7 +2,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	var dmg = weapon_manager._calc_damage(w)
 	var area = w.area * player.area_mult
 	var speed_factor = player.speed_mult
-	var duration_factor = 1.0 + player.duration_bonus
+	var duration_factor = player.duration_mult
 	var hit_count = 1 + int(speed_factor * 3) + int(duration_factor * 2)
 	var base_dir = player.direction if player.direction.length() > 0 else Vector2.DOWN
 	for i in range(hit_count):

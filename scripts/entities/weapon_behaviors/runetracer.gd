@@ -6,7 +6,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	if w.evolved:
 		AudioManager.play_sfx("wpn_nofuture")
 		var wall_len = 300.0 + 60.0 * w.level
-		var wall_dur = 1.5 + player.duration_bonus
+		var wall_dur = 1.5 * player.duration_mult
 		var dir = player.direction if player.direction.length() > 0 else Vector2.DOWN
 		var perp = Vector2(-dir.y, dir.x)
 		for side in [-1, 1]:

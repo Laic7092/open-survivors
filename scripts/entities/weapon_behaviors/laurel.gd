@@ -2,7 +2,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	player.invincible = 0.5 + w.level * 0.1
 	if w.evolved:
 		var all = get_enemies.call()
-		var dmg = w.damage * player.damage_mult
+		var dmg = w.damage * player.might
 		for e in all:
 			if is_instance_valid(e) and player.global_position.distance_to(e.global_position) < w.area * player.area_mult:
 				if e.has_method("take_damage"):

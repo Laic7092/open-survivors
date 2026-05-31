@@ -4,7 +4,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	var area = w.area * player.area_mult
 	var screen_h = player.get_viewport_rect().size.y
 	var height = screen_h * 1.5
-	var dur = 0.5 + player.duration_bonus * 0.1
+	var dur = 0.5 * player.duration_mult
 
 	var zone = Area2D.new()
 	zone.collision_mask = 4

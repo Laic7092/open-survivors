@@ -82,7 +82,7 @@ func _get_enemies() -> Array:
 
 
 func _calc_damage(w: WeaponState) -> float:
-	var dmg = w.damage * _player.damage_mult
+	var dmg = w.damage * _player.might
 	if _player._crit_chance > 0 and randf() < _player._crit_chance:
 		dmg *= _player._crit_mult
 	return dmg
@@ -403,7 +403,7 @@ func process(delta: float):
 	for w in weapons:
 		w.cooldown_timer -= delta
 		if w.cooldown_timer <= 0 and _can_fire(w):
-			w.cooldown_timer = w.cooldown * (1.0 - _player.cooldown_reduction)
+			w.cooldown_timer = w.cooldown * _player.cooldown_mult
 			fire_weapon(w)
 	if not _bible_projectiles.is_empty():
 		_bible_angle += delta * 3.0
@@ -449,18 +449,20 @@ func fire_weapon(w: WeaponState):
 
 
 func get_projectile_count(weapon_type: int) -> int:
-	var count = 1 + _player.projectile_bonus
+	# Use WeaponState.amount as the base (includes per-level and evo bonuses)
+	var w = _find_weapon(weapon_type)
+	var base = w.amount if w else 1
+	var count = base + _player.projectile_bonus
 	if ArcanaManager and ArcanaManager.active_arcanas_have_weapon_effect(weapon_type, "listed_amount_plus_1"):
 		count += 1
 	if ArcanaManager and ArcanaManager.has_effect("main_weapon_amount_plus_3"):
 		if weapons.size() > 0 and weapons[0].type == weapon_type:
 			count += 3
+	# Evolved-specific bonuses (stack with weapon amount)
 	if weapon_type == ItemTypes.Type.KNIFE:
-		var w = _find_weapon(ItemTypes.Type.KNIFE)
 		if w and w.evolved:
 			count += 2
 	elif weapon_type == ItemTypes.Type.MAGIC_WAND:
-		var w = _find_weapon(ItemTypes.Type.MAGIC_WAND)
 		if w and w.evolved:
 			count += 1
 	return max(count, 1)
@@ -584,6 +586,10 @@ func get_level(t: int) -> int:
 	return w.level if w else 0
 
 
+func find_weapon(t: int) -> WeaponState:
+	return _find_weapon(t)
+
+
 func get_max_level(t: int) -> int:
 	var w = _find_weapon(t)
 	return w.max_level if w else DataRegistry.items().item_max_level(t)
@@ -596,6 +602,68 @@ func is_evolved(t: int) -> bool:
 
 func get_count() -> int:
 	return weapons.size()
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Limit Break API
+# ═══════════════════════════════════════════════════════════════════
+
+func can_limit_break(t: int) -> bool:
+	var w = _find_weapon(t)
+	return w != null and w.can_limit_break()
+
+
+func get_limit_break_options(t: int) -> Array:
+	var w = _find_weapon(t)
+	if not w:
+		return []
+	return w.get_limit_break_options()
+
+
+func apply_limit_break(t: int, opt: Dictionary) -> bool:
+	var w = _find_weapon(t)
+	if not w:
+		return false
+	var ok = w.apply_limit_break(opt)
+	if ok:
+		_player.recalculate_stats()
+	return ok
+
+
+func get_limit_break_level(t: int) -> int:
+	var w = _find_weapon(t)
+	return w.limit_break_level if w else 0
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Per-weapon custom state access
+# ═══════════════════════════════════════════════════════════════════
+
+func get_custom_state(t: int) -> Dictionary:
+	var w = _find_weapon(t)
+	return w.custom_state if w else {}
+
+
+func set_custom_state(t: int, key: String, value):
+	var w = _find_weapon(t)
+	if w:
+		w.custom_state[key] = value
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Arcana effect helpers (for weapon behaviors)
+# ═══════════════════════════════════════════════════════════════════
+
+func arcana_has_weapon_effect(effect: String, weapon_type: int) -> bool:
+	if not ArcanaManager:
+		return false
+	return ArcanaManager.active_arcanas_have_weapon_effect(weapon_type, effect)
+
+
+func arcana_has_effect(effect: String) -> bool:
+	if not ArcanaManager:
+		return false
+	return ArcanaManager.has_effect(effect)
 
 
 # ═══════════════════════════════════════════════════════════════════

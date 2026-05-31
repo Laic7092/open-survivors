@@ -35,6 +35,11 @@ class EnemyTypeData:
 	var ignores_collision: bool = false  # passes through other enemies
 	var is_self_destruct: bool = false   # explodes on death/contact
 
+	# ── Resistances (对齐 VS Wiki) ──
+	var freeze_resist: float = 0.0       # 0.0=none, freeze_chance 需高于此值才生效
+	var instant_kill_resistant: bool = false  # 免疫 Pentagram / Gorgeous Moon / Rosary 即死
+	var debuff_resistant: bool = false     # 免疫 knockback/freeze 抗性降低 / 减速
+
 	var spawn_weight: float = 1.0   # relative spawn probability; lower = rarer
 
 	func _init(
@@ -1434,7 +1439,10 @@ static func _load_types():
 			118: t.spawn_weight = 0.0    # The Directer — never random
 			119: t.spawn_weight = 0.002  # Moongolow Atlantean — ultra rare
 
-			# Special flags
+			# ════════════════════════════════════════════════════════
+			#  Special Flags (对齐 VS Wiki Bestiary)
+			# ════════════════════════════════════════════════════════
+
 			# Has three lives
 			64: t.has_three_lives = true  # Scarleton
 
@@ -1447,18 +1455,88 @@ static func _load_types():
 			36: t.is_self_destruct = true   # Sig.ra Rossi
 			66: t.is_self_destruct = true   # Poltergeist
 
-			# HPxLevel flag
-			37: t.has_hp_x_level = true   # Hag
-			38: t.has_hp_x_level = true   # Nesufritto
-			65: t.has_hp_x_level = true   # Dragon Shrimp
-			90: t.has_hp_x_level = true   # Stage Killer
-			107: t.has_hp_x_level = true  # Skeletone
-			113: t.has_hp_x_level = true  # Kizzune
+			# HP x Level (所有 wiki 标记的敌人)
+			6:  t.has_hp_x_level = true   # Giant Enemy Crab (#058)
+			22: t.has_hp_x_level = true   # The Reaper (#119)
+			27: t.has_hp_x_level = true   # Lionhead (#014)
+			27: t.has_hp_x_level = true   # Lionhead (#014)
+			35: t.has_hp_x_level = true   # The Trickster (#120)
+			36: t.has_hp_x_level = true   # Sig.ra Rossi (#017)
+			37: t.has_hp_x_level = true   # Hag (#019)
+			38: t.has_hp_x_level = true   # Nesufritto (#020)
+			59: t.has_hp_x_level = true   # Big Golem (#055) — 部分版本
+			65: t.has_hp_x_level = true   # Dragon Shrimp (#016)
+			66: t.has_hp_x_level = true   # Poltergeist (#018)
+			90: t.has_hp_x_level = true   # Stage Killer (#118)
+			91: t.has_hp_x_level = true   # Reaper Trainee (#105)
+			92: t.has_hp_x_level = true   # Unknown (#104)
+			107: t.has_hp_x_level = true  # Skeletone (#092)
+			113: t.has_hp_x_level = true  # Kizzune (#068)
+			114: t.has_hp_x_level = true  # The Stalker (#121)
+			115: t.has_hp_x_level = true  # The Drowner (#122)
+			116: t.has_hp_x_level = true  # The Maddener (#123)
+			117: t.has_hp_x_level = true  # The Ender (#125)
+			118: t.has_hp_x_level = true  # The Directer (#131)
+			121: t.has_hp_x_level = true  # Flower Wall (#009)
 
 			# Fixed direction
-			53: t.is_fixed_direction = true   # Mignotaur
-			78: t.is_fixed_direction = true   # Non-Giant Enemy Crab
-			120: t.is_fixed_direction = true  # Harzia
+			53: t.is_fixed_direction = true   # Mignotaur (#048)
+			78: t.is_fixed_direction = true   # Non-Giant Enemy Crab (#103)
+			120: t.is_fixed_direction = true  # Harzia (#023)
+
+			# ════════════════════════════════════════════════════════
+			#  Resistances (对齐 VS Wiki)
+			# ════════════════════════════════════════════════════════
+
+			# Freeze resistant
+			22: t.freeze_resist = 1.0    # The Reaper — 完全免疫
+			35: t.freeze_resist = 0.8    # The Trickster
+			37: t.freeze_resist = 0.8    # Hag
+			38: t.freeze_resist = 0.6    # Nesufritto
+			59: t.freeze_resist = 0.4    # Big Golem
+			91: t.freeze_resist = 0.5    # Reaper Trainee
+			92: t.freeze_resist = 0.6    # Unknown
+			108: t.freeze_resist = 0.9   # Sketamari
+			113: t.freeze_resist = 0.8   # Kizzune
+			114: t.freeze_resist = 0.8   # The Stalker
+			115: t.freeze_resist = 0.8   # The Drowner
+			116: t.freeze_resist = 0.9   # The Maddener
+			117: t.freeze_resist = 0.9   # The Ender
+			118: t.freeze_resist = 1.0   # The Directer
+
+			# Instant Kill resistant (Rosary / Pentagram / Gorgeous Moon)
+			22: t.instant_kill_resistant = true   # The Reaper
+			37: t.instant_kill_resistant = true   # Hag
+			92: t.instant_kill_resistant = true   # Unknown
+			108: t.instant_kill_resistant = true  # Sketamari
+			113: t.instant_kill_resistant = true  # Kizzune
+			116: t.instant_kill_resistant = true  # The Maddener
+			117: t.instant_kill_resistant = true  # The Ender
+			118: t.instant_kill_resistant = true  # The Directer
+
+			# Debuff resistant (knockback/freeze reduction / slow)
+			22: t.debuff_resistant = true   # The Reaper
+			35: t.debuff_resistant = true   # The Trickster
+			37: t.debuff_resistant = true   # Hag
+			92: t.debuff_resistant = true   # Unknown
+			108: t.debuff_resistant = true  # Sketamari
+			113: t.debuff_resistant = true  # Kizzune
+			114: t.debuff_resistant = true  # The Stalker
+			115: t.debuff_resistant = true  # The Drowner
+			116: t.debuff_resistant = true  # The Maddener
+			117: t.debuff_resistant = true  # The Ender
+			118: t.debuff_resistant = true  # The Directer
+
+			# Knockback resistant (高击退抗性 — wiki 标记 "Resistant to Knockback")
+			22: t.knockback_resist = 1.0  # The Reaper
+			35: t.knockback_resist = 0.8  # The Trickster
+			37: t.knockback_resist = 0.8  # Hag
+			113: t.knockback_resist = 0.8 # Kizzune
+			114: t.knockback_resist = 0.8 # The Stalker
+			115: t.knockback_resist = 0.8 # The Drowner
+			116: t.knockback_resist = 0.9 # The Maddener
+			117: t.knockback_resist = 0.9 # The Ender
+			118: t.knockback_resist = 1.0 # The Directer
 
 
 static func get_type(id: int) -> EnemyTypeData:

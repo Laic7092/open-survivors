@@ -205,19 +205,23 @@ func spawn_enemy_drops(enemy: Node2D):
 		spawn_pickup_at(enemy.global_position, 0)
 		_try_spawn_boss_drop_relic(enemy.global_position)
 	else:
-		if randf() < 0.28:
+		# XP 宝石掉落：固定值（对齐 VS Wiki），不随难度缩放
+		var base_xp = _get_enemy_base_xp(enemy)
+		if base_xp <= 0:
+			base_xp = 1
+		if randf() < 0.60:
 			var gem = ObjectPoolManager.borrow_gem()
 			gem.player = player
 			gem.global_position = enemy.global_position
-			if game_state.game_time < 480.0:
+			# 颜色由 XP 值决定（对齐 Wiki）：
+			# Blue ≤ 2 XP, Green ≤ 9 XP, Red > 9 XP
+			gem.value = base_xp
+			if base_xp <= 2:
 				gem.tier = gem.Tier.BLUE
-				gem.value = maxi(enemy.xp_value, 1)
-			elif game_state.game_time < 1080.0:
+			elif base_xp <= 9:
 				gem.tier = gem.Tier.GREEN
-				gem.value = maxi(enemy.xp_value * 2, 4)
 			else:
 				gem.tier = gem.Tier.RED
-				gem.value = maxi(enemy.xp_value * 3, 10)
 			main_node.call_deferred("add_child", gem)
 		if randf() < 0.001:
 			var pt = 4 + randi() % 3
@@ -463,3 +467,14 @@ func _clamp_to_map(pos: Vector2, margin: float = 40.0) -> Vector2:
 	var hw = game_state.map_width / 2.0 - margin
 	var hh = game_state.map_height / 2.0 - margin
 	return Vector2(clamp(pos.x, -hw, hw), clamp(pos.y, -hh, hh))
+
+
+# 获取敌人类型的基础 XP 值（固定值，不随难度缩放，对齐 VS Wiki）
+func _get_enemy_base_xp(enemy: Node2D) -> int:
+	if not is_instance_valid(enemy):
+		return 1
+	var type_id = enemy.enemy_type_id if "enemy_type_id" in enemy else -1
+	if type_id < 0:
+		return 1
+	var t = DataRegistry.enemies().get_type(type_id)
+	return t.base_xp if t else 1

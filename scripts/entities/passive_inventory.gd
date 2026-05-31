@@ -28,27 +28,10 @@ func get_all() -> Dictionary:
 
 
 func recalculate(player):
+	# 注意：recalculate 不重置 stat 到基线（已在 player.recalculate_stats 中完成）
+	# 只做被动叠加
 	var old_max = player.max_health
-	player.move_speed = 200.0
-	player.damage_mult = 1.0
-	player.cooldown_reduction = 0.0
-	player.area_mult = 1.0
-	player.growth_mult = 1.0
-	player.recovery = 0.0
-	player.projectile_bonus = 0
-	player.greed_mult = 0.0
-	player.magnet_level = 0
-	player.luck = 0.0
-	player.duration_bonus = 0.0
-	player.speed_mult = 1.0
-	player.curse = 0.0
-	player.revivals = 0
-	player.armor = 0.0
-	player.pickup_range = 60.0
 	player.max_health = player.base_max_health
-	player.invincible_duration = 0.3
-	player.charm = 0
-	player.gold_fever_duration_bonus = 0.0
 
 	for t in _passives:
 		var lv = _passives[t]
@@ -56,31 +39,39 @@ func recalculate(player):
 			ItemTypes.Type.WINGS:
 				player.move_speed = 200.0 * (1.0 + 0.1 * lv)
 			ItemTypes.Type.SPINACH:
-				player.damage_mult += 0.1 * lv
+				player.might += 0.1 * lv
 			ItemTypes.Type.TOME:
-				player.cooldown_reduction = 0.08 * lv
+				# Wiki: Cooldown 100% base, -8%/lv → multiplier = 1.0 - 0.08*lv
+				player.cooldown_mult -= 0.08 * lv
 			ItemTypes.Type.HOLLOW_HEART:
+				# Wiki: Max HP +40%/lv
 				player.max_health = player.base_max_health * (1.0 + 0.4 * lv)
 			ItemTypes.Type.CANDELABRADOR:
+				# Wiki: Area +10%/lv
 				player.area_mult += 0.1 * lv
 			ItemTypes.Type.CROWN:
+				# Wiki: Growth +8%/lv
 				player.growth_mult = 1.0 + 0.08 * lv
 			ItemTypes.Type.PUMMAROLA:
+				# Wiki: Recovery +0.2 HP/s/lv
 				player.recovery += 0.2 * lv
 			ItemTypes.Type.DUPLICATOR:
+				# Wiki: Amount +1/lv
 				player.projectile_bonus = lv
 			ItemTypes.Type.STONE_MASK:
+				# Wiki: Greed +10%/lv
 				player.greed_mult = 0.10 * lv
 			ItemTypes.Type.MAGNET:
 				player.magnet_level = lv
 				player.pickup_range = 60.0 + 20.0 * lv
 			ItemTypes.Type.CLOVER:
+				# Wiki: Luck +10%/lv
 				player.luck = 0.10 * lv
 				player._crit_chance = player.luck * 0.5  # Lv5 = 25% crit
 			ItemTypes.Type.SPELLBINDER:
-				player.duration_bonus += 0.10 * lv
+				player.duration_mult += 0.10 * lv
 			ItemTypes.Type.ARMOR:
-				player.armor = 0.08 * lv  # 8% damage reduction per level
+				player.armor = 0.08 * lv  # 8% 减伤/lv
 			ItemTypes.Type.BRACER:
 				player.speed_mult += 0.10 * lv
 			ItemTypes.Type.SKULL:
@@ -88,12 +79,12 @@ func recalculate(player):
 			ItemTypes.Type.TIRAGISU:
 				player.revivals = lv
 			ItemTypes.Type.TORRONA:
-				player.damage_mult += 0.04 * lv
+				player.might += 0.04 * lv
 				player.area_mult += 0.04 * lv
 				player.speed_mult += 0.04 * lv
-				player.duration_bonus += 0.04 * lv
+				player.duration_mult += 0.04 * lv
 			ItemTypes.Type.SILVER_RING:
-				player.duration_bonus += 0.05 * lv
+				player.duration_mult += 0.05 * lv
 				player.area_mult += 0.05 * lv
 			ItemTypes.Type.GOLD_RING:
 				player.curse += 0.05 * lv

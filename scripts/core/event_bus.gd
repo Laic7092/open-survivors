@@ -28,6 +28,7 @@ signal item_evolved(weapon_type: int)
 signal light_source_destroyed()
 signal pickup_collected(pickup_type: int)
 signal stage_item_collected(item_type: int)
+signal gold_collected(amount: int)
 
 # ═══════════════════════════════════════════════
 #  运行时配置存储（替代 Engine.set_meta/get_meta）

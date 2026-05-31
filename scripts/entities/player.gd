@@ -9,38 +9,57 @@ signal health_changed(health: float, max_health: float)
 signal weapons_changed
 signal passives_changed
 
-var move_speed: float = 200.0
-var max_health: float = 100.0
-var health: float = 100.0
-var damage_mult: float = 1.0
-var base_max_health: float = 100.0
-var pickup_range: float = 60.0
-var armor: float = 0.0
-var cooldown_reduction: float = 0.0
-var area_mult: float = 1.0
-var growth_mult: float = 1.0
-var recovery: float = 0.0
-var projectile_bonus: int = 0
-var greed_mult: float = 0.0
-var magnet_level: int = 0
-var luck: float = 0.0
-var duration_bonus: float = 0.0
-var speed_mult: float = 1.0
-var curse: float = 0.0
-var revivals: int = 0
-var invincible_duration: float = 0.3
-var charm: int = 0
-var gold_fever_duration_bonus: float = 0.0
+# ═══════════════════════════════════════════════════════════════
+#  21 Player Stats — 对齐 VS Wiki
+#  https://vampire.survivors.wiki/w/Player_stats
+#  百分比 stat 基数为 1.0 (= 100%)，加成后相乘
+#  绝对值 stat 为具体数值
+# ═══════════════════════════════════════════════════════════════
 
-var _arcana_speed_override: float = 1.0
-var _arcana_area_override: float = 1.0
-var _arcana_duration_override: float = 0.0
-var _crit_chance: float = 0.0
-var _crit_mult: float = 2.0
+# ── 绝对值 stats ──
+var health: float = 100.0           # 当前 HP
+var max_health: float = 100.0       # 最大 HP (Wiki: 100 HP)
+var base_max_health: float = 100.0  # PowerUp/角色调整后的基础最大 HP
+var recovery: float = 0.0           # HP/s 回复 (Wiki: 0 HP/s)
+var armor: float = 0.0             # 减伤 (Wiki: 0)
+var move_speed: float = 200.0      # 移动速度 px/s (Wiki: 100% = 200px/s)
+var revivals: int = 0              # 复活次数 (Wiki: 0)
+var invincible_duration: float = 0.3  # 受伤无敌时间 (Parm Aegis)
+var charm: int = 0                 # 敌人生成数增加
+
+# ── 百分比乘算 stats (1.0 = 100%) ──
+var might: float = 1.0             # 伤害倍率 (Wiki: Might 100%)
+var area_mult: float = 1.0         # 范围倍率 (Wiki: Area 100%)
+var speed_mult: float = 1.0        # 弹速倍率 (Wiki: Speed 100%)
+var duration_mult: float = 1.0     # 持续时间倍率 (Wiki: Duration 100%)
+var cooldown_mult: float = 1.0     # 冷却倍率 (Wiki: Cooldown 100%, 越低越快)
+var growth_mult: float = 1.0       # XP 倍率 (Wiki: Growth 100%)
+
+# ── 加算偏置 stats (0 = 基线加成) ──
+var luck: float = 0.0             # 幸运加成 (Wiki: Luck 100% = 1.0 + luck)
+var greed_mult: float = 0.0       # 金币加成 (Wiki: Greed 100% = 1.0 + greed)
+var curse: float = 0.0            # 诅咒 (Wiki: 0%)
+
+# ── 弹数 ──
+var projectile_bonus: int = 0     # 额外弹数 (Wiki: Amount 0)
+
+# ── 拾取范围 ──
+var pickup_range: float = 60.0    # 吸引范围 px (Wiki: Magnet)
+var magnet_level: int = 0          # Magnet 被动等级
+
+# ── 其他 ──
+var gold_fever_duration_bonus: float = 0.0  # Gold Fever 延长时间
+var _crit_chance: float = 0.0     # 暴击率
+var _crit_mult: float = 2.0       # 暴击倍率
+
+# ── Arcana 加成层（在 recalculate 最后乘算） ──
+var _arcana_speed_mult: float = 1.0
+var _arcana_area_mult: float = 1.0
+var _arcana_duration_mult: float = 1.0
 
 var xp: int = 0
 var level: int = 1
-var xp_to_next: int = 10
+var xp_to_next: int = 5
 
 var invincible: float = 0.0
 var direction: Vector2 = Vector2.DOWN
@@ -115,14 +134,14 @@ func _ready():
 			start_weapon_type = char_data.get("weapon", UpgradeType.WHIP)
 		var starter = WeaponState.new(start_weapon_type)
 		weapon_manager.add_weapon(starter)
-	update_xp_requirements()
+	xp_to_next = LevelUpService.xp_for_level(level)
 	if debug_weapons.is_empty():
 		var char_data = EventBus.get_config("selected_character", {})
 		if not char_data.is_empty():
 			var bonus_type = char_data.get("bonus_type", "")
 			var bonus_val = char_data.get("bonus_value", 0.0)
 			match bonus_type:
-				"might": damage_mult += bonus_val
+				"might": might += bonus_val
 				"growth": growth_mult += bonus_val
 				"movespeed": move_speed += 200.0 * bonus_val
 				"area": area_mult += bonus_val
@@ -135,6 +154,8 @@ func _process(delta):
 		return
 	if invincible > 0:
 		invincible -= delta
+		# 升级无敌期间闪烁
+		update_visual()
 	if recovery > 0.0 and health < max_health:
 		var old = health
 		health = min(health + recovery * delta, max_health)
@@ -179,18 +200,29 @@ func _draw():
 				whip_evolved = true
 				break
 		var base_color = Color(1.0, 0.2, 0.2) if whip_evolved else Color(1, 1, 1)
-		var outer_r = w_area * 2.0
-		var half_w = outer_r * 0.50
-		var half_h = outer_r * 0.30
-		var rect = Rect2(-half_w, -half_h, half_w * 2, half_h * 2)
-		draw_rect(rect, Color(base_color.r, base_color.g, base_color.b, alpha * 0.12), true)
-		draw_rect(rect, base_color, false, 2.5)
-		var pulse_inset = progress * 8.0
-		var pulse_rect = Rect2(
-			-half_w + pulse_inset, -half_h + pulse_inset,
-			(half_w - pulse_inset) * 2, (half_h - pulse_inset) * 2
-		)
-		draw_rect(pulse_rect, Color(base_color.r, base_color.g, base_color.b, alpha * 0.5), false, 1.5)
+		
+		# Arc-shaped whip visual matching hitbox in whip.gd
+		var arc_r = w_area * 2.0
+		var arc_angle = PI * 0.6  # ~108°
+		var facing = direction.normalized() if direction.length() > 0 else Vector2.DOWN
+		var angle0 = facing.angle() - arc_angle * 0.5
+		var angle1 = facing.angle() + arc_angle * 0.5
+		var segs = 12
+		
+		# Filled arc (triangle fan)
+		var pts: PackedVector2Array = [Vector2.ZERO]
+		for i in range(segs + 1):
+			var a = angle0 + (angle1 - angle0) * (float(i) / segs)
+			pts.push_back(Vector2(cos(a), sin(a)) * arc_r)
+		draw_polygon(pts, PackedColorArray([Color(base_color.r, base_color.g, base_color.b, alpha * 0.15)]))
+		
+		# Arc outline
+		draw_arc(Vector2.ZERO, arc_r, angle0, angle1, segs, base_color, 2.5, true)
+		
+		# Pulse effect (shrinking arc)
+		var pulse_inset = progress * arc_r * 0.15
+		var pulse_r = max(arc_r - pulse_inset, 4.0)
+		draw_arc(Vector2.ZERO, pulse_r, angle0, angle1, segs, Color(base_color.r, base_color.g, base_color.b, alpha * 0.4), 1.5, true)
 	for w in weapon_manager.weapons:
 		if w.type == UpgradeType.GARLIC:
 			var pulse = 0.4 + sin(Time.get_ticks_msec() * 0.004) * 0.15
@@ -268,63 +300,96 @@ func get_weapon_count() -> int:
 
 
 func recalculate_stats():
-	# ── Step 1: Prepare base_max_health (PowerUp + character) BEFORE passives ──
-	var hp_mult := 1.0
+	# ── 对齐 Wiki：所有 stat 从基线重算，分层叠加 ──
+	#    Layer 0: 基础值
+	#    Layer 1: 角色加成
+	#    Layer 2: PowerUp 加成
+	#    Layer 3: 被动物品加成（passive_inventory.recalculate）
+	#    Layer 4: Arcana 加成（在 _recalculate_* 中处理）
+
+	# ── L0 + L1: 基础值 + 角色加成 ──
 	var char_data = EventBus.get_config("selected_character", {})
-	if not char_data.is_empty():
-		var stats = char_data.get("stats", {})
-		if not stats.is_empty():
-			hp_mult = 1.0 + stats.get("max_hp_pct", 0.0)
+	
+	# Max Health: baseline
+	var hp_mult := 1.0
+	var char_stats = char_data.get("stats", {}) if not char_data.is_empty() else {}
+	if not char_stats.is_empty():
+		hp_mult = 1.0 + char_stats.get("max_hp_pct", 0.0)
 	if PowerUpManager:
 		var b = PowerUpManager.get_stat_bonuses()
 		base_max_health = 100.0 * (1.0 + b["max_hp_pct"]) * hp_mult
 	else:
 		base_max_health = 100.0 * hp_mult
 	
+	# 重置所有 stat 到基线
+	might = 1.0
+	cooldown_mult = 1.0
+	area_mult = 1.0
+	speed_mult = 1.0
+	duration_mult = 1.0
+	growth_mult = 1.0
+	luck = 0.0
+	greed_mult = 0.0
+	curse = 0.0
+	recovery = 0.0
+	armor = 0.0
+	move_speed = 200.0
+	projectile_bonus = 0
+	revivals = 0
+	magnet_level = 0
+	pickup_range = 60.0
+	charm = 0
+	invincible_duration = 0.3
+	gold_fever_duration_bonus = 0.0
+	_crit_chance = 0.0
+	
 	var old_max = max_health
 	
-	# ── Step 2: Recalculate passives (uses base_max_health for max_health) ──
-	passive_inventory.recalculate(self)
-	
-	# ── Step 3: Apply character non-HP stats on top ──
-	var char_data_stats = char_data.get("stats", {}) if not char_data.is_empty() else {}
-	if not char_data_stats.is_empty():
-		damage_mult += char_data_stats.get("damage_mult", 0.0)
-		cooldown_reduction += char_data_stats.get("cooldown_reduction", 0.0)
-		area_mult += char_data_stats.get("area_mult", 0.0)
-		move_speed += 200.0 * char_data_stats.get("move_speed_pct", 0.0)
-		growth_mult += char_data_stats.get("growth_pct", 0.0)
-		recovery += char_data_stats.get("recovery", 0.0)
-		armor += char_data_stats.get("armor", 0)
-		greed_mult += char_data_stats.get("greed_pct", 0.0)
-		# max_health already handled via base_max_health above — no overwrite!
+	# L1: Character non-HP 加成
+	if not char_stats.is_empty():
+		might += char_stats.get("damage_mult", 0.0)
+		cooldown_mult -= char_stats.get("cooldown_reduction", 0.0)
+		area_mult += char_stats.get("area_mult", 0.0)
+		move_speed += 200.0 * char_stats.get("move_speed_pct", 0.0)
+		growth_mult += char_stats.get("growth_pct", 0.0)
+		recovery += char_stats.get("recovery", 0.0)
+		armor += char_stats.get("armor", 0)
+		greed_mult += char_stats.get("greed_pct", 0.0)
 	else:
 		var bonus_type = char_data.get("bonus_type", "")
 		var bonus_val = char_data.get("bonus_value", 0.0)
 		match bonus_type:
-			"might": damage_mult += bonus_val
+			"might": might += bonus_val
 			"growth": growth_mult += bonus_val
 			"movespeed": move_speed += 200.0 * bonus_val
 			"area": area_mult += bonus_val
 	
-	# ── Step 4: Apply PowerUp non-HP stats on top ──
+	# L2: PowerUp 加成
 	if PowerUpManager:
 		var b = PowerUpManager.get_stat_bonuses()
-		damage_mult += b["damage_mult"]
+		might += b["damage_mult"]
 		recovery += b["recovery"]
-		cooldown_reduction += b["cooldown_reduction"]
+		cooldown_mult -= b["cooldown_reduction"]
 		area_mult += b["area_mult"]
 		move_speed += 200.0 * b["move_speed_pct"]
 		growth_mult += b["growth_pct"]
 		armor += b["armor"]
-		# base_max_health already handled in Step 1
+	
+	# L3: Passive items（passive_inventory 从基线重算所有 stat）
+	passive_inventory.recalculate(self)
+	
+	# L4: Arcana 加成（乘算在最后）
+	area_mult *= _arcana_area_mult
+	speed_mult *= _arcana_speed_mult
+	duration_mult *= _arcana_duration_mult
+	
+	# Magnet: 更新碰撞形状
 	if _collect_shape_ref and _collect_shape_ref.shape:
 		var circle = _collect_shape_ref.shape as CircleShape2D
 		if circle:
 			circle.radius = pickup_range
 	
-	# ── Step 5: Emit health_changed if max_health changed ──
-	# (passive_inventory.recalculate already scales health proportionally)
+	# 血量变更通知
 	if max_health != old_max or health > max_health:
 		health = min(health, max_health)
 		health_changed.emit(health, max_health)
@@ -369,24 +434,24 @@ func evolve_weapon(weapon_type: int):
 
 
 func set_speed_mult(val: float):
-	_arcana_speed_override = val
+	_arcana_speed_mult = val
 	var bracer_lv = passive_inventory.get_level(UpgradeType.BRACER)
-	speed_mult = (1.0 + 0.10 * bracer_lv) * _arcana_speed_override
+	speed_mult = (1.0 + 0.10 * bracer_lv) * _arcana_speed_mult
 
 
 func set_area_mult_override(val: float):
-	_arcana_area_override = val
+	_arcana_area_mult = val
 	_recalculate_area()
 
 
-func set_duration_bonus_override(val: float):
-	_arcana_duration_override = val
+func set_duration_mult_override(val: float):
+	_arcana_duration_mult = val
 	_recalculate_duration()
 
 
 func add_speed_mult_pct(pct: float):
 	var bracer_lv = passive_inventory.get_level(UpgradeType.BRACER)
-	speed_mult = (1.0 + 0.10 * bracer_lv + pct) * _arcana_speed_override
+	speed_mult = (1.0 + 0.10 * bracer_lv + pct) * _arcana_speed_mult
 
 
 func add_growth_pct(pct: float):
@@ -411,19 +476,27 @@ func add_area_pct(pct: float):
 
 
 func add_duration_pct(pct: float):
-	duration_bonus += pct
+	# +X% → 乘算: duration_mult 1.0 → 1.0 + pct
+	duration_mult += pct
 	_recalculate_duration()
 
 
 func _recalculate_area():
 	var candel_lv = passive_inventory.get_level(UpgradeType.CANDELABRADOR)
 	area_mult = 1.0 + 0.08 * candel_lv
-	area_mult *= _arcana_area_override
+	area_mult *= _arcana_area_mult
 
 
 func _recalculate_duration():
+	# 从被动重算 duration_mult（加成全部为加算到 1.0 基线）
 	var spell_lv = passive_inventory.get_level(UpgradeType.SPELLBINDER)
-	duration_bonus = 0.1 * spell_lv + _arcana_duration_override
+	var torrona_lv = passive_inventory.get_level(UpgradeType.TORRONA)
+	var silver_ring_lv = passive_inventory.get_level(UpgradeType.SILVER_RING)
+	duration_mult = 1.0
+	duration_mult += 0.10 * spell_lv     # Spellbinder: +10%/lv
+	duration_mult += 0.04 * torrona_lv   # Torrona: +4%/lv
+	duration_mult += 0.05 * silver_ring_lv  # Silver Ring: +5%/lv
+	duration_mult *= _arcana_duration_mult  # Arcana 层最后乘算
 
 
 func get_curse() -> float:
@@ -460,6 +533,9 @@ func heal(amount: float):
 
 # ── XP ───────────────────────────────────────────────────────────────
 
+const LevelUpService = preload("res://scripts/core/level_up_service.gd")
+
+
 func _on_collect_area(area: Area2D):
 	if area.has_method("collect"):
 		add_xp(area.collect())
@@ -468,26 +544,18 @@ func _on_collect_area(area: Area2D):
 func add_xp(value: int):
 	if ArcanaManager and ArcanaManager.has_effect("no_xp"):
 		return
-	# ── Growth diminishing returns: prevent exponential XP snowball ──
-	# growth_mult > 1.3 is halved in effectiveness to keep late-game XP sane
-	var effective_growth = growth_mult
-	if effective_growth > 1.3:
-		effective_growth = 1.3 + (effective_growth - 1.3) * 0.5
+	var effective_growth = LevelUpService.effective_growth(growth_mult, level)
 	xp += int(value * effective_growth)
+	xp_to_next = LevelUpService.xp_for_level(level)
 	while xp >= xp_to_next:
 		xp -= xp_to_next
 		level += 1
-		update_xp_requirements()
+		xp_to_next = LevelUpService.xp_for_level(level)
+		invincible = invincible_duration  # 升级后短暂无敌
 		show_floating_text(I18N.t("player.level_up"), Color(0.9, 0.8, 0.2), 22)
 		AudioManager.play_sfx("level_up")
 		leveled_up.emit()
 	xp_changed.emit(xp, xp_to_next)
-
-
-func update_xp_requirements():
-	# Steep quadratic: early levels are easy, high levels require serious grinding
-	# Level 1→2: 35, 10→11: 265, 30→31: 1080, 50→51: 2785, 70→71: 5105, 100→101: 10230
-	xp_to_next = 15 + level * 20 + int(level * level * 0.5)
 
 
 # ── Magnet ───────────────────────────────────────────────────────────
@@ -580,12 +648,12 @@ func _revive():
 	if ArcanaManager and ArcanaManager.has_effect("revival_buff"):
 		max_health *= 1.10
 		armor += 1
-		damage_mult *= 1.05
+		might *= 1.05
 		area_mult *= 1.05
-		duration_bonus += 0.05
+		duration_mult += 0.05
 		speed_mult *= 1.05
 		if ArcanaManager and ArcanaManager.has_effect("armor_scales_damage"):
-			damage_mult += 0.1 * armor
+			might += 0.1 * armor
 	health = max_health * 0.5
 	invincible = 2.0
 	show_floating_text(I18N.t("player.revive"), Color(0.9, 0.8, 0.2), 24)
@@ -599,10 +667,10 @@ func _apply_powerup_stats():
 	if not PowerUpManager:
 		return
 	var b = PowerUpManager.get_stat_bonuses()
-	damage_mult += b["damage_mult"]
+	might += b["damage_mult"]
 	base_max_health = 100.0 * (1.0 + b["max_hp_pct"])
 	recovery += b["recovery"]
-	cooldown_reduction += b["cooldown_reduction"]
+	cooldown_mult -= b["cooldown_reduction"]
 	area_mult += b["area_mult"]
 	move_speed += 200.0 * b["move_speed_pct"]
 	growth_mult += b["growth_pct"]

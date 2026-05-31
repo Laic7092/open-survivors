@@ -308,10 +308,10 @@ func _update_stats():
 	var hp = player.health
 	var max_hp = player.max_health
 	_stat_labels[5].text = I18N.t("pause.hp") % [hp, max_hp]
-	_stat_labels[6].text = I18N.t("pause.dmg") % player.damage_mult
+	_stat_labels[6].text = I18N.t("pause.dmg") % player.might
 	_stat_labels[7].text = I18N.t("pause.spd") % player.move_speed
 	_stat_labels[8].text = I18N.t("pause.area") % player.area_mult
-	_stat_labels[9].text = I18N.t("pause.cd") % int(player.cooldown_reduction * 100)
+	_stat_labels[9].text = I18N.t("pause.cd") % int((1.0 - player.cooldown_mult) * 100)
 	_stat_labels[10].text = I18N.t("pause.armor") % player.armor
 
 

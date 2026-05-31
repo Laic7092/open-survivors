@@ -2,7 +2,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	AudioManager.play_sfx("wpn_knife")
 	var dmg = weapon_manager._calc_damage(w)
 	var area = w.area * player.area_mult
-	var dur_bonus = 1.0 + player.duration_bonus
+	var dur_bonus = player.duration_mult
 	var count = int(weapon_manager.get_projectile_count(w.type) * dur_bonus)
 	count = max(count, 1)
 	var base_dir = player.direction if player.direction.length() > 0 else Vector2.DOWN

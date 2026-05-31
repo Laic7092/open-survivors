@@ -41,58 +41,58 @@ const DATA := {
 	# ── Weapons ──
 	0: {
 		"name": "Whip", "name_key": "item.whip_name",
-		"desc": "Strike enemies in a wide arc", "desc_key": "item.whip_desc",
-		"color": Color(0.8, 0.6, 0.3), "evo_key": "whip", "is_weapon": true, "max_level": 9,
+		"desc": "Attacks horizontally, passes through enemies", "desc_key": "item.whip_desc",
+		"color": Color(0.8, 0.6, 0.3), "evo_key": "whip", "is_weapon": true, "max_level": 8,
 	},
 	1: {
 		"name": "Magic Wand", "name_key": "item.wand_name",
-		"desc": "Fire homing bolts at enemies", "desc_key": "item.wand_desc",
-		"color": Color(0.3, 0.5, 1.0), "evo_key": "wand", "is_weapon": true, "max_level": 9,
+		"desc": "Shoots a magic missile at the closest enemy", "desc_key": "item.wand_desc",
+		"color": Color(0.3, 0.5, 1.0), "evo_key": "wand", "is_weapon": true, "max_level": 8,
 	},
 	2: {
 		"name": "Garlic", "name_key": "item.garlic_name",
-		"desc": "Damage enemies around you", "desc_key": "item.garlic_desc",
-		"color": Color(0.6, 0.2, 0.8), "evo_key": "garlic", "is_weapon": true, "max_level": 9,
+		"desc": "Damages nearby enemies, reduces knockback and freeze resistance", "desc_key": "item.garlic_desc",
+		"color": Color(0.6, 0.2, 0.8), "evo_key": "garlic", "is_weapon": true, "max_level": 8,
 	},
 	10: {
 		"name": "Knife", "name_key": "item.knife_name",
-		"desc": "Throw daggers in faced direction", "desc_key": "item.knife_desc",
-		"color": Color(0.7, 0.7, 0.7), "evo_key": "knife", "is_weapon": true, "max_level": 9,
+		"desc": "Throws projectiles in the faced direction", "desc_key": "item.knife_desc",
+		"color": Color(0.7, 0.7, 0.7), "evo_key": "knife", "is_weapon": true, "max_level": 8,
 	},
 	11: {
 		"name": "Axe", "name_key": "item.axe_name",
-		"desc": "Hurl a heavy axe in an arc", "desc_key": "item.axe_desc",
-		"color": Color(0.6, 0.3, 0.1), "evo_key": "axe", "is_weapon": true, "max_level": 9,
+		"desc": "Throws projectiles above the player that arc downward", "desc_key": "item.axe_desc",
+		"color": Color(0.6, 0.3, 0.1), "evo_key": "axe", "is_weapon": true, "max_level": 8,
 	},
 	12: {
 		"name": "Fire Wand", "name_key": "item.firewand_name",
-		"desc": "Shoot explosive fire at enemies", "desc_key": "item.firewand_desc",
-		"color": Color(0.9, 0.4, 0.1), "evo_key": "firewand", "is_weapon": true, "max_level": 9,
+		"desc": "Shoots an arc of fireballs at a random enemy", "desc_key": "item.firewand_desc",
+		"color": Color(0.9, 0.4, 0.1), "evo_key": "firewand", "is_weapon": true, "max_level": 8,
 	},
 	16: {
 		"name": "Cross", "name_key": "item.cross_name",
-		"desc": "Boomerang that seeks enemies", "desc_key": "item.cross_desc",
-		"color": Color(0.9, 0.6, 0.2), "evo_key": "cross", "is_weapon": true, "max_level": 9,
+		"desc": "Shoots a spinning cross at enemies with a boomerang effect", "desc_key": "item.cross_desc",
+		"color": Color(0.9, 0.6, 0.2), "evo_key": "cross", "is_weapon": true, "max_level": 8,
 	},
 	17: {
 		"name": "King Bible", "name_key": "item.bible_name",
-		"desc": "Orbiting projectiles", "desc_key": "item.bible_desc",
-		"color": Color(0.2, 0.6, 0.9), "evo_key": "king_bible", "is_weapon": true, "max_level": 9,
+		"desc": "Spawns a ring of orbiting bibles around the player", "desc_key": "item.bible_desc",
+		"color": Color(0.2, 0.6, 0.9), "evo_key": "king_bible", "is_weapon": true, "max_level": 8,
 	},
 	18: {
 		"name": "Santa Water", "name_key": "item.santa_water_name",
-		"desc": "Create damaging puddles", "desc_key": "item.santa_water_desc",
-		"color": Color(0.1, 0.5, 0.8), "evo_key": "santa_water", "is_weapon": true, "max_level": 9,
+		"desc": "Rains down holy water bottles that create damaging puddles", "desc_key": "item.santa_water_desc",
+		"color": Color(0.1, 0.5, 0.8), "evo_key": "santa_water", "is_weapon": true, "max_level": 8,
 	},
 	19: {
 		"name": "Runetracer", "name_key": "item.runetracer_name",
-		"desc": "Bouncing tracer projectiles", "desc_key": "item.runetracer_desc",
-		"color": Color(0.8, 0.3, 0.7), "evo_key": "runetracer", "is_weapon": true, "max_level": 9,
+		"desc": "Fires slow-moving runes in random directions that bounce off walls", "desc_key": "item.runetracer_desc",
+		"color": Color(0.8, 0.3, 0.7), "evo_key": "runetracer", "is_weapon": true, "max_level": 8,
 	},
 	20: {
 		"name": "Lightning Ring", "name_key": "item.lightning_name",
 		"desc": "Strike enemies with lightning", "desc_key": "item.lightning_desc",
-		"color": Color(0.9, 0.9, 0.2), "evo_key": "lightning_ring", "is_weapon": true, "max_level": 9,
+		"color": Color(0.9, 0.9, 0.2), "evo_key": "lightning_ring", "is_weapon": true, "max_level": 8,
 	},
 	# ── Passives ──
 	3: {
@@ -204,92 +204,92 @@ const DATA := {
 	32: {
 		"name": "Pentagram", "name_key": "item.pentagram_name",
 		"desc": "Removes all enemies and items from the screen at a fixed interval", "desc_key": "item.pentagram_desc",
-		"color": Color(0.6, 0.1, 0.9), "evo_key": "pentagram", "is_weapon": true, "max_level": 9,
+		"color": Color(0.6, 0.1, 0.9), "evo_key": "pentagram", "is_weapon": true, "max_level": 8,
 	},
 	33: {
 		"name": "Peachone", "name_key": "item.peachone_name",
 		"desc": "Flying ally circles clockwise around you", "desc_key": "item.peachone_desc",
-		"color": Color(0.9, 0.5, 0.3), "evo_key": "peachone", "is_weapon": true, "max_level": 9,
+		"color": Color(0.9, 0.5, 0.3), "evo_key": "peachone", "is_weapon": true, "max_level": 8,
 	},
 	34: {
 		"name": "Ebony Wings", "name_key": "item.ebony_wings_name",
 		"desc": "Flying ally circles counter-clockwise around you", "desc_key": "item.ebony_wings_desc",
-		"color": Color(0.3, 0.3, 0.7), "evo_key": "ebony_wings", "is_weapon": true, "max_level": 9,
+		"color": Color(0.3, 0.3, 0.7), "evo_key": "ebony_wings", "is_weapon": true, "max_level": 8,
 	},
 	35: {
 		"name": "Phiera Der Tuphello", "name_key": "item.phiera_name",
 		"desc": "Fires piercing projectiles in facing direction", "desc_key": "item.phiera_desc",
-		"color": Color(0.3, 0.3, 0.7), "evo_key": "phiera", "is_weapon": true, "max_level": 9,
+		"color": Color(0.3, 0.3, 0.7), "evo_key": "phiera", "is_weapon": true, "max_level": 8,
 	},
 	36: {
 		"name": "Eight The Sparrow", "name_key": "item.eight_name",
 		"desc": "Fires three-way spread shots", "desc_key": "item.eight_desc",
-		"color": Color(0.7, 0.3, 0.4), "evo_key": "eight", "is_weapon": true, "max_level": 9,
+		"color": Color(0.7, 0.3, 0.4), "evo_key": "eight", "is_weapon": true, "max_level": 8,
 	},
 	37: {
 		"name": "Gatti Amari", "name_key": "item.gatti_amari_name",
 		"desc": "Cats scurry around, attacking and collecting", "desc_key": "item.gatti_amari_desc",
-		"color": Color(0.9, 0.5, 0.2), "evo_key": "gatti_amari", "is_weapon": true, "max_level": 9,
+		"color": Color(0.9, 0.5, 0.2), "evo_key": "gatti_amari", "is_weapon": true, "max_level": 8,
 	},
 	38: {
 		"name": "Song of Mana", "name_key": "item.song_of_mana_name",
 		"desc": "Summon damaging vines along the vertical axis", "desc_key": "item.song_of_mana_desc",
-		"color": Color(0.2, 0.8, 0.3), "evo_key": "song_of_mana", "is_weapon": true, "max_level": 9,
+		"color": Color(0.2, 0.8, 0.3), "evo_key": "song_of_mana", "is_weapon": true, "max_level": 8,
 	},
 	39: {
 		"name": "Shadow Pinion", "name_key": "item.shadow_pinion_name",
 		"desc": "Leave damaging shadows while moving, strike when stopping", "desc_key": "item.shadow_pinion_desc",
-		"color": Color(0.4, 0.2, 0.6), "evo_key": "shadow_pinion", "is_weapon": true, "max_level": 9,
+		"color": Color(0.4, 0.2, 0.6), "evo_key": "shadow_pinion", "is_weapon": true, "max_level": 8,
 	},
 	40: {
 		"name": "Clock Lancet", "name_key": "item.clock_lancet_name",
 		"desc": "Chance to freeze enemies in time", "desc_key": "item.clock_lancet_desc",
-		"color": Color(0.6, 0.8, 1.0), "evo_key": "clock_lancet", "is_weapon": true, "max_level": 8,
+		"color": Color(0.6, 0.8, 1.0), "evo_key": "clock_lancet", "is_weapon": true, "max_level": 7,
 	},
 	41: {
 		"name": "Laurel", "name_key": "item.laurel_name",
 		"desc": "Temporary invincibility shield", "desc_key": "item.laurel_desc",
-		"color": Color(0.2, 0.9, 0.4), "evo_key": "laurel", "is_weapon": true, "max_level": 8,
+		"color": Color(0.2, 0.9, 0.4), "evo_key": "laurel", "is_weapon": true, "max_level": 7,
 	},
 	42: {
 		"name": "Vento Sacro", "name_key": "item.vento_sacro_name",
 		"desc": "Stronger while moving, can crit", "desc_key": "item.vento_sacro_desc",
-		"color": Color(0.3, 0.8, 0.8), "evo_key": "vento_sacro", "is_weapon": true, "max_level": 9,
+		"color": Color(0.3, 0.8, 0.8), "evo_key": "vento_sacro", "is_weapon": true, "max_level": 8,
 	},
 	43: {
 		"name": "Bone", "name_key": "item.bone_name",
 		"desc": "Throw bouncing projectiles", "desc_key": "item.bone_desc",
-		"color": Color(0.8, 0.8, 0.7), "evo_key": "bone", "is_weapon": true, "max_level": 9,
+		"color": Color(0.8, 0.8, 0.7), "evo_key": "bone", "is_weapon": true, "max_level": 8,
 	},
 	44: {
 		"name": "Cherry Bomb", "name_key": "item.cherry_bomb_name",
 		"desc": "Throw bouncing bombs that may explode", "desc_key": "item.cherry_bomb_desc",
-		"color": Color(0.9, 0.2, 0.2), "evo_key": "cherry_bomb", "is_weapon": true, "max_level": 9,
+		"color": Color(0.9, 0.2, 0.2), "evo_key": "cherry_bomb", "is_weapon": true, "max_level": 8,
 	},
 	45: {
 		"name": "Carréllo", "name_key": "item.carrello_name",
 		"desc": "Throw bouncing projectiles that scale with amount", "desc_key": "item.carrello_desc",
-		"color": Color(0.2, 0.6, 0.9), "evo_key": "carrello", "is_weapon": true, "max_level": 9,
+		"color": Color(0.2, 0.6, 0.9), "evo_key": "carrello", "is_weapon": true, "max_level": 8,
 	},
 	46: {
 		"name": "Celestial Dusting", "name_key": "item.celestial_dusting_name",
 		"desc": "Throws projectiles, movespeed reduces cooldown", "desc_key": "item.celestial_dusting_desc",
-		"color": Color(0.7, 0.5, 0.9), "evo_key": "celestial_dusting", "is_weapon": true, "max_level": 9,
+		"color": Color(0.7, 0.5, 0.9), "evo_key": "celestial_dusting", "is_weapon": true, "max_level": 8,
 	},
 	47: {
 		"name": "La Robba", "name_key": "item.la_robba_name",
 		"desc": "Generates bouncing projectiles", "desc_key": "item.la_robba_desc",
-		"color": Color(0.6, 0.2, 0.8), "evo_key": "la_robba", "is_weapon": true, "max_level": 9,
+		"color": Color(0.6, 0.2, 0.8), "evo_key": "la_robba", "is_weapon": true, "max_level": 8,
 	},
 	48: {
 		"name": "Greatest Jubilee", "name_key": "item.greatest_jubilee_name",
 		"desc": "Chance to spawn light sources", "desc_key": "item.greatest_jubilee_desc",
-		"color": Color(0.9, 0.8, 0.1), "evo_key": "greatest_jubilee", "is_weapon": true, "max_level": 10,
+		"color": Color(0.9, 0.8, 0.1), "evo_key": "greatest_jubilee", "is_weapon": true, "max_level": 9,
 	},
 	49: {
 		"name": "Bracelet", "name_key": "item.bracelet_name",
 		"desc": "Fires projectiles at random enemies", "desc_key": "item.bracelet_desc",
-		"color": Color(0.7, 0.3, 0.6), "evo_key": "bracelet", "is_weapon": true, "max_level": 7,
+		"color": Color(0.7, 0.3, 0.6), "evo_key": "bracelet", "is_weapon": true, "max_level": 6,
 	},
 	50: {
 		"name": "Candybox", "name_key": "item.candybox_name",
@@ -299,52 +299,52 @@ const DATA := {
 	51: {
 		"name": "Victory Sword", "name_key": "item.victory_sword_name",
 		"desc": "Swings a mighty sword that grows with each swing", "desc_key": "item.victory_sword_desc",
-		"color": Color(0.9, 0.8, 0.6), "evo_key": "victory_sword", "is_weapon": true, "max_level": 13,
+		"color": Color(0.9, 0.8, 0.6), "evo_key": "victory_sword", "is_weapon": true, "max_level": 12,
 	},
 	52: {
 		"name": "Flames of Misspell", "name_key": "item.flames_of_misspell_name",
 		"desc": "Emit a cone of flames", "desc_key": "item.flames_of_misspell_desc",
-		"color": Color(0.9, 0.3, 0.1), "evo_key": "flames_of_misspell", "is_weapon": true, "max_level": 9,
+		"color": Color(0.9, 0.3, 0.1), "evo_key": "flames_of_misspell", "is_weapon": true, "max_level": 8,
 	},
 	53: {
 		"name": "Pako Battiliar", "name_key": "item.pako_battiliar_name",
 		"desc": "May counterattack when taking damage", "desc_key": "item.pako_battiliar_desc",
-		"color": Color(0.4, 0.2, 0.4), "evo_key": "pako_battiliar", "is_weapon": true, "max_level": 9,
+		"color": Color(0.4, 0.2, 0.4), "evo_key": "pako_battiliar", "is_weapon": true, "max_level": 8,
 	},
 	54: {
 		"name": "Ammo Appalate", "name_key": "item.ammo_appalate_name",
 		"desc": "Aims at enemies in faced direction, stores shots", "desc_key": "item.ammo_appalate_desc",
-		"color": Color(0.5, 0.7, 0.3), "evo_key": "ammo_appalate", "is_weapon": true, "max_level": 9,
+		"color": Color(0.5, 0.7, 0.3), "evo_key": "ammo_appalate", "is_weapon": true, "max_level": 8,
 	},
 	55: {
 		"name": "Chaos Rune", "name_key": "item.chaos_rune_name",
 		"desc": "Speed and duration affect hit count", "desc_key": "item.chaos_rune_desc",
-		"color": Color(0.7, 0.1, 0.7), "evo_key": "chaos_rune", "is_weapon": true, "max_level": 9,
+		"color": Color(0.7, 0.1, 0.7), "evo_key": "chaos_rune", "is_weapon": true, "max_level": 8,
 	},
 	56: {
 		"name": "Glass Fandango", "name_key": "item.glass_fandango_name",
 		"desc": "Stronger while moving and against frozen enemies", "desc_key": "item.glass_fandango_desc",
-		"color": Color(0.5, 0.8, 0.9), "evo_key": "glass_fandango", "is_weapon": true, "max_level": 9,
+		"color": Color(0.5, 0.8, 0.9), "evo_key": "glass_fandango", "is_weapon": true, "max_level": 8,
 	},
 	57: {
 		"name": "Santa Javelin", "name_key": "item.santa_javelin_name",
 		"desc": "Duration affects amount, can crit", "desc_key": "item.santa_javelin_desc",
-		"color": Color(0.8, 0.6, 0.1), "evo_key": "santa_javelin", "is_weapon": true, "max_level": 9,
+		"color": Color(0.8, 0.6, 0.1), "evo_key": "santa_javelin", "is_weapon": true, "max_level": 8,
 	},
 	58: {
 		"name": "Gaze of Gaea", "name_key": "item.gaze_of_gaea_name",
 		"desc": "May disarm enemies", "desc_key": "item.gaze_of_gaea_desc",
-		"color": Color(0.3, 0.7, 0.3), "evo_key": "gaze_of_gaea", "is_weapon": true, "max_level": 9,
+		"color": Color(0.3, 0.7, 0.3), "evo_key": "gaze_of_gaea", "is_weapon": true, "max_level": 8,
 	},
 	59: {
 		"name": "Magi-Stone", "name_key": "item.magi_stone_name",
 		"desc": "Deals damage based on weapon level", "desc_key": "item.magi_stone_desc",
-		"color": Color(0.6, 0.4, 0.8), "evo_key": "magi_stone", "is_weapon": true, "max_level": 9,
+		"color": Color(0.6, 0.4, 0.8), "evo_key": "magi_stone", "is_weapon": true, "max_level": 8,
 	},
 	60: {
 		"name": "Phas3r", "name_key": "item.phas3r_name",
 		"desc": "Creates thin damaging zones, high amount scaling", "desc_key": "item.phas3r_desc",
-		"color": Color(0.2, 0.9, 0.6), "evo_key": "phas3r", "is_weapon": true, "max_level": 9,
+		"color": Color(0.2, 0.9, 0.6), "evo_key": "phas3r", "is_weapon": true, "max_level": 8,
 	},
 	61: {
 		"name": "Arma Dio", "name_key": "item.arma_dio_name",
@@ -362,6 +362,54 @@ const DATA := {
 		"desc": "Increase enemy count and Gold Fever/Gold Finger duration", "desc_key": "item.karomas_mana_desc",
 		"color": Color(0.3, 0.9, 0.7), "is_weapon": false, "max_level": 5,
 	},
+}
+
+
+# ── Wiki metadata (reference stats from vampire.survivors.wiki) ──
+# Fields: knockback, pierce, crit_mul, chance, pool, rarity, effects, base_amount
+const WIKI_DATA := {
+	# Weapons
+	0:  { "knockback": 1.0, "pierce": "AoE",  "crit_mul": 2.0, "chance": 0.20, "pool": 30,  "rarity": 100, "effects": "Ignores Speed and Duration", "base_amt": 1, "max_amt": 2 },
+	1:  { "knockback": 1.0, "pierce": 1,       "crit_mul": 1.0, "chance": 0.0,  "pool": 60,  "rarity": 100, "effects": "Ignores Area", "base_amt": 1, "max_amt": 4 },
+	2:  { "knockback": 0.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 50,  "rarity": 70,  "effects": "Ignores Speed and Duration", "base_amt": 1, "max_amt": 1 },
+	10: { "knockback": 0.5, "pierce": 1,       "crit_mul": 3.0, "chance": 0.30, "pool": 70,  "rarity": 100, "effects": "Ignores Area and Duration", "base_amt": 1, "max_amt": 6 },
+	11: { "knockback": 1.0, "pierce": 3,       "crit_mul": 2.0, "chance": 0.30, "pool": 70,  "rarity": 100, "effects": "Ignores Speed", "base_amt": 1, "max_amt": 3 },
+	12: { "knockback": 1.0, "pierce": 1,       "crit_mul": 1.0, "chance": 0.0,  "pool": 30,  "rarity": 80,  "effects": "Ignores Speed and Duration", "base_amt": 3, "max_amt": 3 },
+	16: { "knockback": 1.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 100, "rarity": 80,  "effects": "Ignores Duration", "base_amt": 1, "max_amt": 3 },
+	17: { "knockback": 1.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 50,  "rarity": 80,  "effects": "" , "base_amt": 1, "max_amt": 4 },
+	18: { "knockback": 0.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 20,  "rarity": 100, "effects": "Ignores Speed and Duration", "base_amt": 1, "max_amt": 4 },
+	19: { "knockback": 1.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 25,  "rarity": 80,  "effects": "Scales with all stat bonuses", "base_amt": 1, "max_amt": 3 },
+	20: { "knockback": 1.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 50,  "rarity": 80,  "effects": "Ignores Speed", "base_amt": 2, "max_amt": 6 },
+	32: { "knockback": -2.0,"pierce": "AoE",  "crit_mul": 1.0, "chance": 0.10, "pool": 10,  "rarity": 60,  "effects": "Ignores everything but Cooldown", "base_amt": 1, "max_amt": 1 },
+	33: { "knockback": 2.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 60,  "rarity": 50,  "effects": "Area orbits clockwise; Scales with all", "base_amt": 4, "max_amt": 11 },
+	34: { "knockback": 2.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 60,  "rarity": 50,  "effects": "Area orbits CCW; Scales with all", "base_amt": 4, "max_amt": 11 },
+	35: { "knockback": 0.1, "pierce": 1,       "crit_mul": 1.0, "chance": 0.0,  "pool": 100, "rarity": 50,  "effects": "Ignores Area", "base_amt": 1, "max_amt": 3 },
+	36: { "knockback": 0.1, "pierce": 1,       "crit_mul": 1.0, "chance": 0.0,  "pool": 100, "rarity": 50,  "effects": "Ignores Area", "base_amt": 1, "max_amt": 3 },
+	37: { "knockback": 0.1, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.10, "pool": 30,  "rarity": 50,  "effects": "Consumes pickups; Scales with all", "base_amt": 1, "max_amt": 3 },
+	38: { "knockback": 0.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 30,  "rarity": 50,  "effects": "Ignores Speed", "base_amt": 1, "max_amt": 1 },
+	39: { "knockback": 0.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 100, "rarity": 50,  "effects": "Scales with all and Duration", "base_amt": 1, "max_amt": 2 },
+	40: { "knockback": 0.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 10,  "rarity": 70,  "effects": "Ignores everything but Cooldown", "base_amt": 1, "max_amt": 1 },
+	41: { "knockback": 0.0, "pierce": "N/A",  "crit_mul": 1.0, "chance": 0.0,  "pool": 5,   "rarity": 60,  "effects": "Ignores everything but Cooldown", "base_amt": 1, "max_amt": 1 },
+	42: { "knockback": 0.1, "pierce": "AoE",  "crit_mul": 2.0, "chance": 0.05, "pool": 120, "rarity": 50,  "effects": "Scales with all; +dmg from walking", "base_amt": 4, "max_amt": 7 },
+	43: { "knockback": 1.0, "pierce": 0,       "crit_mul": 1.0, "chance": 0.0,  "pool": 50,  "rarity": 1,   "effects": "Bounces from terrain and enemies", "base_amt": 1, "max_amt": 3 },
+	44: { "knockback": 0.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.40, "pool": 50,  "rarity": 1,   "effects": "40% chance to explode; scales with Luck", "base_amt": 1, "max_amt": 2 },
+	45: { "knockback": 0.1, "pierce": 0,       "crit_mul": 1.0, "chance": 0.0,  "pool": 100, "rarity": 1,   "effects": "Scales with Amount", "base_amt": 1, "max_amt": 3 },
+	46: { "knockback": 0.1, "pierce": 0,       "crit_mul": 1.0, "chance": 0.0,  "pool": 100, "rarity": 1,   "effects": "Ignores Speed; movespeed reduces CD", "base_amt": 1, "max_amt": 2 },
+	47: { "knockback": 0.1, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 50,  "rarity": 1,   "effects": "Scales with all stat bonuses", "base_amt": 3, "max_amt": 7 },
+	48: { "knockback": 0.1, "pierce": "AoE",  "crit_mul": 2.0, "chance": 0.01, "pool": 100, "rarity": 20,  "effects": "1% spawn light source; 5% crit light show", "base_amt": 1, "max_amt": 5 },
+	49: { "knockback": 0.0, "pierce": 1,       "crit_mul": 1.0, "chance": 0.0,  "pool": 80,  "rarity": 40,  "effects": "Scales with all stat bonuses", "base_amt": 3, "max_amt": 4 },
+	50: { "knockback": 0.0, "pierce": 0,       "crit_mul": 1.0, "chance": 0.0,  "pool": 1,   "rarity": 1,   "effects": "Choose any unlocked base weapon", "base_amt": 1, "max_amt": 1 },
+	51: { "knockback": 0.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.10, "pool": 100, "rarity": 30,  "effects": "Ignores Area; grows with each swing", "base_amt": 2, "max_amt": 5 },
+	52: { "knockback": 0.0, "pierce": 0,       "crit_mul": 1.0, "chance": 0.0,  "pool": 100, "rarity": 30,  "effects": "Scales with all stat bonuses", "base_amt": 12, "max_amt": 12 },
+	53: { "knockback": 0.0, "pierce": 1,       "crit_mul": 1.0, "chance": 0.0,  "pool": 200, "rarity": 60,  "effects": "Ignores Area and Duration", "base_amt": 10, "max_amt": 15 },
+	54: { "knockback": 0.0, "pierce": 1,       "crit_mul": 2.0, "chance": 0.05, "pool": 200, "rarity": 60,  "effects": "Ignores Area; aims at faced direction", "base_amt": 3, "max_amt": 8 },
+	55: { "knockback": 0.0, "pierce": 1,       "crit_mul": 1.0, "chance": 0.0,  "pool": 50,  "rarity": 40,  "effects": "Speed and Duration affect hit count", "base_amt": 1, "max_amt": 4 },
+	56: { "knockback": 0.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 100, "rarity": 50,  "effects": "Ignores Speed; stronger while moving", "base_amt": 1, "max_amt": 5 },
+	57: { "knockback": 0.0, "pierce": 0,       "crit_mul": 2.0, "chance": 0.05, "pool": 200, "rarity": 60,  "effects": "Ignores Speed; Duration affects amount", "base_amt": 1, "max_amt": 3 },
+	58: { "knockback": 0.0, "pierce": 0,       "crit_mul": 1.0, "chance": 0.03, "pool": 100, "rarity": 50,  "effects": "Ignores Speed; may disarm enemies", "base_amt": 1, "max_amt": 3 },
+	59: { "knockback": 0.0, "pierce": "AoE",  "crit_mul": 1.0, "chance": 0.0,  "pool": 50,  "rarity": 60,  "effects": "Ignores Speed and Duration", "base_amt": 1, "max_amt": 3 },
+	60: { "knockback": 0.0, "pierce": 0,       "crit_mul": 1.0, "chance": 0.0,  "pool": 200, "rarity": 50,  "effects": "Ignores Speed; creates thin damaging zones", "base_amt": 1, "max_amt": 5 },
+	61: { "knockback": 0.0, "pierce": "N/A",  "crit_mul": 1.0, "chance": 0.0,  "pool": 1,   "rarity": 1,   "effects": "Select an additional passive item", "base_amt": 1, "max_amt": 1 },
 }
 
 
@@ -399,3 +447,45 @@ static func item_evo_key(t: int) -> String:
 
 static func item_max_level(t: int) -> int:
 	return DATA.get(t, {}).get("max_level", 8)
+
+
+# ── Wiki metadata accessors ──
+
+static func wiki_data(t: int) -> Dictionary:
+	return WIKI_DATA.get(t, {})
+
+
+static func wiki_knockback(t: int) -> float:
+	return WIKI_DATA.get(t, {}).get("knockback", 0.0)
+
+
+static func wiki_pierce(t: int):
+	return WIKI_DATA.get(t, {}).get("pierce", 0)
+
+
+static func wiki_crit_mul(t: int) -> float:
+	return WIKI_DATA.get(t, {}).get("crit_mul", 1.0)
+
+
+static func wiki_chance(t: int) -> float:
+	return WIKI_DATA.get(t, {}).get("chance", 0.0)
+
+
+static func wiki_pool(t: int) -> int:
+	return WIKI_DATA.get(t, {}).get("pool", 50)
+
+
+static func wiki_rarity(t: int) -> int:
+	return WIKI_DATA.get(t, {}).get("rarity", 50)
+
+
+static func wiki_effects(t: int) -> String:
+	return WIKI_DATA.get(t, {}).get("effects", "")
+
+
+static func wiki_base_amount(t: int) -> int:
+	return WIKI_DATA.get(t, {}).get("base_amt", 1)
+
+
+static func wiki_max_amount(t: int) -> int:
+	return WIKI_DATA.get(t, {}).get("max_amt", 1)

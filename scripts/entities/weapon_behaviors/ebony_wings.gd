@@ -31,7 +31,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		player.get_parent().add_child(bird)
 		bird.body_entered.connect(weapon_manager._on_proj_hit.bind(bird, dmg))
 		birds.append(bird)
-	var dur = 4.0 + player.duration_bonus
+	var dur = 4.0 * player.duration_mult
 	player.get_tree().create_timer(dur).timeout.connect(_cleanup.bind(birds))
 
 static func _cleanup(birds):

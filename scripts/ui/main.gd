@@ -92,6 +92,8 @@ func _ready():
 	_level_up_screen.upgrade_selected.connect(_on_upgrade_selected)
 	_level_up_screen.evolution_selected.connect(_on_evolution_selected)
 	_level_up_screen.gold_selected.connect(_on_gold_selected)
+	_level_up_screen.chicken_selected.connect(_on_chicken_selected)
+	_level_up_screen.limit_break_selected.connect(_on_limit_break_selected)
 	# _arcana_choice_screen、pause_overlay 延迟创建
 	
 	# ── 玩家 ──
@@ -142,6 +144,7 @@ func _ready():
 	
 	# ── 重置运行时状态 ──
 	PowerUpManager.reset_run_gold()
+	PowerUpManager.init_run_actions()
 	ArcanaManager.deactivate_all()
 	
 	# ── HUD 信号连接 + 初始同步 ──
@@ -371,7 +374,9 @@ func _on_weapons_changed():
 			"name_key": DataRegistry.items().item_name_key(w.type),
 			"type": w.type,
 			"level": w.level,
+			"max_level": w.max_level,
 			"evolved": w.evolved,
+			"amount": w.amount,
 			"color": DataRegistry.items().item_color(w.type),
 		})
 	hud.set_weapons(wep_data)
@@ -519,6 +524,20 @@ func _on_evolution_selected(weapon_type: int):
 func _on_gold_selected(amount: int):
 	get_tree().paused = false
 	PowerUpManager.add_run_gold(amount)
+	# Big Coin Bag 计数（用于解锁 Always Floor Chicken 模式）
+	PowerUpManager.add_big_coin_bag()
+	_level_up_screen.hide_screen()
+	EventBus.gold_collected.emit(amount)
+
+
+func _on_chicken_selected(amount: int):
+	get_tree().paused = false
+	player.heal(amount)
+	_level_up_screen.hide_screen()
+
+
+func _on_limit_break_selected(_weapon_type: int, _option: Dictionary):
+	get_tree().paused = false
 	_level_up_screen.hide_screen()
 
 

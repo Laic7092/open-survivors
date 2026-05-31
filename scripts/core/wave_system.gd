@@ -265,6 +265,10 @@ func _spawn_continuous_batch():
 	if _wave_enemy_types.is_empty():
 		return
 
+	# ═══ 300 敌人上限：存活 ≥ 300 时停止周期性刷怪（Boss / 地图事件除外）═══
+	if EnemyRegistry and EnemyRegistry.get_count() >= 300:
+		return
+
 	# 批次大小随 minimum 增长，保证节奏感
 	var batch_size = maxi(1, floori(_wave_minimum / 20.0))
 	for _i in range(batch_size):
@@ -282,6 +286,10 @@ func _check_minimum_enforcement():
 	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
 	var needed = _wave_minimum - alive
 	if needed <= 0:
+		return
+
+	# ═══ 300 敌人上限：硬下限补怪也检查 ═══
+	if alive >= 300:
 		return
 
 	for _i in range(needed):

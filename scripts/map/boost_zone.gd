@@ -76,8 +76,8 @@ func _apply_buff(player: Node2D):
 			_original_value = player.move_speed
 			player.move_speed = player.move_speed * (1.0 + buff_amount)
 		"might":
-			_original_value = player.damage_mult
-			player.damage_mult = player.damage_mult * (1.0 + buff_amount)
+			_original_value = player.might
+			player.might = player.might * (1.0 + buff_amount)
 		"magnet":
 			_original_value = player.pickup_range
 			player.pickup_range = player.pickup_range * (1.0 + buff_amount)
@@ -93,7 +93,7 @@ func _remove_buff():
 			"speed":
 				_player_ref.move_speed = _original_value
 			"might":
-				_player_ref.damage_mult = _original_value
+				_player_ref.might = _original_value
 			"magnet":
 				_player_ref.pickup_range = _original_value
 
