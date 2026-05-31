@@ -33,6 +33,7 @@ static func get_data() -> Dictionary:
 
 		# ── Main Menu — Relics ──
 		"menu.relics": "遗物收集",
+		"menu.collection": "图鉴",
 		"menu.load_game": "📂 读取存档",
 
 		# ── Relic Screen ──
@@ -290,6 +291,7 @@ static func get_data() -> Dictionary:
 		"powerup.maxed": "已满级",
 		"powerup.locked": "🔒 未解锁",
 		"powerup.need_relic": "🔒 需要遗物: %s",
+		"powerup.need_item": "🔒 需要道具: %s",
 		"powerup.cost": "需要 %d 金币",
 		"powerup.level": "Lv.%d",
 
@@ -775,5 +777,20 @@ static func get_data() -> Dictionary:
 		"unlock.type_arcana": "密术",
 		"unlock.type_character": "角色",
 		"unlock.separator": "：",
+
+		# ── 道具拾取提示 ──
+		"stage_item.new": "NEW!",
+		"stage_item.upgraded": "已升级!",
+
+		# ── 图鉴 ──
+		"collection.title": "图鉴",
+		"collection.back": "返回",
+		"collection.progress": "%d / %d",
+		"collection.tab_weapons": "武器",
+		"collection.tab_passives": "被动",
+		"collection.tab_enemies": "敌人",
+		"collection.unlocked": "已解锁",
+		"collection.level": "Lv.%d/%d",
+		"collection.boss": "BOSS",
 	}
 

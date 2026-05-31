@@ -19,9 +19,9 @@ static var _emoji_font: SystemFont
 
 
 func _ready():
-	collision_layer = 0
+	collision_layer = CollisionLayers.PICKUP
 	collision_mask = CollisionLayers.MASK_PLAYER
-	area_entered.connect(_on_area_entered)
+	body_entered.connect(_on_body_entered)
 	add_to_group("stage_items")
 
 	var timer = Timer.new()
@@ -67,10 +67,9 @@ func setup(wpn_type: int, wpn_is_weapon: bool, name_text: String):
 	_cached_icon_tex = _ICON_GEN.generate(item_type, 16)
 
 
-func _on_area_entered(area: Area2D):
+func _on_body_entered(body: Node2D):
 	if collected:
 		return
-	var body = area.get_parent()
 	if body == player:
 		_collect()
 

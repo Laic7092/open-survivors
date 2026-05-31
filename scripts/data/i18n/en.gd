@@ -31,6 +31,7 @@ static func get_data() -> Dictionary:
 
 		# ── Main Menu — Relics ──
 		"menu.relics": "RELICS",
+		"menu.collection": "COLLECTION",
 		"menu.load_game": "📂 LOAD GAME",
 
 		# ── Relic Screen ──
@@ -282,6 +283,7 @@ static func get_data() -> Dictionary:
 		"powerup.maxed": "MAXED",
 		"powerup.locked": "🔒 LOCKED",
 		"powerup.need_relic": "🔒 Need relic: %s",
+		"powerup.need_item": "🔒 Need item: %s",
 		"powerup.cost": "Need %d Gold",
 		"powerup.level": "Lv.%d",
 
@@ -757,4 +759,19 @@ static func get_data() -> Dictionary:
 		"unlock.type_arcana": "Arcana",
 		"unlock.type_character": "Character",
 		"unlock.separator": ": ",
+
+		# ── Item pickup notification ──
+		"stage_item.new": "NEW!",
+		"stage_item.upgraded": "Upgraded!",
+
+		# ── Collection ──
+		"collection.title": "Collection",
+		"collection.back": "Back",
+		"collection.progress": "%d / %d",
+		"collection.tab_weapons": "Weapons",
+		"collection.tab_passives": "Passives",
+		"collection.tab_enemies": "Enemies",
+		"collection.unlocked": "Unlocked",
+		"collection.level": "Lv.%d/%d",
+		"collection.boss": "BOSS",
 	}

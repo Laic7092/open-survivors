@@ -329,6 +329,7 @@ func _connect_hud_signals():
 	game_state.kills_changed.connect(_on_kills_changed)
 	wave_system.wave_started.connect(_on_wave_changed)
 	PowerUpManager.run_gold_changed.connect(_on_run_gold_changed)
+	EventBus.stage_item_collected.connect(_on_stage_item_collected)
 
 
 func _sync_hud_initial():
@@ -386,6 +387,21 @@ func _on_passives_changed():
 
 func _on_pickup_timer_spawn(pos: Vector2, pickup_type: int):
 	spawn_manager.spawn_pickup_at(pos, pickup_type)
+
+
+func _on_stage_item_collected(item_type: int):
+	if not is_instance_valid(player):
+		return
+	# Determine if it's a new item (level 1) or an upgrade
+	var is_new: bool = false
+	if DataRegistry.items().is_weapon(item_type):
+		is_new = player.weapon_manager.get_level(item_type) <= 1
+	else:
+		is_new = player.passive_inventory.get_level(item_type) <= 1
+	
+	var notif = preload("res://scenes/item_acquired_notification.tscn").instantiate()
+	notif.setup(item_type, is_new)
+	_ui_layer.add_child(notif)
 
 
 # ═══════════════════════════════════════════════════════════

@@ -154,6 +154,14 @@ theme_type_variation = &"NeutralButton"
 theme_override_font_sizes/font_size = 18
 text = "Relics"
 
+[node name="CollectionBtn" type="Button" parent="Center/BtnRow" unique_id=870193185]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+theme_type_variation = &"NeutralButton"
+theme_override_font_sizes/font_size = 18
+text = "Collection"
+
 [node name="BotFill" type="Control" parent="Center" unique_id=969679115]
 layout_mode = 2
 size_flags_vertical = 3

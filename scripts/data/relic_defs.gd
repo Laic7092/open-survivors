@@ -86,12 +86,14 @@ const RELICS := [
 	},
 
 	# ── #404 Mindbender — Collection 50 entries ──
+	# TODO: Re-enable when Collection 50 entries condition is implemented.
+	# Currently removed from stage spawn to avoid instant unlock (was stage_id=0, spawn_pos=(0,0)).
 	{
 		"id": "mindbender",
 		"name": "Mindbender",
 		"desc": "Permanently allows changing character appearance and max weapon configuration.",
 		"effect": "Unlocks cosmetic options for certain characters and allows setting max weapon count.",
-		"stage_id": 0,
+		"stage_id": -1,
 		"spawn_pos": Vector2(0, 0),
 		"color": Color(0.8, 0.3, 0.8),
 		"icon_shape": "mind",

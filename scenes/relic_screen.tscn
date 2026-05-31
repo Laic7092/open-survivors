@@ -60,17 +60,25 @@ offset_top = 100.0
 offset_right = 150.0
 offset_bottom = 102.0
 
-[node name="CardArea" type="Control" parent="."]
+[node name="CardArea" type="ScrollContainer" parent="."]
 unique_name_in_owner = true
 anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
+offset_left = 30.0
 offset_top = 110.0
-offset_right = -20.0
+offset_right = -30.0
 offset_bottom = -60.0
 mouse_filter = 1
+horizontal_scroll_mode = 0
+
+[node name="RelicGrid" type="GridContainer" parent="CardArea"]
+unique_name_in_owner = true
+columns = 4
+anchor_right = 1.0
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 16
 
 [node name="BackBtn" type="Button" parent="."]
 unique_name_in_owner = true

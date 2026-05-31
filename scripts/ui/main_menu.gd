@@ -14,6 +14,7 @@ extends Control
 @onready var _start_btn: Button = %StartBtn
 @onready var _pu_btn: Button = %PuBtn
 @onready var _relic_btn: Button = %RelicBtn
+@onready var _collection_btn: Button = %CollectionBtn
 @onready var _load_btn: Button = %LoadBtn
 @onready var _version_lbl: Label = %VersionLabel
 @onready var _quit_btn: Button = %QuitBtn
@@ -29,6 +30,7 @@ func _ready():
 	_start_btn.pressed.connect(_on_start_pressed)
 	_pu_btn.pressed.connect(_on_powerups_pressed)
 	_relic_btn.pressed.connect(_on_relics_pressed)
+	_collection_btn.pressed.connect(_on_collection_pressed)
 	_load_btn.pressed.connect(_on_load_pressed)
 	_lang_btn.pressed.connect(_on_language_pressed)
 	_fs_btn.pressed.connect(_on_fs_pressed)
@@ -62,6 +64,7 @@ func _refresh_text():
 	_start_btn.text = I18N.t("menu.start_game")
 	_pu_btn.text = I18N.t("menu.power_ups")
 	_relic_btn.text = I18N.t("menu.relics")
+	_collection_btn.text = I18N.t("menu.collection")
 	_load_btn.text = I18N.t("menu.load_game")
 	_lang_btn.text = I18N.t("menu.language")
 	_fs_btn.text = _fullscreen_text()
@@ -168,6 +171,11 @@ func _on_powerups_pressed():
 func _on_relics_pressed():
 	AudioManager.play_sfx("menu_confirm")
 	SceneManager.change_scene("res://scenes/relic_screen.tscn")
+
+
+func _on_collection_pressed():
+	AudioManager.play_sfx("menu_confirm")
+	SceneManager.change_scene("res://scenes/collection_screen.tscn")
 
 
 func _on_language_pressed():
