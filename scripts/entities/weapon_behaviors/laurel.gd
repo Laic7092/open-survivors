@@ -16,4 +16,9 @@ static func fire(w, weapon_manager, player, get_enemies):
 	player.get_parent().add_child(flash)
 	var tw = player.create_tween()
 	tw.tween_property(flash, "modulate:a", 0.0, 0.3)
-	tw.finished.connect(flash.queue_free)
+	var flash_id = flash.get_instance_id()
+	tw.finished.connect(func():
+		var _x = instance_from_id(flash_id)
+		if _x:
+			_x.queue_free()
+	)

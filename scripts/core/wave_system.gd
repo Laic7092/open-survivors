@@ -22,7 +22,7 @@ const ENEMY_NAME_MAP := {
 	"zombie": 8, "zombie_b": 8, "skeleton": 9, "skeleton_b": 9, "skeleton_r": 9,
 	"ghost": 10, "mudman": 15, "mudman_g": 16, "werewolf": 18, "werewolf_giant": 18,
 	"mantichana": 17, "mantichana_giant": 17, "mummy_big": 19, "mummy_giant": 19,
-	"flower_wall": 116, "venus": 20, "venus_blue_giant": 21, "reaper": 22,
+	"flower_wall": 121, "venus": 20, "venus_blue_giant": 21, "reaper": 22,
 	"wraith": 0, "viper": 1, "golem": 2, "mantis": 4, "nightmare": 5,
 
 	# ── Inlaid Library (stage 1) ──
@@ -127,6 +127,7 @@ var _wave_minimum: int = 1             # 当前波次最低存活数
 var _wave_interval: float = 1.0        # 当前波次补怪间隔（秒）
 var _wave_boss_id: int = -1            # 当前波次 Boss 类型（-1=无）
 var _wave_boss_spawned: bool = false   # Boss 是否已生成
+var _enforce_cooldown: float = 0.0     # 硬下限补怪冷却（防 spawn-die 循环）
 
 # 地图事件
 var _map_events: Array = []
@@ -201,8 +202,11 @@ func _process_wave_defs(delta: float):
 		_wave_timer = _wave_interval
 		_spawn_continuous_batch()
 
-	# 2) 硬下限检测：场上少于 minimum 时立刻补满
-	_check_minimum_enforcement()
+	# 2) 硬下限检测：场上少于 minimum 时补满（带冷却防 spawn-die 循环）
+	_enforce_cooldown -= delta
+	if _enforce_cooldown <= 0.0:
+		_enforce_cooldown = 2.0
+		_check_minimum_enforcement()
 
 	# 波次内事件
 	_process_wave_events(delta)
@@ -227,6 +231,7 @@ func _try_trigger_next_wave():
 
 	# 更新参数
 	_wave_minimum = wd.get("enemy_minimum", 1)
+	_enforce_cooldown = 0.0  # 新波次立即响应
 	_wave_interval = wd.get("interval", 0.5)
 
 	# 解析敌人类型列表
@@ -265,12 +270,29 @@ func _spawn_continuous_batch():
 	if _wave_enemy_types.is_empty():
 		return
 
-	# ═══ 300 敌人上限：存活 ≥ 300 时停止周期性刷怪（Boss / 地图事件除外）═══
-	if EnemyRegistry and EnemyRegistry.get_count() >= 300:
+	# ═══ 300 敌人上限 ═══
+	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
+	if alive >= 300:
 		return
 
-	# 批次大小随 minimum 增长，保证节奏感
-	var batch_size = maxi(1, floori(_wave_minimum / 20.0))
+	# ═══ 软上限 ═══
+	var soft_cap = int(_wave_minimum * 1.1) + 10
+	if alive >= soft_cap:
+		return
+
+	# ═══ 动态节流：填充率 >30% 启动，二次曲线加速 ═══
+	var fill_pct = float(alive) / float(max(_wave_minimum, 1))
+	if fill_pct > 0.3:
+		var t = (fill_pct - 0.3) / 0.7  # 0..1，超标量
+		var throttle = int(lerpf(1.0, 8.0, t * t))  # 二次加速
+		if Engine.get_physics_frames() % throttle != 0:
+			return
+
+	# 批次大小：填充率 >50% 逐步衰减到 1
+	var batch_size = clampi(floori(_wave_minimum / 20.0), 1, 5)
+	if fill_pct > 0.5:
+		var bs = lerpf(1.0, 0.2, (fill_pct - 0.5) / 0.45)
+		batch_size = maxi(1, int(batch_size * bs))
 	for _i in range(batch_size):
 		var type_id = _wave_enemy_types[randi() % _wave_enemy_types.size()]
 		var enemy = spawn_enemy_func.call(type_id)
@@ -292,7 +314,8 @@ func _check_minimum_enforcement():
 	if alive >= 300:
 		return
 
-	for _i in range(needed):
+	var batch = clampi(needed, 1, 10)
+	for _i in range(batch):
 		var type_id = _wave_enemy_types[randi() % _wave_enemy_types.size()]
 		var enemy = spawn_enemy_func.call(type_id)
 		if is_instance_valid(enemy):
@@ -306,6 +329,7 @@ func _spawn_boss_if_needed():
 
 	var enemy = spawn_enemy_func.call(_wave_boss_id)
 	if is_instance_valid(enemy):
+		enemy.set_as_boss()
 		enemy.is_wave_enemy = true
 
 

@@ -21,7 +21,12 @@ static func fire(w, weapon_manager, player, get_enemies):
 		zone.body_entered.connect(_on_shadow_hit.bind(zone, dmg))
 		var tw = player.create_tween()
 		tw.tween_property(vis, "modulate:a", 0.0, 0.5)
-		tw.finished.connect(zone.queue_free)
+		var zone_id = zone.get_instance_id()
+		tw.finished.connect(func():
+			var _x = instance_from_id(zone_id)
+			if _x:
+				_x.queue_free()
+		)
 	else:
 		var trail_pos = player.global_position - player.velocity.normalized() * 20.0
 		var zone = Area2D.new()
@@ -41,7 +46,12 @@ static func fire(w, weapon_manager, player, get_enemies):
 		zone.body_entered.connect(_on_shadow_hit.bind(zone, dmg * 0.5))
 		var tw = player.create_tween()
 		tw.tween_property(vis, "modulate:a", 0.0, 0.3)
-		tw.finished.connect(zone.queue_free)
+		var zone_id = zone.get_instance_id()
+		tw.finished.connect(func():
+			var _x = instance_from_id(zone_id)
+			if _x:
+				_x.queue_free()
+		)
 
 static func _on_shadow_hit(body, zone, dmg):
 	if not is_instance_valid(body) or not is_instance_valid(zone):

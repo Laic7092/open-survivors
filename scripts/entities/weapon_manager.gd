@@ -766,7 +766,12 @@ func _spawn_explosion_fx(pos: Vector2, radius: float, color: Color):
 	var tw = _player.create_tween()
 	tw.tween_property(node, "modulate:a", 0.0, 0.3).from(1.0)
 	tw.parallel().tween_property(node, "scale", Vector2(1.6, 1.6), 0.3).from(Vector2(0.4, 0.4))
-	tw.finished.connect(node.queue_free)
+	var node_id = node.get_instance_id()
+	tw.finished.connect(func():
+		var _x = instance_from_id(node_id)
+		if _x:
+			_x.queue_free()
+	)
 
 
 func _on_boomerang_return(proj, dmg: float):

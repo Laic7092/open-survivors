@@ -73,10 +73,19 @@ func _bounce_effect(pos: Vector2, parent: Node):
 	var tw = create_tween()
 	tw.tween_property(ring, "scale", Vector2.ONE * 0.2, 0.1)
 	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.15)
-	tw.finished.connect(ring.queue_free)
+	var ring_id = ring.get_instance_id()
+	tw.finished.connect(func():
+		var _x = instance_from_id(ring_id)
+		if _x:
+			_x.queue_free()
+	)
 	# 兜底：tween 被 kill（updater 被清理）时 finished 不触发，
 	# 定时器确保残留菱形最终被清理
-	ring.get_tree().create_timer(0.3).timeout.connect(ring.queue_free)
+	ring.get_tree().create_timer(0.3).timeout.connect(func():
+		var _x = instance_from_id(ring_id)
+		if _x:
+			_x.queue_free()
+	)
 
 
 func _on_runetracer_tick(proj: Node2D, delta: float):

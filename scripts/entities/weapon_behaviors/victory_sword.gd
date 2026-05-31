@@ -23,7 +23,12 @@ static func fire(w, weapon_manager, player, get_enemies):
 		player.get_parent().add_child(slash)
 		var tw = player.create_tween()
 		tw.tween_property(slash, "modulate:a", 0.0, 0.2)
-		tw.finished.connect(slash.queue_free)
+		var slash_id = slash.get_instance_id()
+		tw.finished.connect(func():
+			var _x = instance_from_id(slash_id)
+			if _x:
+				_x.queue_free()
+		)
 		for e in enemies:
 			if not is_instance_valid(e):
 				continue

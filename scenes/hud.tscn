@@ -97,6 +97,21 @@ offset_right = -12.0
 offset_bottom = 58.0
 alignment = 2
 
+[node name="BossCountLabel" type="Label" parent="." unique_id=1899000111]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 38.0
+offset_right = -12.0
+offset_bottom = 56.0
+mouse_filter = 1
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.9, 0.2, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = ""
+
 [node name="WeaponGrid" type="GridContainer" parent="." unique_id=1038685266]
 layout_mode = 0
 anchor_left = 1.0

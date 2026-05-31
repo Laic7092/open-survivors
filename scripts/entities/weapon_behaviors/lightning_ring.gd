@@ -38,7 +38,12 @@ static func fire(w, weapon_manager, player, get_enemies):
 
 	var tw = player.create_tween()
 	tw.tween_property(flash, "modulate", Color(1, 1, 0.3, 0), 0.15)
-	tw.finished.connect(flash.queue_free)
+	var flash_id = flash.get_instance_id()
+	tw.finished.connect(func():
+		var _x = instance_from_id(flash_id)
+		if _x:
+			_x.queue_free()
+	)
 
 	if w.evolved:
 		var chained: Array[Node2D] = [target]
@@ -72,7 +77,12 @@ static func fire(w, weapon_manager, player, get_enemies):
 				player.get_parent().add_child(ch_flash)
 				var tw2 = player.create_tween()
 				tw2.tween_property(ch_flash, "modulate", Color(0.6, 0.8, 1.0, 0), 0.1)
-				tw2.finished.connect(ch_flash.queue_free)
+				var ch_flash_id = ch_flash.get_instance_id()
+				tw2.finished.connect(func():
+					var _x = instance_from_id(ch_flash_id)
+					if _x:
+						_x.queue_free()
+				)
 				if next_target.has_method("take_damage"):
 					next_target.take_damage(chain_dmg, next_target.global_position)
 				chained.append(next_target)

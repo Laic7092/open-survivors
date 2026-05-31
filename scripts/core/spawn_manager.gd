@@ -16,6 +16,9 @@ var game_state: Node  # GameState
 var camera_ctrl: Node  # CameraController
 var main_node: Node2D  # 父节点（main.gd）
 
+var _overflow_xp: int = 0
+const MAX_GEMS: int = 500
+
 var _enemy_scene = preload("res://scenes/enemy.tscn")
 var _pickup_scene = preload("res://scenes/pickup.tscn")
 var _relic_scene = preload("res://scenes/relic_pickup.tscn")
@@ -86,6 +89,7 @@ func spawn_boss():
 	enemy.game_state = game_state
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
 	enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod)
+	enemy.set_as_boss()
 	
 	var bounds = camera_ctrl.get_camera_bounds()
 	var margin = 80.0
@@ -113,6 +117,7 @@ func spawn_arcana_boss():
 	enemy.game_state = game_state
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
 	enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod * 1.5)
+	enemy.set_as_boss()
 	enemy.set_meta("arcana_boss", true)
 	
 	var bounds = camera_ctrl.get_camera_bounds()
@@ -194,14 +199,12 @@ func spawn_enemy_drops(enemy: Node2D):
 	
 	var is_boss = enemy.has_method("get_is_boss") and enemy.get_is_boss()
 	if is_boss:
-		for i in range(8):
+		for i in range(3):
 			var gem = ObjectPoolManager.borrow_gem()
-			gem.value = max(enemy.xp_value / 4, 5)
+			gem.value = max(enemy.xp_value / 3, 5)
 			gem.player = player
 			gem.global_position = enemy.global_position + Vector2(randf_range(-30, 30), randf_range(-30, 30))
 			main_node.call_deferred("add_child", gem)
-		for i in range(3):
-			spawn_pickup_at(enemy.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 3 if i == 0 else -1)
 		spawn_pickup_at(enemy.global_position, 0)
 		_try_spawn_boss_drop_relic(enemy.global_position)
 	else:
@@ -210,22 +213,43 @@ func spawn_enemy_drops(enemy: Node2D):
 		if base_xp <= 0:
 			base_xp = 1
 		if randf() < 0.60:
-			var gem = ObjectPoolManager.borrow_gem()
-			gem.player = player
-			gem.global_position = enemy.global_position
-			# 颜色由 XP 值决定（对齐 Wiki）：
-			# Blue ≤ 2 XP, Green ≤ 9 XP, Red > 9 XP
-			gem.value = base_xp
-			if base_xp <= 2:
-				gem.tier = gem.Tier.BLUE
-			elif base_xp <= 9:
-				gem.tier = gem.Tier.GREEN
-			else:
-				gem.tier = gem.Tier.RED
-			main_node.call_deferred("add_child", gem)
+			_try_spawn_gem(base_xp, enemy.global_position)
 		if randf() < 0.001:
 			var pt = 4 + randi() % 3
 			spawn_pickup_at(enemy.global_position, pt)
+
+
+func _try_spawn_gem(value: int, pos: Vector2):
+	var gem_count = main_node.get_tree().get_nodes_in_group("gems").size()
+	if gem_count >= MAX_GEMS:
+		_overflow_xp += value
+		# 累积够大时，尝试合并为一大颗
+		if _overflow_xp >= 100:
+			_overflow_xp -= 100
+			_spawn_single_gem(100, pos)
+		return
+	# 正常生成
+	_spawn_single_gem(value, pos)
+	# 如果有溢出，顺便生成
+	if _overflow_xp >= 50 and gem_count < MAX_GEMS - 1:
+		var n = mini(_overflow_xp / 50, 5)
+		for i in range(n):
+			_overflow_xp -= 50
+			_spawn_single_gem(50, pos + Vector2(randf_range(-20, 20), randf_range(-20, 20)))
+
+
+func _spawn_single_gem(value: int, pos: Vector2):
+	var gem = ObjectPoolManager.borrow_gem()
+	gem.player = player
+	gem.global_position = pos
+	gem.value = value
+	if value <= 2:
+		gem.tier = gem.Tier.BLUE
+	elif value <= 9:
+		gem.tier = gem.Tier.GREEN
+	else:
+		gem.tier = gem.Tier.RED
+	main_node.call_deferred("add_child", gem)
 
 
 # ── 遗物 ──

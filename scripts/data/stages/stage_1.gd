@@ -18,6 +18,7 @@ static func get_data() -> Dictionary:
 		"bg_color": Color(0.08, 0.02, 0.12),
 		"map_width": 2800,
 		"map_height": 7200,
+		"map_scale": 3.0,
 		"theme": "Inlaid Library",
 
 		"move_speed_mod": 1.25,

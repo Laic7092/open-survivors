@@ -73,13 +73,17 @@ func _on_player_leveled_up(level: int):
 		_run_check(UnlockTypes.ConditionType.CHAR_LEVEL)
 
 
+var _kill_check_skip: int = 0
+
 func _on_enemy_killed(enemy_type: int, position: Vector2, is_boss: bool):
 	_run_data["run_kills"] += 1
 	_persistent_stats["total_kills"] += 1
-	run_stat_updated.emit("run_kills", _run_data["run_kills"])
-	persistent_stat_updated.emit("total_kills", _persistent_stats["total_kills"])
-	_run_check(UnlockTypes.ConditionType.RUN_KILLS)
-	_run_check(UnlockTypes.ConditionType.TOTAL_KILLS)
+	_kill_check_skip += 1
+	if _kill_check_skip % 10 == 0:
+		run_stat_updated.emit("run_kills", _run_data["run_kills"])
+		persistent_stat_updated.emit("total_kills", _persistent_stats["total_kills"])
+		_run_check(UnlockTypes.ConditionType.RUN_KILLS)
+		_run_check(UnlockTypes.ConditionType.TOTAL_KILLS)
 
 
 

@@ -14,6 +14,7 @@ const HudCell = preload("res://scripts/ui/hud_cell.gd")
 @onready var _arcana_container: HBoxContainer = $ArcanaContainer
 @onready var _weapon_grid: GridContainer = $WeaponGrid
 @onready var _relic_arrow: Control = $RelicArrow
+@onready var _boss_count_label: Label = $BossCountLabel
 @onready var _overlay_panel: Panel = $OverlayPanel
 @onready var _overlay_title: Label = $OverlayPanel/OverlayTitle
 @onready var _overlay_stats: Label = $OverlayPanel/OverlayStats
@@ -98,6 +99,12 @@ func _ready():
 	# 遗物箭头通过 draw 信号绘制
 	_relic_arrow.draw.connect(_draw_relic_arrow_signal)
 
+	# Boss 计数 — 监听 EnemyRegistry 信号
+	if EnemyRegistry:
+		if not EnemyRegistry.boss_count_changed.is_connected(set_boss_count):
+			EnemyRegistry.boss_count_changed.connect(set_boss_count)
+		set_boss_count(EnemyRegistry.get_boss_count())
+
 
 # ═══════════════════════════════════════════════════════════════════════
 #  Public Setters
@@ -153,6 +160,14 @@ func set_gold(g: int):
 
 func set_wave(_n: int):
 	pass
+
+
+func set_boss_count(n: int):
+	if n > 0:
+		_boss_count_label.visible = true
+		_boss_count_label.text = "BOSS x" + str(n)
+	else:
+		_boss_count_label.visible = false
 
 
 func set_curse_level(n: int):

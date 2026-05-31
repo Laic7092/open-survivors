@@ -97,4 +97,9 @@ static func fire(w, weapon_manager, player, get_enemies):
 		var tw = player.create_tween()
 		tw.tween_property(p, "global_position", end_pos, travel_time)
 		tw.parallel().tween_property(p, "rotation", deg_to_rad(720), travel_time).as_relative()
-		tw.finished.connect(p.queue_free)
+		var p_id = p.get_instance_id()
+		tw.finished.connect(func():
+			var _x = instance_from_id(p_id)
+			if _x:
+				_x.queue_free()
+		)

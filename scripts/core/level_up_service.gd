@@ -452,6 +452,13 @@ static func generate_choices(
 	return choices
 
 
+static func is_fallback_only(choices: Array) -> bool:
+	for c in choices:
+		if c.type == ChoiceType.ITEM or c.type == ChoiceType.EVOLUTION:
+			return false
+	return true
+
+
 # ═══════════════════════════════════════════════════════════════════
 #  7. 应用升级
 # ═══════════════════════════════════════════════════════════════════

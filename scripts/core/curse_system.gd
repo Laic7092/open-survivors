@@ -80,7 +80,12 @@ func _show_announcement(text: String):
 			var tw = create_tween()
 			tw.tween_interval(1.5)
 			tw.tween_property(label, "modulate", Color(1, 1, 1, 0), 1.0)
-			tw.finished.connect(label.queue_free)
+			var label_id = label.get_instance_id()
+			tw.finished.connect(func():
+				var _x = instance_from_id(label_id)
+				if _x:
+					_x.queue_free()
+			)
 			break
 
 

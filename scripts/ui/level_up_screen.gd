@@ -46,7 +46,7 @@ func _ready():
 	visible = false
 
 
-func show_choices(p):
+func show_choices(p, pre_choices: Array = []):
 	_player_ref = p
 	var has_gospel = RelicManager and RelicManager.has_relic("great_gospel")
 	var is_random = EventBus.get_config("random_level_up", false)
@@ -58,16 +58,19 @@ func show_choices(p):
 	_skips_left = PowerUpManager.get_skips_remaining() if PowerUpManager else 0
 	_banishes_left = PowerUpManager.get_banishes_remaining() if PowerUpManager else 0
 
-	_current_choices = LevelUpService.generate_choices(
-		p,
-		p.weapon_manager,
-		p.passive_inventory,
-		luck,
-		has_gospel,
-		is_random,
-		always_chicken,
-		p.level,
-	)
+	if not pre_choices.is_empty():
+		_current_choices = pre_choices
+	else:
+		_current_choices = LevelUpService.generate_choices(
+			p,
+			p.weapon_manager,
+			p.passive_inventory,
+			luck,
+			has_gospel,
+			is_random,
+			always_chicken,
+			p.level,
+		)
 
 	visible = true
 	_clear()

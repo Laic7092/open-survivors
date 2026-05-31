@@ -162,7 +162,12 @@ static func create_water_zone(pos: Vector2, area: float, dmg: float, dur: float,
 	var btw = player.create_tween()
 	btw.tween_property(burst, "scale", Vector2(8.0, 8.0), 0.2).from(Vector2(0.3, 0.3))
 	btw.parallel().tween_property(burst, "modulate:a", 0.0, 0.2).from(0.8)
-	btw.finished.connect(burst.queue_free)
+	var burst_id = burst.get_instance_id()
+	btw.finished.connect(func():
+		var _x = instance_from_id(burst_id)
+		if _x:
+			_x.queue_free()
+	)
 
 	# 2) 水洼主体 — 呼吸动画（链式递归，不用 set_loops）
 	var puddle = ColorRect.new()

@@ -927,4 +927,3 @@ static func get_data() -> Dictionary:
 		"collection.level": "Lv.%d/%d",
 		"collection.boss": "BOSS",
 	}
-

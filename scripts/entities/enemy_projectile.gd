@@ -4,7 +4,9 @@ extends Area2D
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
 
-var target: Node2D
+var target: Node2D:
+	set(v):
+		_target_ref = weakref(v) if v else null
 var speed: float = 250.0
 var damage: float = 10.0
 var lifetime: float = 4.0
@@ -12,6 +14,7 @@ var lifetime: float = 4.0
 var _age: float = 0.0
 var _direction: Vector2 = Vector2.ZERO
 var _in_use: bool = false
+var _target_ref: WeakRef = null
 
 
 func _ready():
@@ -23,20 +26,21 @@ func _ready():
 func _physics_process(delta):
 	if not _in_use:
 		return
-	if not is_instance_valid(target):
+	var t = _target_ref.get_ref() if _target_ref else null
+	if not t:
 		_recycle()
 		return
-	
+
 	_age += delta
 	if _age >= lifetime:
 		_recycle()
 		return
 
 	if _direction == Vector2.ZERO:
-		_direction = (target.global_position - global_position).normalized()
+		_direction = (t.global_position - global_position).normalized()
+		rotation = _direction.angle()
 
 	global_position += _direction * speed * delta
-	rotation = _direction.angle()
 
 
 func _draw():
@@ -83,7 +87,7 @@ func _recycle():
 	set_physics_process(false)
 	collision_layer = 0
 	collision_mask = 0
-	target = null
+	_target_ref = null
 	if ObjectPoolManager:
 		ObjectPoolManager.return_obj(self)
 	else:

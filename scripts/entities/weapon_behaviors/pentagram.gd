@@ -18,7 +18,12 @@ static func fire(w, weapon_manager, player, get_enemies):
 	player.get_parent().add_child(ring)
 	var tw_ring = player.create_tween()
 	tw_ring.tween_property(ring, "modulate:a", 0.0, 0.6)
-	tw_ring.finished.connect(ring.queue_free)
+	var ring_id = ring.get_instance_id()
+	tw_ring.finished.connect(func():
+		var _x = instance_from_id(ring_id)
+		if _x:
+			_x.queue_free()
+	)
 
 	# ── 主闪光 ──
 	var flash = ColorRect.new()
@@ -28,4 +33,9 @@ static func fire(w, weapon_manager, player, get_enemies):
 	player.get_parent().add_child(flash)
 	var tw = player.create_tween()
 	tw.tween_property(flash, "modulate:a", 0.0, 0.5)
-	tw.finished.connect(flash.queue_free)
+	var flash_id = flash.get_instance_id()
+	tw.finished.connect(func():
+		var _x = instance_from_id(flash_id)
+		if _x:
+			_x.queue_free()
+	)

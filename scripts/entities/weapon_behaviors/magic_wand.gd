@@ -42,8 +42,13 @@ static func fire(w, weapon_manager, player, get_enemies):
 		if not is_instance_valid(target):
 			continue
 		if delay > 0:
+			var target_id = target.get_instance_id()
 			player.get_tree().create_timer(delay).timeout.connect(
-				func(): _fire_missile(w, weapon_manager, player, ppos, target, dmg, area)
+				func():
+					var t = instance_from_id(target_id)
+					if not is_instance_valid(t):
+						return
+					_fire_missile(w, weapon_manager, player, ppos, t, dmg, area)
 			)
 		else:
 			_fire_missile(w, weapon_manager, player, ppos, target, dmg, area)

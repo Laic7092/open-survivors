@@ -60,6 +60,7 @@ var _arcana_duration_mult: float = 1.0
 var xp: int = 0
 var level: int = 1
 var xp_to_next: int = 5
+var _accumulated_xp: int = 0
 
 var invincible: float = 0.0
 var direction: Vector2 = Vector2.DOWN
@@ -140,6 +141,7 @@ func _ready():
 func _process(delta):
 	if health <= 0:
 		return
+	_flush_xp()
 	if invincible > 0:
 		invincible -= delta
 		# 升级无敌期间闪烁
@@ -520,14 +522,25 @@ const LevelUpService = preload("res://scripts/core/level_up_service.gd")
 func add_xp(value: int):
 	if ArcanaManager and ArcanaManager.has_effect("no_xp"):
 		return
+	_accumulated_xp += value
+
+
+func _flush_xp():
+	if _accumulated_xp <= 0:
+		return
+	var gained = _accumulated_xp
+	_accumulated_xp = 0
 	var effective_growth = LevelUpService.effective_growth(growth_mult, level)
-	xp += int(value * effective_growth)
+	xp += int(gained * effective_growth)
 	xp_to_next = LevelUpService.xp_for_level(level)
+	var leveled = false
 	while xp >= xp_to_next:
 		xp -= xp_to_next
 		level += 1
 		xp_to_next = LevelUpService.xp_for_level(level)
-		invincible = invincible_duration  # 升级后短暂无敌
+		leveled = true
+	if leveled:
+		invincible = invincible_duration
 		show_floating_text(I18N.t("player.level_up"), Color(0.9, 0.8, 0.2), 22)
 		AudioManager.play_sfx("level_up")
 		leveled_up.emit()
@@ -535,34 +548,37 @@ func add_xp(value: int):
 
 
 var _attract_skip: int = 0
+var _attracted_items: Array = []
 
 func _attract_gems(delta: float):
-	# 节流：每 10 帧扫描一次，标记范围内的 gem/pickup
 	_attract_skip += 1
+	var pos = global_position
+
+	# 每 10 帧：扫描全组，找出新进入范围的物品
 	if _attract_skip % 10 == 0:
-		var pos = global_position
 		var range_sq = pickup_range * pickup_range
 		for g in get_tree().get_nodes_in_group("gems"):
 			if not is_instance_valid(g) or g.collected or g.attracted:
 				continue
 			if (pos - g.global_position).length_squared() < range_sq:
 				g.attracted = true
+				_attracted_items.append(g)
 		for p in get_tree().get_nodes_in_group("pickups"):
 			if not is_instance_valid(p) or p.collected or p.attracted:
 				continue
 			if (pos - p.global_position).length_squared() < range_sq:
 				p.attracted = true
-	
-	# 每帧：已被标记的持续飞行
-	var pos = global_position
-	for g in get_tree().get_nodes_in_group("gems"):
-		if not is_instance_valid(g) or g.collected or not g.attracted:
+				_attracted_items.append(p)
+
+	# 每帧：移动已吸引的物品，清理已收集/失效的
+	var i = 0
+	while i < _attracted_items.size():
+		var item = _attracted_items[i]
+		if not is_instance_valid(item) or item.collected or not item.attracted:
+			_attracted_items.remove_at(i)
 			continue
-		g.global_position += (pos - g.global_position).normalized() * 300.0 * delta
-	for p in get_tree().get_nodes_in_group("pickups"):
-		if not is_instance_valid(p) or p.collected or not p.attracted:
-			continue
-		p.global_position += (pos - p.global_position).normalized() * 300.0 * delta
+		item.global_position += (pos - item.global_position).normalized() * 300.0 * delta
+		i += 1
 
 
 # ── Hurt / Health ────────────────────────────────────────────────────

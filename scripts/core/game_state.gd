@@ -31,6 +31,7 @@ var starting_spawns: int = 10
 var enemy_minimum: int = 1
 var map_width: float = 3200.0
 var map_height: float = 2400.0
+var map_scale: float = 1.0
 var _stage_id: int = 0
 var _diff_ramp_time: float = 60.0
 
@@ -84,6 +85,7 @@ func reset():
 	shake_duration = 0.0
 	starting_spawns = 10
 	enemy_minimum = 1
+	map_scale = 1.0
 
 
 func set_stage_data(data: Dictionary):
@@ -99,8 +101,47 @@ func set_stage_data(data: Dictionary):
 	stage_enemy_hp_mod = data.get("enemy_hp_mod", 1.0)
 	starting_spawns = data.get("starting_spawns", 10)
 	enemy_minimum = data.get("enemy_minimum", 1)
-	map_width = data.get("map_width", 3200.0)
-	map_height = data.get("map_height", 2400.0)
+	map_scale = data.get("map_scale", 1.0)
+	map_width = data.get("map_width", 3200.0) * map_scale
+	map_height = data.get("map_height", 2400.0) * map_scale
+	if map_scale != 1.0:
+		_scale_stage_positions(data, map_scale)
+
+
+func _scale_stage_positions(data: Dictionary, scale: float):
+	# Scale stage_items positions
+	for item in data.get("stage_items", []):
+		var positions = item.get("positions", [])
+		if positions.is_empty():
+			continue
+		var scaled: Array = []
+		for entry in positions:
+			if entry is Vector2:
+				scaled.append(entry * scale)
+			elif entry is Dictionary:
+				var d = entry.duplicate()
+				if d.has("pos"):
+					d["pos"] = d["pos"] * scale
+				scaled.append(d)
+			else:
+				scaled.append(entry)
+		item["positions"] = scaled
+
+	# Scale coffin position
+	if data.has("coffin") and data["coffin"].has("pos"):
+		data["coffin"]["pos"] = data["coffin"]["pos"] * scale
+
+	# Scale hidden_relics positions
+	for relic in data.get("hidden_relics", []):
+		if relic.has("pos"):
+			relic["pos"] = relic["pos"] * scale
+
+	# Scale interactable positions
+	var ia = data.get("interactables", {})
+	for key in ["chests", "fountains", "hazards", "boosts"]:
+		for entry in ia.get(key, []):
+			if entry.has("pos"):
+				entry["pos"] = entry["pos"] * scale
 
 
 func update_difficulty(delta: float):
@@ -117,22 +158,21 @@ func update_difficulty(delta: float):
 # curse_level 由 Cursed Time 系统提供
 
 static func calc_enemy_hp(base_hp: float, diff_factor: float, curse_level: int) -> float:
-	var diff_sq = diff_factor * diff_factor
-	var hp = base_hp * (1.0 + diff_factor * 0.2 + diff_sq * 0.015)
+	var hp = base_hp
 	if curse_level > 0:
 		hp *= (1.0 + curse_level * 0.15)
 	return hp
 
 
 static func calc_enemy_damage(base_dmg: float, diff_factor: float, curse_level: int) -> float:
-	var dmg = base_dmg * (1.0 + diff_factor * 0.08)
+	var dmg = base_dmg * 0.1
 	if curse_level > 0:
 		dmg *= (1.0 + curse_level * 0.15 * 0.75)
 	return dmg
 
 
 static func calc_enemy_speed(base_speed: float, diff_factor: float, curse_level: int) -> float:
-	var speed = base_speed * (1.0 + diff_factor * 0.08)
+	var speed = base_speed * 0.8
 	if curse_level > 0:
 		speed *= (1.0 + curse_level * 0.5 * 0.5)
 	return speed

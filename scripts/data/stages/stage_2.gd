@@ -18,6 +18,7 @@ static func get_data() -> Dictionary:
 		"bg_color": Color(0.06, 0.16, 0.04),
 		"map_width": 6000,
 		"map_height": 6000,
+		"map_scale": 2.0,
 		"theme": "Vempair Survaivors",
 		"move_speed_mod": 1.25,
 		"enemy_speed_mod": 0.0,

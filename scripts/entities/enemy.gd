@@ -12,10 +12,6 @@ var _outline_color: Color = Color(0.5, 0.6, 1.0)
 var _outline_width: float = 1.5
 var _shape: String = "circle"
 var _behavior: String = "chase"
-var _has_ranged: bool = false
-var _ranged_cooldown: float = 0.0
-var _ranged_speed: float = 0.0
-var _ranged_dmg_mult: float = 0.0
 var _knockback_resist: float = 0.0
 var _is_boss: bool = false
 var _drop_xp_mult: float = 1.0
@@ -35,6 +31,19 @@ var _is_fixed_direction: bool = false
 var _ignores_collision: bool = false
 var _is_self_destruct: bool = false
 
+# Knockback resist reduction (replaces meta for perf)
+var _kb_resist_reduce: float = 0.0
+var _kb_resist_reduce_timer: float = 0.0
+var _dmg_text_skip: int = 0
+var _cached_velocity: Vector2 = Vector2.ZERO
+# Fixed direction for bat_swarm / flower_wall
+var _fixed_dir: Vector2 = Vector2.ZERO
+var _has_fixed_dir: bool = false
+# Enemy collision flag
+var _has_enemy_collision: bool = false
+var _cached_camera: Camera2D = null
+var _init_collision_mask: int = 0
+
 # ── Three-lives state ──
 var _lives_remaining: int = 1
 
@@ -53,14 +62,12 @@ var knockback_velocity: Vector2 = Vector2.ZERO
 const KNOCKBACK_DECAY: float = 6.0   # how fast knockback fades
 const KNOCKBACK_STRENGTH: float = 300.0  # base push pixels
 
-# ── Ranged attack state ──
-var _ranged_timer: float = 0.0
-
 # ── Wavy movement state ──
 var _wavy_time: float = 0.0
 
 # Visibility culling — skip AI processing for distant enemies
-const CULL_DIST_SQ: float = 1000.0 * 1000.0  # ~1000px max processing range
+var CULL_DIST_SQ: float = 1000.0 * 1000.0  # ~1000px max processing range
+var MID_DIST_SQ: float = 500.0 * 500.0        # ~500px: skip physics, direct position move
 var _culled: bool = false
 
 # ── Freeze state ──
@@ -83,7 +90,9 @@ func _get_curse_level() -> int:
 
 # 获取相机视野矩形（用于 Boss 传送回屏幕）
 func _get_camera_bounds() -> Rect2:
-	var cam = get_viewport().get_camera_2d() if is_inside_tree() else null
+	if _cached_camera == null:
+		_cached_camera = get_viewport().get_camera_2d() if is_inside_tree() else null
+	var cam = _cached_camera
 	if not cam:
 		return Rect2()
 	var vp = get_viewport().get_visible_rect().size
@@ -91,9 +100,6 @@ func _get_camera_bounds() -> Rect2:
 	var half_w = vp.x * 0.5 / cam.zoom.x
 	var half_h = vp.y * 0.5 / cam.zoom.y
 	return Rect2(cam_pos.x - half_w, cam_pos.y - half_h, half_w * 2, half_h * 2)
-
-# ── Scene references ──
-var _proj_scene = preload("res://scenes/enemy_projectile.tscn")
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -112,24 +118,25 @@ func _ready():
 # Call BEFORE add_child. Loads type data and applies difficulty scaling.
 func set_enemy_type(type_id: int, diff: float):
 	enemy_type_id = type_id
-	_copy_type_data()
-	_scale_difficulty(diff)
+	var t = DataRegistry.enemies().get_type(type_id)
+	_copy_type_data(t)
+	_scale_difficulty(diff, t)
+	_init_collision_mask = CollisionLayers.ENEMY if (_has_enemy_collision and not _ignores_collision) else 0
+	collision_mask = _init_collision_mask
+	if game_state:
+		var scale = game_state.map_scale
+		CULL_DIST_SQ = (1000.0 * scale) ** 2
+		MID_DIST_SQ = (500.0 * scale) ** 2
 
 
-func _copy_type_data():
-	var t = DataRegistry.enemies().get_type(enemy_type_id)
+func _copy_type_data(t):
 	_type_name = t.name
 	_color = t.color
 	_outline_color = t.outline_color
 	_outline_width = t.outline_width
 	_shape = t.shape
 	_behavior = t.behavior
-	_has_ranged = t.has_ranged
-	_ranged_cooldown = t.ranged_cooldown
-	_ranged_speed = t.ranged_speed
-	_ranged_dmg_mult = t.ranged_dmg_mult
 	_knockback_resist = t.knockback_resist
-	_is_boss = t.is_boss
 	_drop_xp_mult = t.drop_xp_mult
 	_drop_gold_chance = t.drop_gold_chance
 	_drop_chest_chance = t.drop_chest_chance
@@ -148,8 +155,7 @@ func _copy_type_data():
 	_lives_remaining = 3 if t.has_three_lives else 1
 
 
-func _scale_difficulty(diff: float):
-	var t = DataRegistry.enemies().get_type(enemy_type_id)
+func _scale_difficulty(diff: float, t):
 	var diff_factor = (diff - 1.0)
 	var curse_level = _get_curse_level()
 	
@@ -164,11 +170,11 @@ func _scale_difficulty(diff: float):
 	# Reduced XP per kill to slow leveling
 	xp_value = t.base_xp + int(diff_factor * 3 * t.drop_xp_mult)
 	
-	# Bosses get extra HP multiplier
+	
+
 	if _is_boss:
 		health *= 3.0
 		max_health = health
-	
 	# ═══ HP x Level: 生成时按玩家等级乘算血量（对齐 VS Wiki）═══
 	if _has_hp_x_level and is_instance_valid(player):
 		var lv_factor = max(player.level, 1)
@@ -206,9 +212,8 @@ func apply_debuff(type: String, value: float, duration: float) -> bool:
 		"knockback_resist_reduce":
 			# 暂时降低击退抗性
 			_knockback_resist = max(0.0, _knockback_resist - value)
-			# 用 custom_state 存回退值
-			set_meta("kb_resist_reduce", value)
-			set_meta("kb_resist_reduce_timer", duration)
+			_kb_resist_reduce = value
+			_kb_resist_reduce_timer = duration
 		_:
 			return false
 	return true
@@ -217,13 +222,15 @@ func apply_debuff(type: String, value: float, duration: float) -> bool:
 func _physics_process(delta):
 	if health <= 0 or not is_instance_valid(player):
 		return
+	var player_pos = player.global_position
 	if _frozen:
 		_freeze_timer -= delta
 		if _freeze_timer <= 0:
 			_frozen = false
-		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta * 60.0)
-		velocity = knockback_velocity
-		move_and_slide()
+		if knockback_velocity.length_squared() > 0.0:
+			knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta * 60.0)
+			velocity = knockback_velocity
+			move_and_slide()
 		return
 
 	# Debuff timer decay
@@ -232,18 +239,14 @@ func _physics_process(delta):
 		if _debuff_timer <= 0:
 			_debuff_slow = 0.0
 	# Knockback resist reduction timer
-	if has_meta("kb_resist_reduce_timer"):
-		var t = get_meta("kb_resist_reduce_timer") - delta
-		if t <= 0:
-			var reduce = get_meta("kb_resist_reduce", 0.0)
-			_knockback_resist = min(1.0, _knockback_resist + reduce)
-			remove_meta("kb_resist_reduce")
-			remove_meta("kb_resist_reduce_timer")
-		else:
-			set_meta("kb_resist_reduce_timer", t)
+	if _kb_resist_reduce_timer > 0.0:
+		_kb_resist_reduce_timer -= delta
+		if _kb_resist_reduce_timer <= 0.0:
+			_knockback_resist = min(1.0, _knockback_resist + _kb_resist_reduce)
+			_kb_resist_reduce = 0.0
 
 	# Visibility culling: skip full AI for distant enemies
-	var dist_sq = global_position.distance_squared_to(player.global_position)
+	var dist_sq = global_position.distance_squared_to(player_pos)
 	if dist_sq > CULL_DIST_SQ:
 		if not _culled:
 			_culled = true
@@ -266,19 +269,20 @@ func _physics_process(delta):
 					3: global_position = Vector2(bounds.position.x + bounds.size.x + margin, randf_range(bounds.position.y + margin, bounds.position.y + bounds.size.y - margin))
 				velocity = Vector2.ZERO
 				move_and_slide()
-				_update_ranged(delta)
 				return
 		# Throttle culled enemies to every 4th frame — they're far offscreen
-		if Engine.get_frames_drawn() % 4 != 0:
+		if (get_instance_id() + Engine.get_physics_frames()) % 4 != 0:
 			return
-		var dir = (player.global_position - global_position).normalized()
-		velocity = dir * move_speed * 0.3
-		move_and_slide()
+		var dir = (player_pos - global_position).normalized()
+		global_position += dir * move_speed * 0.3 * delta
 		return
 	elif _culled:
 		_culled = false
 		collision_layer = CollisionLayers.ENEMY
-		collision_mask = 0
+		collision_mask = _init_collision_mask
+
+	# 跳过物理引擎：中距敌人 或 全场拥挤时非Boss敌人
+	var _skip_physics = dist_sq > MID_DIST_SQ or (EnemyRegistry and EnemyRegistry.is_crowded and not _is_boss)
 
 	# Hit flash — use modulate which is GPU-side
 	if hit_flash_time > 0:
@@ -292,12 +296,26 @@ func _physics_process(delta):
 		if knockback_velocity.length_squared() < 1.0:
 			knockback_velocity = Vector2.ZERO
 
+	# ── Frame staggering: 每敌人每 3 帧才跑完整 AI ──
+	var phys_frame = Engine.get_physics_frames()
+	var my_turn = (get_instance_id() + phys_frame) % 3 == 0
+
 	# Stationary enemies (Il Molise override)
 	var speed_mod = _get_speed_mod()
 	if speed_mod <= 0.0:
-		velocity = Vector2.ZERO + knockback_velocity
-		move_and_slide()
-		_update_ranged(delta)
+		velocity = knockback_velocity
+		if _skip_physics:
+			global_position += velocity * delta
+		else:
+			move_and_slide()
+		return
+
+	if not my_turn:
+		velocity = _cached_velocity + knockback_velocity
+		if _skip_physics:
+			global_position += velocity * delta
+		else:
+			move_and_slide()
 		return
 
 	# 应用 debuff 减速
@@ -305,52 +323,45 @@ func _physics_process(delta):
 	if _debuff_slow > 0.0:
 		effective_speed_mod = speed_mod * (1.0 - _debuff_slow)
 
-	# Ignores collision: 不与其他敌人碰撞
-	if _ignores_collision:
-		collision_mask = 0  # 穿透其他敌人
-	else:
-		collision_mask = CollisionLayers.ENEMY if has_meta("enemy_collision") else 0
-
 	# Behavior dispatch
 	match _behavior:
 		"wavy":
 			if _is_fixed_direction:
 				_behavior_fixed_wavy(delta, effective_speed_mod)
 			else:
-				_behavior_wavy(delta, effective_speed_mod)
+				_behavior_wavy(delta, effective_speed_mod, player_pos)
 		"stationary":
 			_behavior_stationary(delta)
 		_:
 			if _is_fixed_direction:
-				_behavior_fixed_chase(delta, effective_speed_mod)
+				_behavior_fixed_chase(delta, effective_speed_mod, player_pos)
 			else:
-				_behavior_chase(delta, effective_speed_mod)
+				_behavior_chase(delta, effective_speed_mod, player_pos)
 
-	# Apply knockback on top
+	_cached_velocity = velocity
 	velocity += knockback_velocity
-	move_and_slide()
+	if _skip_physics:
+		global_position += velocity * delta
+	else:
+		move_and_slide()
 
-	# Ranged attack update
-	_update_ranged(delta)
 
-
-func _behavior_chase(_delta: float, speed_mod: float = 1.0):
-	var dir = (player.global_position - global_position).normalized()
+func _behavior_chase(_delta: float, speed_mod: float = 1.0, player_pos: Vector2 = Vector2.ZERO):
+	var dir = (player_pos - global_position).normalized()
 	velocity = dir * move_speed * speed_mod
 
 
 # Fixed Direction: 直线移动（初始方向固定）
-func _behavior_fixed_chase(_delta: float, speed_mod: float = 1.0):
+func _behavior_fixed_chase(_delta: float, speed_mod: float = 1.0, player_pos: Vector2 = Vector2.ZERO):
 	# 首次运行时记录初始方向
-	if not has_meta("fixed_dir"):
-		var dir = (player.global_position - global_position).normalized()
-		set_meta("fixed_dir", dir)
-	var dir = get_meta("fixed_dir")
-	velocity = dir * move_speed * speed_mod
+	if not _has_fixed_dir:
+		_fixed_dir = (player_pos - global_position).normalized()
+		_has_fixed_dir = true
+	velocity = _fixed_dir * move_speed * speed_mod
 
 
-func _behavior_wavy(delta: float, speed_mod: float = 1.0):
-	var dir = (player.global_position - global_position).normalized()
+func _behavior_wavy(delta: float, speed_mod: float = 1.0, player_pos: Vector2 = Vector2.ZERO):
+	var dir = (player_pos - global_position).normalized()
 	var perp = dir.rotated(PI / 2.0)
 	_wavy_time += delta
 	var wave_amp = 60.0 * speed_mod
@@ -360,9 +371,10 @@ func _behavior_wavy(delta: float, speed_mod: float = 1.0):
 
 # Fixed Direction + Wavy: 直线移动 + 波形偏移
 func _behavior_fixed_wavy(delta: float, speed_mod: float = 1.0):
-	if not has_meta("fixed_dir"):
-		set_meta("fixed_dir", Vector2.DOWN)
-	var dir = get_meta("fixed_dir")
+	if not _has_fixed_dir:
+		_fixed_dir = Vector2.DOWN
+		_has_fixed_dir = true
+	var dir = _fixed_dir
 	var perp = dir.rotated(PI / 2.0)
 	_wavy_time += delta
 	var wave_amp = 60.0 * speed_mod
@@ -371,44 +383,7 @@ func _behavior_fixed_wavy(delta: float, speed_mod: float = 1.0):
 
 
 func _behavior_stationary(_delta: float):
-	# Don't move; ranged attack handled by _update_ranged
 	velocity = Vector2.ZERO
-
-
-func _update_ranged(delta: float):
-	if not _has_ranged or not is_instance_valid(player):
-		return
-	_ranged_timer -= delta
-	if _ranged_timer <= 0.0:
-		_ranged_timer = _ranged_cooldown
-		_fire_projectile()
-
-
-func _fire_projectile():
-	if not is_instance_valid(player) or not is_inside_tree():
-		return
-	# Cursed Time: extra projectiles per volley
-	var extra_shots = _get_curse_level() / 5  # +1 projectile every 5 curse levels
-	
-	var shot_count = 1 + extra_shots
-	for s in range(shot_count):
-		if ObjectPoolManager:
-			var proj = ObjectPoolManager.borrow_enemy_proj(player, _ranged_speed, contact_damage * _ranged_dmg_mult, 4.0)
-			proj.global_position = global_position
-			if s > 0:
-				# Spread extra projectiles slightly
-				proj.global_position += Vector2(randf_range(-20, 20), randf_range(-20, 20))
-			get_parent().add_child(proj)
-		else:
-			var proj = _proj_scene.instantiate()
-			proj.global_position = global_position
-			if s > 0:
-				proj.global_position += Vector2(randf_range(-20, 20), randf_range(-20, 20))
-			proj.target = player
-			proj.speed = _ranged_speed
-			proj.damage = contact_damage * _ranged_dmg_mult
-			get_parent().add_child(proj)
-	AudioManager.play_sfx("enemy_shoot")
 
 
 func take_damage(amount: float, source_pos: Vector2 = Vector2.ZERO):
@@ -422,8 +397,9 @@ func take_damage(amount: float, source_pos: Vector2 = Vector2.ZERO):
 		var kb_dir = (global_position - source_pos).normalized()
 		knockback_velocity = kb_dir * KNOCKBACK_STRENGTH * (1.0 - _knockback_resist)
 	
-	# Floating damage number (via pooled system)
-	if is_inside_tree() and ObjectPoolManager:
+	# Floating damage number — throttle to every 3rd hit for perf
+	_dmg_text_skip += 1
+	if _dmg_text_skip % 3 == 0 and is_inside_tree() and ObjectPoolManager:
 		ObjectPoolManager.spawn_ft(get_parent(), global_position + Vector2(randf_range(-8, 8), -10), str(int(amount)), Color(1, 0.9, 0.6), 16 + mini(int(amount) / 10, 14))
 	
 	if health <= 0:
@@ -516,9 +492,11 @@ func _spawn_explosion_fx(radius: float, color: Color):
 	var tw = create_tween()
 	tw.tween_property(circle, "modulate:a", 0.0, 0.3).from(0.6)
 	tw.parallel().tween_property(circle, "scale", Vector2(0.3, 0.3), 0.3).from(Vector2(1.0, 1.0))
+	var exp_id = explosion.get_instance_id()
 	tw.finished.connect(func():
-		if is_instance_valid(explosion):
-			explosion.queue_free()
+		var exp = instance_from_id(exp_id)
+		if exp:
+			exp.queue_free()
 	)
 
 
@@ -547,14 +525,29 @@ func _spawn_death_burst():
 		tw.tween_property(p, "position", Vector2(cos(angle), sin(angle)) * dist, 0.3)
 		tw.tween_property(p, "modulate", Color(1, 1, 1, 0), 0.3)
 	
-	# Clean up burst node
+	# Clean up burst node (safe via instance_from_id)
+	var burst_id = burst.get_instance_id()
 	var clean = create_tween()
 	clean.tween_interval(0.4)
-	clean.finished.connect(burst.queue_free)
+	clean.finished.connect(func():
+		var b = instance_from_id(burst_id)
+		if b:
+			b.queue_free()
+	)
 
 
 func get_contact_damage() -> float:
 	return contact_damage
+
+
+func set_as_boss():
+	if _is_boss:
+		return
+	_is_boss = true
+	# 通知 EnemyRegistry 更新 Boss 计数（wave boss spawn 后调用）
+	if EnemyRegistry and is_inside_tree():
+		EnemyRegistry._boss_count += 1
+		EnemyRegistry.boss_count_changed.emit(EnemyRegistry._boss_count)
 
 
 func get_is_boss() -> bool:
@@ -580,9 +573,7 @@ func _draw():
 	
 	# Health bar removed for performance
 	
-	# Boss: extra health bar + aura
-	if _is_boss:
-		_draw_boss_flair(r)
+	# Boss flair removed for performance
 
 
 func _draw_circle_style(r: float):
@@ -627,35 +618,3 @@ func _draw_hexagon(r: float):
 	for i in range(6):
 		var n = (i + 1) % 6
 		draw_line(pts[i], pts[n], _outline_color, _outline_width)
-
-
-func _draw_boss_flair(r: float):
-	# Aura ring — pulsing
-	var pulse = 0.5 + sin(Time.get_ticks_msec() * 0.003) * 0.15
-	var aura_r = r + 8.0 + pulse * 4.0
-	var aura_col = Color(0.6, 0.05, 0.05, 0.25 + pulse * 0.15)
-	draw_circle(Vector2.ZERO, aura_r, aura_col)
-	draw_circle(Vector2.ZERO, aura_r, Color(0.8, 0.1, 0.1, 0.4), false, 2.0)
-	
-	# Crown-like spikes
-	var spike_count = 8
-	var spike_len = r * 0.35
-	for i in range(spike_count):
-		var a = float(i) * TAU / spike_count + Time.get_ticks_msec() * 0.001
-		var inner = Vector2(cos(a), sin(a)) * (r + 2)
-		var outer = Vector2(cos(a), sin(a)) * (r + 2 + spike_len)
-		draw_line(inner, outer, Color(0.8, 0.15, 0.15, 0.7), 2.0)
-	
-	# Boss health bar removed for performance
-	# Name (i18n)
-	var name_col = Color(1, 0.9, 0.9, 0.6)
-	_draw_string_centered(Vector2(0, -r - 16), I18N.t("enemy." + str(enemy_type_id) + "_name", _type_name), name_col, 10)
-
-
-func _draw_string_centered(pos: Vector2, text: String, col: Color, sz: int):
-	var font = ThemeDB.fallback_font
-	if not font:
-		return
-	var text_size = font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, sz)
-	var draw_pos = Vector2(pos.x - text_size.x / 2.0, pos.y + sz * 0.35)
-	draw_string(font, draw_pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, sz, col)

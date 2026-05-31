@@ -99,11 +99,14 @@ func _add_stage_decor(stage_id: int, hw: float, hh: float):
 func _apply_decor_config(dc: Dictionary, hw: float, hh: float):
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
-	var margin = 40.0
+	var ref_area = 3200.0 * 2400.0
+	var area_ratio = (game_state.map_width * game_state.map_height) / ref_area
+	var area_scale = sqrt(area_ratio)
+	var margin = clampf(40.0 * area_scale, 40.0, 120.0)
 
 	for el in dc.get("decor_elements", []):
 		var el_type = el.get("type", "dot")
-		var count = el.get("count", 10)
+		var count = int(el.get("count", 10) * area_ratio)
 		var size_min = el.get("size_min", 2.0)
 		var size_max = el.get("size_max", 4.0)
 		var base_color: Color = el.get("color", Color.WHITE)
@@ -314,13 +317,14 @@ func _generate_props(stage_id: int, hw: float, hh: float):
 	
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
-	var margin = 80.0
-	var clear_radius = 180.0
-	var min_dist = 60.0
 	var target_count = int(game_state.map_width * game_state.map_height * density)
 	var ref_area = 3200.0 * 2400.0
 	var area_ratio = (game_state.map_width * game_state.map_height) / ref_area
-	var max_props = clampi(int(60 * sqrt(area_ratio)), 15, 200)
+	var area_scale = sqrt(area_ratio)
+	var margin = clampf(80.0 * area_scale, 80.0, 200.0)
+	var clear_radius = clampf(180.0 * area_scale, 180.0, 400.0)
+	var min_dist = clampf(60.0 * area_scale, 60.0, 150.0)
+	var max_props = clampi(int(60 * area_scale), 15, 500)
 	target_count = clampi(target_count, 15, max_props)
 	var attempts = target_count * 5
 	var placed = 0
@@ -526,7 +530,9 @@ func _make_decoration(pos: Vector2, radius: float, color: Color):
 # ── 边界墙 ──
 
 func _add_boundary_walls(hw: float, hh: float):
-	var wall_thick = 60.0
+	var ref_area = 3200.0 * 2400.0
+	var area_ratio = (game_state.map_width * game_state.map_height) / ref_area
+	var wall_thick = clampf(60.0 * sqrt(area_ratio), 60.0, 150.0)
 	_add_boundary_wall(Vector2(0, -hh - wall_thick / 2.0), Vector2(game_state.map_width + wall_thick * 2, wall_thick))
 	_add_boundary_wall(Vector2(0, hh + wall_thick / 2.0), Vector2(game_state.map_width + wall_thick * 2, wall_thick))
 	_add_boundary_wall(Vector2(-hw - wall_thick / 2.0, 0), Vector2(wall_thick, game_state.map_height))
@@ -596,10 +602,13 @@ func _add_interactive_elements(data: Dictionary, hw: float, hh: float):
 func _spawn_breakable_walls(density: float, hp: float, hw: float, hh: float, prop_manager):
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
-	var margin = 80.0
-	var clear_radius = 180.0
-	var min_dist = 80.0
-	var target_count = clampi(int(game_state.map_width * game_state.map_height * density), 5, 120)
+	var ref_area = 3200.0 * 2400.0
+	var area_ratio = (game_state.map_width * game_state.map_height) / ref_area
+	var area_scale = sqrt(area_ratio)
+	var margin = clampf(80.0 * area_scale, 80.0, 200.0)
+	var clear_radius = clampf(180.0 * area_scale, 180.0, 400.0)
+	var min_dist = clampf(80.0 * area_scale, 80.0, 200.0)
+	var target_count = clampi(int(game_state.map_width * game_state.map_height * density), 5, 300)
 	var attempts = target_count * 6
 	var placed = 0
 	
@@ -635,14 +644,18 @@ func _spawn_breakable_walls(density: float, hp: float, hw: float, hh: float, pro
 func _spawn_light_sources(chance: float, max_count: int, hw: float, hh: float, prop_manager):
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
-	var margin = 80.0
-	var clear_radius = 180.0
-	var min_dist = 80.0
+	var ref_area = 3200.0 * 2400.0
+	var area_ratio = (game_state.map_width * game_state.map_height) / ref_area
+	var area_scale = sqrt(area_ratio)
+	var margin = clampf(80.0 * area_scale, 80.0, 200.0)
+	var clear_radius = clampf(180.0 * area_scale, 180.0, 400.0)
+	var min_dist = clampf(80.0 * area_scale, 80.0, 200.0)
+	var scaled_max = int(max_count * area_ratio)
 	var placed = 0
-	var attempts = max_count * 10
+	var attempts = scaled_max * 10
 
 	for _a in range(attempts):
-		if placed >= max_count:
+		if placed >= scaled_max:
 			break
 		if rng.randf() > chance:
 			continue

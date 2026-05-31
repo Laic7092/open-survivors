@@ -16,6 +16,7 @@ static func get_data() -> Dictionary:
 		"bg_color": Color(0.04, 0.04, 0.10),
 		"map_width": 6400,
 		"map_height": 4800,
+		"map_scale": 3.0,
 		"theme": "Forest Night Fever",
 
 		# ── 基础倍率 ──
@@ -166,7 +167,7 @@ static func get_data() -> Dictionary:
 
 		# ── 地图事件 ──
 		"map_events": [
-			{"time": 2,  "type": "bat_swarm",   "unit": "bat",   "delay": 5.0,  "repeats": 2, "direction": "straight"},
+			{"time": 2,  "type": "bat_swarm",   "unit": "bat_s", "delay": 5.0,  "repeats": 2, "direction": "straight"},
 			{"time": 5,  "type": "flower_wall",  "duration": 30.0, "chance": 1.0},
 			{"time": 13, "type": "ghost_swarm",  "unit": "ghost", "delay": 1.2, "repeats": 20},
 		],

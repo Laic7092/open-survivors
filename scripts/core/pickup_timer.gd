@@ -113,5 +113,15 @@ func _emit_nduja_fire():
 	add_child(fb)
 	var tw = create_tween()
 	tw.tween_interval(0.3)
-	tw.finished.connect(area.queue_free)
-	tw.finished.connect(fb.queue_free)
+	var area_id = area.get_instance_id()
+	tw.finished.connect(func():
+		var _x = instance_from_id(area_id)
+		if _x:
+			_x.queue_free()
+	)
+	var fb_id = fb.get_instance_id()
+	tw.finished.connect(func():
+		var _x = instance_from_id(fb_id)
+		if _x:
+			_x.queue_free()
+	)

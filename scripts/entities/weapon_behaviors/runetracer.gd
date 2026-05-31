@@ -30,7 +30,12 @@ static func fire(w, weapon_manager, player, get_enemies):
 			wall.global_position = player.global_position + perp * side * 30
 			player.get_parent().add_child(wall)
 			wall.body_entered.connect(weapon_manager._on_proj_hit.bind(wall, dmg * 0.3))
-			player.get_tree().create_timer(wall_dur).timeout.connect(wall.queue_free)
+			var wall_id = wall.get_instance_id()
+			player.get_tree().create_timer(wall_dur).timeout.connect(func():
+				var _x = instance_from_id(wall_id)
+				if _x:
+					_x.queue_free()
+			)
 		return
 
 	# ── 普通形态：弹射投射物 ──
@@ -108,7 +113,12 @@ static func fire(w, weapon_manager, player, get_enemies):
 		var tw = player.create_tween()
 		tw.tween_property(spark, "scale", Vector2.ONE * 1.5, 0.15)
 		tw.parallel().tween_property(spark, "modulate:a", 0.0, 0.3)
-		tw.finished.connect(spark.queue_free)
+		var spark_id = spark.get_instance_id()
+		tw.finished.connect(func():
+			var _x = instance_from_id(spark_id)
+			if _x:
+				_x.queue_free()
+		)
 
 		# ── 命中连接 ──
 		p.body_entered.connect(weapon_manager._on_proj_hit.bind(p, dmg))

@@ -19,7 +19,12 @@ static func fire(w, weapon_manager, player, get_enemies):
 	zone.body_entered.connect(_on_gaea_hit.bind(zone, dmg))
 	var tw = player.create_tween()
 	tw.tween_property(vis, "modulate:a", 0.0, dur)
-	tw.finished.connect(zone.queue_free)
+	var zone_id = zone.get_instance_id()
+	tw.finished.connect(func():
+		var _x = instance_from_id(zone_id)
+		if _x:
+			_x.queue_free()
+	)
 
 static func _on_gaea_hit(body, zone, dmg):
 	if not is_instance_valid(body) or not is_instance_valid(zone):

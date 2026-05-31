@@ -66,7 +66,12 @@ func _ready():
 	var timer = Timer.new()
 	timer.wait_time = 25.0
 	timer.one_shot = true
-	timer.timeout.connect(queue_free)
+	var _self_id = get_instance_id()
+	timer.timeout.connect(func():
+		var _s = instance_from_id(_self_id)
+		if _s:
+			_s.queue_free()
+	)
 	add_child(timer)
 	timer.start()
 	

@@ -11,6 +11,7 @@ const CameraController = preload("res://scripts/core/camera_controller.gd")
 const StageGenerator = preload("res://scripts/core/stage_generator.gd")
 const SpawnManager = preload("res://scripts/core/spawn_manager.gd")
 const PickupTimer = preload("res://scripts/core/pickup_timer.gd")
+const LevelUpService = preload("res://scripts/core/level_up_service.gd")
 
 # ── 外部依赖 ──
 # Data defs loaded lazily via DataRegistry (autoload)
@@ -38,6 +39,9 @@ var prop_manager: Node = null
 # ── 状态 ──
 var _arcana_boss_spawned_11: bool = false
 var _arcana_boss_spawned_21: bool = false
+# 满级自动选择
+var _max_level_mode: bool = false
+var _last_fallback_type: int = -1
 var _frame_count: int = 0
 var _map_ready: bool = false
 var _cached_vp_size: Vector2 = Vector2.ZERO
@@ -465,8 +469,40 @@ func _update_interaction_prompt(every_n: Callable):
 func _on_player_leveled_up():
 	EventBus.player_leveled_up.emit(player.level)
 	ArcanaManager.on_player_level_up(player, player.level)
+
+	# 满级后：首弹出让玩家选一次，之后自动沿用
+	var choices = LevelUpService.generate_choices(
+		player, player.weapon_manager, player.passive_inventory,
+		player.luck,
+		RelicManager and RelicManager.has_relic("great_gospel"),
+		EventBus.get_config("random_level_up", false),
+		EventBus.get_config("always_chicken_unlocked", false),
+		player.level,
+	)
+	if LevelUpService.is_fallback_only(choices) and not choices.is_empty():
+		if _max_level_mode:
+			_auto_apply_fallback(choices)
+			return
+		else:
+			_max_level_mode = true
+	else:
+		_max_level_mode = false
+
 	get_tree().paused = true
-	_level_up_screen.show_choices(player)
+	_level_up_screen.show_choices(player, choices)
+
+
+func _auto_apply_fallback(choices: Array):
+	# 沿用上次选择的类型，从当前选项中找到匹配的
+	var target_type = _last_fallback_type
+	if target_type < 0:
+		target_type = LevelUpService.ChoiceType.GOLD
+	for c in choices:
+		if c.type == target_type:
+			LevelUpService.apply_choice(player, c, player.weapon_manager, player.passive_inventory)
+			return
+	# 兜底：应用第一个选项
+	LevelUpService.apply_choice(player, choices[0], player.weapon_manager, player.passive_inventory)
 
 
 func _on_player_hurt():
@@ -524,21 +560,23 @@ func _on_evolution_selected(weapon_type: int):
 func _on_gold_selected(amount: int):
 	get_tree().paused = false
 	PowerUpManager.add_run_gold(amount)
-	# Big Coin Bag 计数（用于解锁 Always Floor Chicken 模式）
 	PowerUpManager.add_big_coin_bag()
 	_level_up_screen.hide_screen()
 	EventBus.gold_collected.emit(amount)
+	_last_fallback_type = LevelUpService.ChoiceType.GOLD
 
 
 func _on_chicken_selected(amount: int):
 	get_tree().paused = false
 	player.heal(amount)
 	_level_up_screen.hide_screen()
+	_last_fallback_type = LevelUpService.ChoiceType.CHICKEN
 
 
 func _on_limit_break_selected(_weapon_type: int, _option: Dictionary):
 	get_tree().paused = false
 	_level_up_screen.hide_screen()
+	_last_fallback_type = LevelUpService.ChoiceType.LIMIT_BREAK
 
 
 # ═══════════════════════════════════════════════════════════
@@ -593,7 +631,12 @@ func _show_boss_announcement(text: String):
 	var tw = create_tween()
 	tw.tween_interval(1.5)
 	tw.tween_property(label, "modulate", Color(1, 1, 1, 0), 1.0)
-	tw.finished.connect(label.queue_free)
+	var label_id = label.get_instance_id()
+	tw.finished.connect(func():
+		var l = instance_from_id(label_id)
+		if l:
+			l.queue_free()
+	)
 
 
 func start_game_music():

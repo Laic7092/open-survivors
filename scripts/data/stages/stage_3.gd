@@ -12,6 +12,7 @@ static func get_data() -> Dictionary:
 		"bg_color": Color(0.08, 0.06, 0.16),
 		"map_width": 5400,
 		"map_height": 4400,
+		"map_scale": 3.0,
 		"move_speed_mod": 1.25,
 		"enemy_speed_mod": 1.2,
 		"gold_mod": 1.2,

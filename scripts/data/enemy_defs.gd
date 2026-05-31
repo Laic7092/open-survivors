@@ -64,11 +64,14 @@ class EnemyTypeData:
 
 
 static var _types: Array[EnemyTypeData] = []
+static var _type_index: Dictionary = {}
 
 
 static func _ensure_loaded():
 	if _types.is_empty():
 		_load_types()
+		for t in _types:
+			_type_index[t.id] = t
 
 
 static func _load_types():
@@ -1335,9 +1338,9 @@ static func _load_types():
 		# 121 — Flower Wall (Mad Forest event, bestiary 009)
 		EnemyTypeData.new(
 			121, "Flower Wall",
-			30.0, 0.0, 14.0, 1.2, 5,
+			30.0, 30.0, 14.0, 1.2, 5,
 			Color(0.3, 0.6, 0.1), Color(0.4, 0.7, 0.15), 2.0,
-			"hexagon", "stationary",
+			"hexagon", "chase",
 			false, 0.0, 0.0, 0.0,
 			0.5, false,
 			1.5, 0.02, 0.0
@@ -1541,10 +1544,7 @@ static func _load_types():
 
 static func get_type(id: int) -> EnemyTypeData:
 	_ensure_loaded()
-	for t in _types:
-		if t.id == id:
-			return t
-	return _types[0]
+	return _type_index.get(id, _types[0])
 
 
 static func get_type_count() -> int:

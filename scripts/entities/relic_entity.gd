@@ -25,7 +25,12 @@ func _ready():
 	var timer = Timer.new()
 	timer.wait_time = 600.0
 	timer.one_shot = true
-	timer.timeout.connect(queue_free)
+	var _self_id = get_instance_id()
+	timer.timeout.connect(func():
+		var _s = instance_from_id(_self_id)
+		if _s:
+			_s.queue_free()
+	)
 	add_child(timer)
 	timer.start()
 	
@@ -87,14 +92,24 @@ func _collect():
 				ui_layer.add_child(flash)
 				var tw = create_tween()
 				tw.tween_property(flash, "modulate", Color(1, 1, 1, 0), 0.5)
-				tw.finished.connect(flash.queue_free)
+				var flash_id = flash.get_instance_id()
+				tw.finished.connect(func():
+					var _x = instance_from_id(flash_id)
+					if _x:
+						_x.queue_free()
+				)
 		
 		# Remove from world — play a brief shrinking animation
 		var tw2 = create_tween()
 		tw2.set_parallel(true)
 		tw2.tween_property(self, "scale", Vector2(2.0, 2.0), 0.2)
 		tw2.tween_property(self, "modulate", Color(1, 1, 1, 0), 0.3)
-		tw2.finished.connect(queue_free)
+		var _self_id_2 = get_instance_id()
+		tw2.finished.connect(func():
+			var _s = instance_from_id(_self_id_2)
+			if _s:
+				_s.queue_free()
+		)
 
 
 func _find_ui_layer() -> CanvasLayer:
