@@ -18,6 +18,16 @@ func has_relic(id: String) -> bool:
 	return _collected.has(id) and _collected[id] == true
 
 
+# Centralized feature gate: queries by feature name instead of relic ID.
+# Usage: RelicManager.is_feature_unlocked("hurry_mode")
+# Mapping lives in relic_defs.gd FEATURE_GATES.
+func is_feature_unlocked(feature_id: String) -> bool:
+	var rid = DataRegistry.relics().get_relic_for_feature(feature_id)
+	if rid.is_empty():
+		return true  # unknown features default unlocked
+	return has_relic(rid)
+
+
 func collect_relic(id: String) -> bool:
 	if has_relic(id):
 		return false
@@ -25,8 +35,7 @@ func collect_relic(id: String) -> bool:
 		return false
 	_collected[id] = true
 	_save_data()
-	if UnlockManager:
-		UnlockManager.on_relic_collected(id)
+	EventBus.relic_collected.emit(id)
 	return true
 
 

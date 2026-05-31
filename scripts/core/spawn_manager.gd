@@ -25,6 +25,21 @@ var stage_relics: Array = []
 var has_relic_arrow: bool = false
 var relic_arrow_target: Vector2 = Vector2.ZERO
 
+# 延时刷出的遗物队列
+var _queued_time_relics: Array = []
+
+# 掉落圣物队列 (boss_drop) — 当 BOSS 死亡时刷出
+var _queued_boss_relics: Array = []
+
+# 条件圣物队列 (conditional) — 满足条件时刷出
+var _queued_conditional_relics: Array = []
+
+# 商人圣物 (merchant) — 在商人处出售
+var _queued_merchant_relics: Array = []
+
+# 探索圣物 (collection) — 隐藏于关卡中
+var _queued_collection_relics: Array = []
+
 
 func setup(p: Node2D, gs: Node, cam: Node, parent: Node2D):
 	player = p
@@ -161,12 +176,9 @@ func spawn_initial_pickups(hw: float, hh: float):
 
 
 func spawn_enemy_drops(enemy: Node2D):
-	# Returns: is_arcana_boss (bool), is_boss (bool) for caller to handle progression
-	
 	if not is_instance_valid(enemy):
 		return
 	
-	# Arcana Boss
 	var is_arcana_boss = enemy.has_meta("arcana_boss") and enemy.get_meta("arcana_boss")
 	if is_arcana_boss:
 		for i in range(5):
@@ -191,6 +203,7 @@ func spawn_enemy_drops(enemy: Node2D):
 		for i in range(3):
 			spawn_pickup_at(enemy.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 3 if i == 0 else -1)
 		spawn_pickup_at(enemy.global_position, 0)
+		_try_spawn_boss_drop_relic(enemy.global_position)
 	else:
 		if randf() < 0.28:
 			var gem = ObjectPoolManager.borrow_gem()
@@ -213,25 +226,180 @@ func spawn_enemy_drops(enemy: Node2D):
 
 # ── 遗物 ──
 
+# 在关卡开始时刷出/登记所有圣物。根据 spawn_type 分派：
+#   immediate    → 直接放置在关卡中
+#   time_based   → 加入延时队列，指定时间到达后刷出
+#   boss_drop    → 加入掉落队列，Boss 死亡时刷出
+#   conditional  → 加入条件队列，满足条件时刷出
+#   merchant     → 加入商人队列，在商人处出售
+#   collection   → 加入探索队列，隐藏于关卡中
 func spawn_stage_relics():
 	stage_relics.clear()
+	_queued_time_relics.clear()
+	_queued_boss_relics.clear()
+	_queued_conditional_relics.clear()
+	_queued_merchant_relics.clear()
+	_queued_collection_relics.clear()
 	has_relic_arrow = false
 	relic_arrow_target = Vector2.ZERO
 	
 	var stage_id = game_state._stage_id
-	var relics = DataRegistry.relics().get_relics_for_stage(stage_id)
+	var imm_relics = DataRegistry.relics().get_relics_for_stage_by_type(stage_id, "immediate")
+	for r in imm_relics:
+		_place_relic(r)
+	
+	_register_relics_by_type(stage_id, "time_based", _queued_time_relics)
+	_register_relics_by_type(stage_id, "boss_drop", _queued_boss_relics)
+	_register_relics_by_type(stage_id, "conditional", _queued_conditional_relics)
+	_register_relics_by_type(stage_id, "merchant", _queued_merchant_relics)
+	_register_relics_by_type(stage_id, "collection", _queued_collection_relics)
+
+
+# 将指定类型的圣物登记到队列中（跳过已收集的）
+func _register_relics_by_type(stage_id: int, spawn_type: String, queue: Array):
+	var relics = DataRegistry.relics().get_relics_for_stage_by_type(stage_id, spawn_type)
 	for r in relics:
-		var rid = r["id"]
-		if RelicManager.has_relic(rid):
+		if RelicManager.has_relic(r["id"]):
+			continue
+		queue.append({"def": r})
+
+
+# 每帧检查延时圣物时间条件，在 main.gd _process 中调用
+func process_delayed_spawns(game_time: float):
+	if _queued_time_relics.is_empty():
+		return
+	var i = 0
+	while i < _queued_time_relics.size():
+		var entry = _queued_time_relics[i]
+		var r = entry["def"]
+		var spawn_time = r.get("spawn_time", 0.0)
+		if game_time >= spawn_time:
+			if not RelicManager.has_relic(r["id"]):
+				_place_relic(r)
+			_queued_time_relics.remove_at(i)
+		else:
+			i += 1
+
+
+# ── Boss 掉落圣物 ──
+
+# 在 Boss 死亡时尝试掉落 boss_drop 圣物
+func _try_spawn_boss_drop_relic(boss_pos: Vector2):
+	if _queued_boss_relics.is_empty():
+		return
+	var entry = _queued_boss_relics[0]
+	var r = entry["def"]
+	if not RelicManager.has_relic(r["id"]):
+		r["spawn_pos"] = boss_pos
+		_place_relic(r)
+	_queued_boss_relics.remove_at(0)
+
+
+# ── 条件圣物 ──
+
+# 每帧检查条件圣物（有条件限制的圣物）
+func process_conditional_relics():
+	if _queued_conditional_relics.is_empty():
+		return
+	var i = 0
+	while i < _queued_conditional_relics.size():
+		var entry = _queued_conditional_relics[i]
+		var r = entry["def"]
+		if _evaluate_condition(r.get("condition", {})):
+			if not RelicManager.has_relic(r["id"]):
+				_place_relic(r)
+			_queued_conditional_relics.remove_at(i)
+		else:
+			i += 1
+
+
+# 评估条件圣物的前置条件
+# condition 格式: { "type": "player_level"|"total_kills"|"wave_number"|"weapon_evolved",
+#                   "value": N,
+#                   "weapon_type": N (only for weapon_evolved) }
+func _evaluate_condition(cond: Dictionary) -> bool:
+	var ctype = cond.get("type", "")
+	var val = cond.get("value", 0)
+	match ctype:
+		"player_level":
+			return is_instance_valid(player) and player.level >= val
+		"total_kills":
+			return game_state and game_state.total_kills >= val
+		"wave_number":
+			return game_state and game_state.wave_number >= val
+		"weapon_evolved":
+			var wpn_type = cond.get("weapon_type", -1)
+			if wpn_type >= 0 and is_instance_valid(player) and player.weapon_manager:
+				return player.weapon_manager.is_evolved(wpn_type)
+			return false
+	return false
+
+
+# ── 商人圣物 ──
+
+# 获取本关可购买的商人圣物列表
+func get_merchant_relics() -> Array:
+	var result: Array = []
+	for entry in _queued_merchant_relics:
+		result.append(entry["def"])
+	return result
+
+
+# 当玩家从商人处购买圣物后调用
+func on_merchant_relic_bought(relic_id: String):
+	var i = 0
+	while i < _queued_merchant_relics.size():
+		var entry = _queued_merchant_relics[i]
+		if entry["def"]["id"] == relic_id:
+			_queued_merchant_relics.remove_at(i)
+			return
+		i += 1
+
+
+# ── 探索圣物 ──
+
+# 放置探索圣物（collection 类型）——隐藏在关卡中，未发现前不可见
+func place_collection_relics(parent_node: Node):
+	for entry in _queued_collection_relics:
+		var r = entry["def"]
+		if RelicManager.has_relic(r["id"]):
 			continue
 		var relic = _relic_scene.instantiate()
-		relic.initialize(rid, player)
-		relic.global_position = _clamp_to_map(r["spawn_pos"], 30.0)
-		main_node.add_child(relic)
+		relic.initialize(r["id"], player)
+		var pos = r.get("spawn_pos", Vector2.ZERO)
+		relic.global_position = _clamp_to_map(pos, 30.0)
+		relic.set_meta("collection_relic", true)
+		relic.visible = false  # 初始隐藏（由互动触发发现）
+		relic.process_mode = PROCESS_MODE_DISABLED  # 发现前不处理
+		parent_node.add_child(relic)
 		stage_relics.append(relic)
-		if not has_relic_arrow:
-			has_relic_arrow = true
-			relic_arrow_target = relic.global_position
+	_queued_collection_relics.clear()
+
+
+# 发现隐藏圣物（被玩家触发时调用，如打破墙/开箱）
+func reveal_collection_relic(relic_node: Node2D):
+	if not is_instance_valid(relic_node):
+		return
+	if not relic_node.has_meta("collection_relic") or not relic_node.get_meta("collection_relic"):
+		return
+	relic_node.visible = true
+	relic_node.process_mode = PROCESS_MODE_INHERIT
+	if not has_relic_arrow:
+		has_relic_arrow = true
+		relic_arrow_target = relic_node.global_position
+func _place_relic(r: Dictionary):
+	var rid = r["id"]
+	if RelicManager.has_relic(rid):
+		return
+	var relic = _relic_scene.instantiate()
+	relic.initialize(rid, player)
+	var pos = r.get("spawn_pos", Vector2.ZERO)
+	relic.global_position = _clamp_to_map(pos, 30.0)
+	main_node.add_child(relic)
+	stage_relics.append(relic)
+	if not has_relic_arrow:
+		has_relic_arrow = true
+		relic_arrow_target = relic.global_position
 
 
 func spawn_stage_items():

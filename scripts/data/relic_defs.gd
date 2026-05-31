@@ -164,7 +164,8 @@ const RELICS := [
 		"desc": "Enables base game adventures.",
 		"effect": "Unlocks Adventure Mode.",
 		"stage_id": 9,
-		"spawn_pos": Vector2(0, 0),
+		"spawn_type": "time_based",
+		"spawn_time": 420.0,
 		"color": Color(0.2, 0.5, 0.8),
 		"icon_shape": "gate",
 	},
@@ -176,7 +177,8 @@ const RELICS := [
 		"desc": "Allows Mortaccio to transform at level 80.",
 		"effect": "Mortaccio transforms into a stronger form at Lv.80, evolving their main weapon.",
 		"stage_id": 14,
-		"spawn_pos": Vector2(0, -1000),
+		"spawn_type": "time_based",
+		"spawn_time": 1080.0,
 		"color": Color(0.2, 0.8, 0.4),
 		"icon_shape": "chaos",
 	},
@@ -236,7 +238,8 @@ const RELICS := [
 		"desc": "Enables random upgrade selection on level up.",
 		"effect": "Adds a Random Upgrade option in the stage select menu.",
 		"stage_id": 13,
-		"spawn_pos": Vector2(0, 1500),
+		"spawn_type": "time_based",
+		"spawn_time": 1080.0,
 		"color": Color(0.8, 0.4, 0.2),
 		"icon_shape": "star",
 	},
@@ -260,7 +263,8 @@ const RELICS := [
 		"desc": "Allows purchasing the Charm power-up.",
 		"effect": "Unlocks the Charm upgrade.",
 		"stage_id": 14,
-		"spawn_pos": Vector2(0, 1000),
+		"spawn_type": "time_based",
+		"spawn_time": 540.0,
 		"color": Color(0.9, 0.1, 0.1),
 		"icon_shape": "charm",
 	},
@@ -315,6 +319,32 @@ const RELICS := [
 ]
 
 
+# Feature gate mapping: feature ID → relic ID.
+# Business code queries RelicManager.is_feature_unlocked("feature_id")
+# instead of scattering has_relic("specific_id") everywhere.
+const FEATURE_GATES := {
+	"hurry_mode": "sorceress_tears",
+	"endless_mode": "seventh_trumpet",
+	"alt_music": "magic_banger",
+	"arcana_system": "randomazzo",
+	"map_pause": "milky_way_map",
+	"grimoire_pause": "grim_grimoire",
+	"inverse_mode": "gracia_mirror",
+	"random_events": "trisection",
+	"random_upgrade": "brave_story",
+	"powerup_charm": "apoplexy",
+	"powerup_defang": "antidote",
+	"powerup_preserve": "wax_fetish",
+	"bestiary": "ars_gouda",
+	"merchant_all_stages": "glass_vizard",
+	"limit_break": "great_gospel",
+	"secrets_menu": "forbidden_scrolls",
+	"adventure_mode": "atlas_gate",
+	"party_mode": "masquerade",
+	"speed_up_btn": "roast_chicken",
+}
+
+
 static func get_relic(id: String) -> Dictionary:
 	for r in RELICS:
 		if r["id"] == id:
@@ -322,10 +352,24 @@ static func get_relic(id: String) -> Dictionary:
 	return RELICS[0]
 
 
+static func get_relic_for_feature(feature_id: String) -> String:
+	return FEATURE_GATES.get(feature_id, "")
+
+
 static func get_relics_for_stage(stage_id: int) -> Array:
 	var result: Array = []
 	for r in RELICS:
 		if r["stage_id"] == stage_id:
+			result.append(r)
+	return result
+
+
+# Returns relics matching a spawn_type on the given stage.
+# spawn_type values: "immediate", "time_based", "boss_drop", "conditional", "merchant", "collection"
+static func get_relics_for_stage_by_type(stage_id: int, spawn_type: String) -> Array:
+	var result: Array = []
+	for r in RELICS:
+		if r.get("stage_id", -1) == stage_id and r.get("spawn_type", "immediate") == spawn_type:
 			result.append(r)
 	return result
 

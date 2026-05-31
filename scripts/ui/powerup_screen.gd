@@ -17,10 +17,10 @@ func _ready():
 	get_viewport().size_changed.connect(_rebuild)
 
 
-const RELIC_GATE := {
-	"charm": "apoplexy",
-	"defang": "antidote",
-	"preserve": "wax_fetish",
+const FEATURE_GATE := {
+	"charm": "powerup_charm",
+	"defang": "powerup_defang",
+	"preserve": "powerup_preserve",
 }
 
 
@@ -36,8 +36,8 @@ func _rebuild():
 
 
 func _is_powerup_locked(id: String) -> bool:
-	if RELIC_GATE.has(id):
-		return not RelicManager.has_relic(RELIC_GATE[id])
+	if FEATURE_GATE.has(id):
+		return not RelicManager.is_feature_unlocked(FEATURE_GATE[id])
 	return false
 
 
@@ -80,8 +80,9 @@ func _add_powerup_card(id: String):
 
 	var desc = Label.new()
 	if locked:
-		var relic_id = RELIC_GATE[id]
-		var relic_name = I18N.t("relic." + relic_id, relic_id)
+		var feature_id = FEATURE_GATE[id]
+		var rid = DataRegistry.relics().get_relic_for_feature(feature_id)
+		var relic_name = I18N.t("relic." + rid, rid)
 		desc.text = "🔒 " + I18N.t("powerup.need_relic") % relic_name
 	else:
 		desc.text = I18N.t("pu." + id + "_desc", info["desc"])

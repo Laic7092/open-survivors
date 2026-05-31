@@ -116,7 +116,7 @@ func _ready():
 	# ── Core 系统 ──
 	wave_system = WaveSystem.new()
 	add_child(wave_system)
-	wave_system.setup(game_state, player, spawn_manager.spawn_enemy)
+	wave_system.setup(game_state, player, spawn_manager.spawn_enemy, camera_ctrl)
 	
 	curse_system = CurseSystem.new()
 	add_child(curse_system)
@@ -137,6 +137,7 @@ func _ready():
 	
 	# ── 遗物 / 道具生成 ──
 	spawn_manager.spawn_stage_relics()
+	spawn_manager.place_collection_relics(self)
 	spawn_manager.spawn_stage_items()
 	
 	# ── 重置运行时状态 ──
@@ -149,8 +150,8 @@ func _ready():
 	
 	call_deferred("start_game_music")
 	
-	if RelicManager.has_relic("randomazzo"):
-		UnlockManager.on_relic_collected("randomazzo")
+	# Re-evaluate relic-owned unlock conditions for relics collected in previous runs
+	UnlockManager.reevaluate_relic_conditions()
 	
 	call_deferred("_deferred_setup")
 	
@@ -162,7 +163,7 @@ func _apply_stage_mods():
 	var sd = game_state.stage_data
 	var hurry = EventBus.get_config("hurry_mode", false)
 	var hyper = EventBus.get_config("hyper_mode", false)
-	var inverse = EventBus.get_config("inverse_mode", false) and RelicManager.has_relic("gracia_mirror")
+	var inverse = EventBus.get_config("inverse_mode", false) and RelicManager.is_feature_unlocked("inverse_mode")
 	var hyper_mods = sd.get("hyper_mods", {})
 	var inverse_mods = sd.get("inverse_mods", {})
 	
@@ -194,7 +195,7 @@ func _apply_stage_mods():
 		game_state.starting_spawns = inverse_mods.get("starting_spawns", game_state.starting_spawns)
 	
 	# Handle random events
-	if EventBus.get_config("random_events", false) and RelicManager.has_relic("trisection"):
+	if EventBus.get_config("random_events", false) and RelicManager.is_feature_unlocked("random_events"):
 		game_state.stage_data["random_events"] = true
 
 
@@ -210,13 +211,17 @@ func _on_map_ready():
 	var hh = game_state.map_height / 2.0
 	spawn_manager.spawn_initial_pickups(hw, hh)
 	
-	var starting = game_state.starting_spawns
-	var pool = DataRegistry.enemies().get_types_for_stage(game_state._stage_id, 0.0)
-	for i in range(starting):
-		var t = DataRegistry.enemies().pick_weighted(pool) if not pool.is_empty() else 11
-		var e = spawn_manager.spawn_enemy(t)
-		if e:
-			e.is_wave_enemy = false
+	# wave_defs 驱动的关卡：起始刷怪由第0分钟波次接管，不额外生成
+	var sd = game_state.stage_data
+	var has_wave_defs = sd.has("wave_defs") and not sd["wave_defs"].is_empty()
+	if not has_wave_defs:
+		var starting = game_state.starting_spawns
+		var pool = DataRegistry.enemies().get_types_for_stage(game_state._stage_id, 0.0)
+		for i in range(starting):
+			var t = DataRegistry.enemies().pick_weighted(pool) if not pool.is_empty() else 11
+			var e = spawn_manager.spawn_enemy(t)
+			if e:
+				e.is_wave_enemy = false
 
 
 # ═══════════════════════════════════════════════════════════
@@ -254,6 +259,8 @@ func _process(delta):
 	curse_system.process(delta)
 	camera_ctrl.process(delta)
 	pickup_timer.process(delta)
+	spawn_manager.process_delayed_spawns(game_state.game_time)
+	spawn_manager.process_conditional_relics()
 	
 	# ── Boss 检测 ──
 	# 数据驱动关卡（wave_defs）由波次系统管理 Boss，跳过此处
@@ -296,9 +303,6 @@ func _on_enemy_died(enemy: Node2D):
 	var is_boss = enemy.has_method("get_is_boss") and enemy.get_is_boss()
 	var enemy_type = enemy.enemy_type_id if "enemy_type_id" in enemy else -1
 	EventBus.enemy_killed.emit(enemy_type, enemy.global_position, is_boss)
-	
-	if game_state.wave_active and enemy.is_wave_enemy:
-		game_state.wave_alive -= 1
 	
 	var is_arcana_boss = enemy.has_meta("arcana_boss") and enemy.get_meta("arcana_boss")
 	
@@ -560,7 +564,7 @@ func _show_boss_announcement(text: String):
 func start_game_music():
 	if AudioManager and AudioManager.has_method("play_bgm"):
 		AudioManager.stop_bgm()
-		var use_alt = EventBus.get_config("alt_music", false) and RelicManager.has_relic("magic_banger")
+		var use_alt = EventBus.get_config("alt_music", false) and RelicManager.is_feature_unlocked("alt_music")
 		var bgm_key = "bgm_alt" if use_alt else "bgm_game"
 		if AudioManager.sounds.has(bgm_key):
 			AudioManager.play_bgm(AudioManager.sounds.get(bgm_key))

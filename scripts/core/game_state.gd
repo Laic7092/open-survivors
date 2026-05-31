@@ -74,12 +74,6 @@ func reset():
 	difficulty = 1.0
 	wave_number = 0
 	wave_active = false
-	wave_spawning = false
-	wave_total = 0
-	wave_spawned = 0
-	wave_alive = 0
-	wave_spawn_timer = 0.0
-	wave_break_timer = 0.0
 	rest_spawn_timer = -1.0
 	boss_spawned = false
 	cursed_time_active = false

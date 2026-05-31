@@ -29,10 +29,21 @@ var _borrowed_count: Dictionary = {}
 
 func _ready():
 	process_mode = PROCESS_MODE_WHEN_PAUSED
-	# 池不再预填充 —— 改为懒填充，首次 borrow() 时创建
 	_pool_sizes[_SCENE_GEM] = POOL_SIZE_PER_TYPE
 	_pool_sizes[_SCENE_FT] = POOL_SIZE_PER_TYPE
 	_pool_sizes[_SCENE_PROJ] = POOL_SIZE_PER_TYPE
+	# 延迟预填充，不影响首帧启动速度，但确保首次战斗时池已就绪
+	call_deferred("_prefill_all_pools")
+
+
+func _prefill_all_pools():
+	# 只在池尚未创建时预填充，避免与 borrow() 的懒填充冲突
+	if not _pools.has(_SCENE_GEM):
+		_prefill_pool(_SCENE_GEM, POOL_SIZE_PER_TYPE)
+	if not _pools.has(_SCENE_FT):
+		_prefill_pool(_SCENE_FT, POOL_SIZE_PER_TYPE)
+	if not _pools.has(_SCENE_PROJ):
+		_prefill_pool(_SCENE_PROJ, POOL_SIZE_PER_TYPE)
 
 
 func _prefill_pool(scene_path: String, count: int):

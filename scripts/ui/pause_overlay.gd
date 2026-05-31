@@ -321,7 +321,7 @@ func _setup_minimap():
 	if not player or not is_instance_valid(main):
 		return
 
-	var has_map_relic = RelicManager and RelicManager.has_relic("milky_way_map")
+	var has_map_relic = RelicManager and RelicManager.is_feature_unlocked("map_pause")
 
 	if not _map_data_ready and has_map_relic:
 		_cache_map_data()
@@ -359,7 +359,7 @@ func _setup_minimap():
 			_map_text.text = I18N.t("pause.map_available") + "\n🔒 " + I18N.t("pause.find_milky_way")
 
 	# Grim Grimoire
-	if RelicManager and RelicManager.has_relic("grim_grimoire"):
+	if RelicManager and RelicManager.is_feature_unlocked("grimoire_pause"):
 		_grimoire_header.visible = true
 		_grimoire_container.visible = true
 		for c in _grimoire_container.get_children():

@@ -126,7 +126,7 @@ func active_arcanas_have_weapon_effect(weapon_type: int, effect_id: String) -> b
 
 
 func is_system_enabled() -> bool:
-	return RelicManager.has_relic("randomazzo")
+	return RelicManager.is_feature_unlocked("arcana_system")
 
 
 # ── Apply Arcana stat modifiers ──

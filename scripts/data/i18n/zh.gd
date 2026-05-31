@@ -599,6 +599,16 @@ static func get_data() -> Dictionary:
 		"enemy.3_name": "诅咒之眼",
 		"enemy.4_name": "螳螂",
 		"enemy.5_name": "梦魇",
+		"enemy.23_name": "沙尘元素",
+		"enemy.24_name": "慕斯慕斯",
+		"enemy.25_name": "美杜莎之首",
+		"enemy.26_name": "木乃伊",
+		"enemy.27_name": "狮头",
+		"enemy.28_name": "无头之手",
+		"enemy.29_name": "学徒女巫",
+		"enemy.30_name": "精英无头之手",
+		"enemy.31_name": "发光颅骨",
+		"enemy.32_name": "巨型美杜莎",
 
 		# ── Boss ──
 		"wave.label": "波次",

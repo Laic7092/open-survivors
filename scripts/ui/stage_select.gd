@@ -45,15 +45,15 @@ func _notification(what):
 
 func _add_extra_toggles():
 	var toggles := [
-		{"name": I18N.t("stage_select.inverse"),    "relic": "gracia_mirror",   "config": "inverse_mode"},
-		{"name": I18N.t("stage_select.random_events"), "relic": "trisection",    "config": "random_events"},
-		{"name": I18N.t("stage_select.random_upgrade"), "relic": "brave_story",  "config": "random_upgrade"},
+		{"name": I18N.t("stage_select.inverse"),    "feature": "inverse_mode",   "config": "inverse_mode"},
+		{"name": I18N.t("stage_select.random_events"), "feature": "random_events", "config": "random_events"},
+		{"name": I18N.t("stage_select.random_upgrade"), "feature": "random_upgrade", "config": "random_upgrade"},
 	]
 	for t in toggles:
 		var btn = Button.new()
 		btn.text = t["name"]
 		btn.toggle_mode = true
-		btn.disabled = not RelicManager.has_relic(t["relic"])
+		btn.disabled = not RelicManager.is_feature_unlocked(t["feature"])
 		if not btn.disabled:
 			btn.button_pressed = EventBus.get_config(t["config"], false)
 		btn.toggled.connect(func(v): EventBus.set_config(t["config"], v))
@@ -65,20 +65,20 @@ func _add_extra_toggles():
 
 
 func _update_toggle_states():
-	_hurry_btn.disabled = not RelicManager.has_relic("sorceress_tears")
-	_endless_btn.disabled = not RelicManager.has_relic("seventh_trumpet")
-	_music_btn.disabled = not RelicManager.has_relic("magic_banger")
-	var has_randomazzo = RelicManager.has_relic("randomazzo")
-	_arcana_btn.disabled = not has_randomazzo
-	if has_randomazzo:
+	_hurry_btn.disabled = not RelicManager.is_feature_unlocked("hurry_mode")
+	_endless_btn.disabled = not RelicManager.is_feature_unlocked("endless_mode")
+	_music_btn.disabled = not RelicManager.is_feature_unlocked("alt_music")
+	var has_arcana = RelicManager.is_feature_unlocked("arcana_system")
+	_arcana_btn.disabled = not has_arcana
+	if has_arcana:
 		_arcana_btn.button_pressed = EventBus.get_config("arcanas_enabled", true)
 	
 	if _inverse_btn:
-		_inverse_btn.disabled = not RelicManager.has_relic("gracia_mirror")
+		_inverse_btn.disabled = not RelicManager.is_feature_unlocked("inverse_mode")
 	if _random_events_btn:
-		_random_events_btn.disabled = not RelicManager.has_relic("trisection")
+		_random_events_btn.disabled = not RelicManager.is_feature_unlocked("random_events")
 	if _random_upgrade_btn:
-		_random_upgrade_btn.disabled = not RelicManager.has_relic("brave_story")
+		_random_upgrade_btn.disabled = not RelicManager.is_feature_unlocked("random_upgrade")
 
 
 func _rebuild_cards():

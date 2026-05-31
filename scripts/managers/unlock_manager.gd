@@ -132,6 +132,12 @@ func on_relic_collected(relic_id: String):
 	_on_relic_collected(relic_id)
 
 
+# Re-evaluate all relic-owned unlock conditions.
+# Called at stage start to catch relics collected in previous runs.
+func reevaluate_relic_conditions():
+	_run_check(UnlockTypes.ConditionType.RELIC_OWNED)
+
+
 func on_boss_defeated(stage_id: int):
 	if PowerUpManager and not PowerUpManager.has_hyper(stage_id):
 		PowerUpManager.unlock_hyper(stage_id)

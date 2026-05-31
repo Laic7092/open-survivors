@@ -287,6 +287,107 @@ static func _load_types():
 			1.0, true,
 			0.0, 0.0, 0.0
 		),
+		# ── Inlaid Library enemies (IDs 23-32) ──
+		# 23 — Dust Elemental (slow sturdy ground)
+		EnemyTypeData.new(
+			23, "Dust Elemental",
+			30.0, 30.0, 12.0, 1.3, 4,
+			Color(0.55, 0.4, 0.25), Color(0.7, 0.55, 0.35), 2.0,
+			"circle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.2, false,
+			1.5, 0.02, 0.0
+		),
+		# 24 — Musc Musc (floating ghost)
+		EnemyTypeData.new(
+			24, "Musc Musc",
+			12.0, 50.0, 8.0, 0.9, 3,
+			Color(0.5, 0.1, 0.5), Color(0.7, 0.2, 0.7), 1.5,
+			"circle", "chase",
+			true, 3.0, 200.0, 0.6,
+			0.0, false,
+			1.0, 0.0, 0.0
+		),
+		# 25 — Medusa Head (stationary ranged)
+		EnemyTypeData.new(
+			25, "Medusa Head",
+			20.0, 0.0, 15.0, 1.0, 5,
+			Color(0.2, 0.6, 0.2), Color(0.3, 0.8, 0.3), 2.0,
+			"diamond", "stationary",
+			true, 2.5, 250.0, 0.8,
+			0.4, false,
+			1.5, 0.02, 0.0
+		),
+		# 26 — Mummy (slow melee)
+		EnemyTypeData.new(
+			26, "Mummy",
+			25.0, 35.0, 12.0, 1.2, 4,
+			Color(0.6, 0.5, 0.3), Color(0.7, 0.6, 0.4), 2.0,
+			"hexagon", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.3, false,
+			1.2, 0.01, 0.0
+		),
+		# 27 — Lionhead (fast aggressive)
+		EnemyTypeData.new(
+			27, "Lionhead",
+			40.0, 45.0, 18.0, 1.4, 8,
+			Color(0.8, 0.4, 0.1), Color(0.9, 0.55, 0.15), 2.5,
+			"triangle", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.2, false,
+			2.0, 0.03, 0.0
+		),
+		# 28 — Dullahan (erratic floating hand)
+		EnemyTypeData.new(
+			28, "Dullahan",
+			15.0, 60.0, 10.0, 0.8, 3,
+			Color(0.5, 0.5, 0.5), Color(0.65, 0.65, 0.65), 1.5,
+			"triangle", "wavy",
+			false, 0.0, 0.0, 0.0,
+			0.0, false,
+			0.8, 0.0, 0.0
+		),
+		# 29 — Apprentice Witch (ranged caster)
+		EnemyTypeData.new(
+			29, "Apprentice Witch",
+			18.0, 40.0, 14.0, 1.0, 5,
+			Color(0.5, 0.2, 0.6), Color(0.7, 0.3, 0.8), 2.0,
+			"diamond", "chase",
+			true, 2.0, 220.0, 0.7,
+			0.1, false,
+			1.5, 0.01, 0.0
+		),
+		# 30 — Elite Dullahan (fast tough hand)
+		EnemyTypeData.new(
+			30, "Elite Dullahan",
+			30.0, 70.0, 16.0, 1.1, 6,
+			Color(0.3, 0.3, 0.3), Color(0.5, 0.5, 0.5), 2.0,
+			"triangle", "wavy",
+			false, 0.0, 0.0, 0.0,
+			0.2, false,
+			2.0, 0.03, 0.0
+		),
+		# 31 — Glowing Skull (fast fragile)
+		EnemyTypeData.new(
+			31, "Glowing Skull",
+			12.0, 55.0, 8.0, 0.7, 3,
+			Color(0.8, 0.8, 0.6), Color(1.0, 1.0, 0.8), 1.5,
+			"diamond", "chase",
+			false, 0.0, 0.0, 0.0,
+			0.0, false,
+			0.8, 0.0, 0.0
+		),
+		# 32 — Giant Medusa (large stationary ranged, semi-boss)
+		EnemyTypeData.new(
+			32, "Giant Medusa",
+			60.0, 0.0, 20.0, 2.0, 15,
+			Color(0.1, 0.5, 0.1), Color(0.2, 0.7, 0.2), 2.5,
+			"hexagon", "stationary",
+			true, 2.0, 280.0, 1.0,
+			0.6, false,
+			3.0, 0.05, 0.0
+		),
 	]
 
 	# Spawn weight overrides (lower = much rarer)
@@ -301,6 +402,13 @@ static func _load_types():
 			20: t.spawn_weight = 0.01   # Venus — very rare
 			21: t.spawn_weight = 0.005  # Giant Blue Venus — stage boss only
 			22: t.spawn_weight = 0.0    # The Reaper — never random spawn
+			# Inlaid Library spawn weights
+			25: t.spawn_weight = 0.03   # Medusa Head — rare (stationary ranged)
+			27: t.spawn_weight = 0.10   # Lionhead — uncommon
+			28: t.spawn_weight = 0.15   # Dullahan — uncommon
+			30: t.spawn_weight = 0.08   # Elite Dullahan — rarer
+			31: t.spawn_weight = 0.15   # Glowing Skull — uncommon
+			32: t.spawn_weight = 0.01   # Giant Medusa — rare semi-boss
 
 
 static func get_type(id: int) -> EnemyTypeData:
@@ -322,127 +430,7 @@ static func get_types_for_stage(stage_id: int, game_time: float) -> Array[int]:
 	_ensure_loaded()
 	var pool: Array[int] = []
 
-	var early := game_time < 180.0
-	var mid := game_time >= 180.0 and game_time < 480.0
-	var late := game_time >= 480.0
-
 	match stage_id:
-		0:  # Mad Forest — VS timeline
-			if game_time < 60.0:
-				pool = [11, 12]                # Bats only (0:00-1:00)
-			elif game_time < 120.0:
-				pool = [8, 11, 12]             # +Zombie (1:00-2:00)
-			elif game_time < 180.0:
-				pool = [9, 11, 12]             # +Skeleton (2:00-3:00)
-			elif game_time < 240.0:
-				pool = [8, 9, 10]              # Skeletons + Ghosts
-			elif game_time < 300.0:
-				pool = [15, 16]                # Mudmen (5:00)
-			elif game_time < 480.0:
-				pool = [8, 9, 10, 15, 16]      # Mid: all basic
-			elif game_time < 720.0:
-				pool = [9, 10, 15, 16, 18]     # +Werewolf (12:00)
-			elif game_time < 1020.0:
-				pool = [10, 13, 15, 16, 18, 19]  # +Giant Bat, Big Mummy (17:00)
-			elif game_time < 1260.0:
-				pool = [13, 15, 16, 18, 19, 20]  # +Venus (21:00)
-			else:
-				pool = [8, 13, 15, 16, 18, 19, 20]  # late (25:00+)
-		1:  # Inlaid Library — ranged focus
-			if early:
-				pool = [0, 3]           # Wraith + Cursed Eye
-			elif mid:
-				pool = [0, 1, 3]        # +Viper
-			elif late:
-				pool = [0, 1, 2, 3, 4]  # full
-		2:  # Il Molise — swarm + tanks
-			if early:
-				pool = [0, 1]
-			elif mid:
-				pool = [0, 1, 2, 4]
-			elif late:
-				pool = [0, 1, 2, 4]
-		3:  # Dairy Plant — mixed
-			if early:
-				pool = [0, 1, 4]
-			elif mid:
-				pool = [0, 1, 2, 4]
-			elif late:
-				pool = [0, 1, 2, 3, 4]
-		4:  # Gallo Tower — magic-heavy
-			if early:
-				pool = [1, 3]           # Viper + Cursed Eye
-			elif mid:
-				pool = [0, 1, 3, 4]
-			elif late:
-				pool = [0, 1, 2, 3, 4]
-		5:  # Cappella Magna — full bestiary
-			if early:
-				pool = [1, 2, 3, 4]
-			elif mid:
-				pool = [0, 1, 2, 3, 4]
-			elif late:
-				pool = [1, 2, 3, 4]     # drop easy Wraiths
-		6:  # Moongolow — aggressive
-			if early:
-				pool = [1, 2, 4]
-			elif mid:
-				pool = [0, 1, 2, 3, 4]
-			elif late:
-				pool = [1, 2, 3, 4]
-		7:  # Green Acres — all mix
-			if early:
-				pool = [0, 1, 2, 3]
-			elif mid:
-				pool = [0, 1, 2, 3, 4]
-			elif late:
-				pool = [0, 2, 3, 4]
-		8:  # The Bone Zone — fast/aggressive
-			if early:
-				pool = [1, 4]
-			elif mid:
-				pool = [0, 1, 2, 4]
-			elif late:
-				pool = [1, 2, 4]
-		9:  # Boss Rash
-			pool = [5, 6, 7]
-		10: # Whiteout
-			if early:
-				pool = [0, 1, 4]
-			elif mid:
-				pool = [0, 1, 2, 4]
-			elif late:
-				pool = [0, 1, 2, 3, 4]
-		11: # The Lycaeum
-			if early:
-				pool = [0, 3, 4]
-			elif mid:
-				pool = [0, 1, 3, 4]
-			elif late:
-				pool = [0, 1, 2, 3, 4]
-		12: # The Coop — melee swarms
-			if early:
-				pool = [0, 1]
-			elif mid:
-				pool = [0, 1, 4]
-			elif late:
-				pool = [0, 1, 2, 4]
-		13: # Space 54 — chaotic
-			pool = [0, 1, 2, 3, 4]
-		14: # Bat Country — extreme
-			if early:
-				pool = [1, 4]
-			elif mid:
-				pool = [0, 1, 2, 4]
-			elif late:
-				pool = [0, 1, 2, 3, 4]
-		15: # Eudaimonia Machine — endgame
-			if early:
-				pool = [1, 2, 3, 4]
-			elif mid:
-				pool = [1, 2, 3, 4, 5]
-			elif late:
-				pool = [1, 2, 3, 4, 5]
 		_:
 			pool = [0, 1, 2, 3, 4]
 

@@ -575,6 +575,11 @@ func get_max_level(t: int) -> int:
 	return w.max_level if w else DataRegistry.items().item_max_level(t)
 
 
+func is_evolved(t: int) -> bool:
+	var w = _find_weapon(t)
+	return w != null and w.evolved
+
+
 func get_count() -> int:
 	return weapons.size()
 
