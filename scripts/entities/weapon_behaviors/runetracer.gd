@@ -108,7 +108,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		player.get_parent().add_child(p)
 		var _hit2 = Node2D.new()
 		_hit2.set_script(weapon_manager._proj_mover_script)
-		_hit2.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 6.0, -1)
+		_hit2.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(area * 0.8, 12.0), -1)
 		p.add_child(_hit2)
 
 		# ── 开火闪光 ──

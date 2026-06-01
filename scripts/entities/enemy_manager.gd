@@ -71,11 +71,24 @@ var _proxy_pool: Array[EnemyProxy] = []
 var _proxy_pool_idx: int = 0
 var _frame_n: int = 0
 
+# Spatial grid for proximity queries
+const GRID_CELL: float = 64.0
+var _grid: Dictionary = {}  # Vector2i -> Array[int]
+var _grid_frame: int = -1
+
+# MultiMesh rendering — 固定槽位（每个敌人对应固定 mm 实例索引，支持跳帧更新）
+const MULTIMESH_CAPACITY = 500
+var _mm_slot: PackedInt32Array = []
+var _mm_shape: PackedByteArray = []
+var _mm_free_slots: Array = [[], [], [], []]
+var _mm_next_slot: PackedInt32Array = [0, 0, 0, 0]
+
 
 func setup(p: Node2D, gs: Node, cam: Node):
 	player = p
 	game_state = gs
 	camera_ctrl = cam
+	_init_multimesh()
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -110,6 +123,10 @@ func _resize(n: int):
 	_wavy_time.resize(n); _hit_flash.resize(n); _freeze_timer.resize(n)
 	_debuff_slow.resize(n); _debuff_timer.resize(n)
 	_kb_resist_reduce.resize(n); _kb_resist_reduce_timer.resize(n)
+	var prev = _mm_slot.size()
+	_mm_slot.resize(n); _mm_shape.resize(n)
+	for i in range(prev, n):
+		_mm_slot[i] = -1
 	_knockback_resist.resize(n); _freeze_resist.resize(n); _drop_xp_mult.resize(n)
 	_outline_width.resize(n); _color.resize(n); _outline_color.resize(n)
 	_shape.resize(n); _behavior.resize(n); _alive.resize(n)
@@ -154,6 +171,10 @@ func spawn(type_id: int, pos: Vector2,
 	_knockback_resist[id] = t.knockback_resist
 	_drop_xp_mult[id] = t.drop_xp_mult
 	_freeze_resist[id] = t.freeze_resist
+
+	# Allocate MultiMesh slot
+	_mm_shape[id] = _shape[id]
+	_mm_slot[id] = _alloc_mm_slot(_shape[id])
 
 	# Scale difficulty
 	var diff_factor = diff - 1.0
@@ -232,7 +253,9 @@ func kill(id: int):
 		_boss_count = maxi(0, _boss_count - 1)
 		boss_count_changed.emit(_boss_count)
 
-	# Free slot
+	# Free MultiMesh slot
+	_free_mm_slot(id)
+	# Free entity slot
 	_free(id)
 
 
@@ -258,6 +281,11 @@ func _process(delta):
 	var n = _pos.size()
 	for i in n:
 		if _alive[i] == 0:
+			continue
+
+		# ── Death check (merged, catches all states including frozen) ──
+		if _health[i] <= 0:
+			kill(i)
 			continue
 
 		# ── Frozen ──
@@ -318,6 +346,11 @@ func _process(delta):
 		var my_turn = (i + _frame_n) % 3 == 0
 		var effective_speed = speed_mod
 
+		# ── 近战减速：越靠近 Player 越慢 → 分散到更多格子，提升空间网格性能 ──
+		# 近战减速（直接用 dist_sq 避免 sqrt）
+		var crowding_factor = clampf((dist_sq - 3600.0) / 28800.0, 0.3, 1.0)
+		effective_speed *= crowding_factor
+
 		# Stationary or off-turn
 		if speed_mod <= 0.0 or not my_turn:
 			if speed_mod <= 0.0:
@@ -337,14 +370,7 @@ func _process(delta):
 		_cached_vel[i] = _vel[i]
 		_pos[i] += (_vel[i] + _kb_vel[i]) * delta
 
-	# ── Death check (after movement) ──
-	for i in n:
-		if _alive[i] == 0:
-			continue
-		if _health[i] <= 0:
-			kill(i)
-
-	queue_redraw()
+	_update_multimesh()
 
 
 func _teleport_boss(id: int):
@@ -445,15 +471,135 @@ func _spawn_explosion_fx(world_pos: Vector2, radius: float, color: Color):
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  DRAW
+#  RENDERING — MultiMesh (批量渲染)
 # ═══════════════════════════════════════════════════════════════════
 
-func _draw():
+# 每种形状独立 Mesh + MultiMeshInstance2D（outline + fill）
+var _mm_outline = []  # [shape]->MultiMesh
+var _mm_fill = []
+var _mmi_outline = []
+var _mmi_fill = []
+
+
+func _build_shape_mesh(shape: int) -> Mesh:
+	var mesh = ArrayMesh.new()
+	var verts = PackedVector3Array()
+	var idx = PackedInt32Array()
+	match shape:
+		1:  # triangle — 指向 -Y，由 transform.rotation 转向玩家
+			for j in range(3):
+				var a = -PI / 2.0 + float(j) * TAU / 3.0
+				verts.append(Vector3(cos(a), sin(a), 0))
+			idx.append(0); idx.append(1); idx.append(2)
+		2:  # diamond
+			for d in [Vector2(0, -1), Vector2(0.7, 0), Vector2(0, 1), Vector2(-0.7, 0)]:
+				verts.append(Vector3(d.x, d.y, 0))
+			for i in [0, 1, 2, 0, 2, 3]:
+				idx.append(i)
+		3:  # hexagon
+			for j in range(6):
+				var a = float(j) * TAU / 6.0 - PI / 2.0
+				verts.append(Vector3(cos(a), sin(a), 0))
+			for i in [0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5]:
+				idx.append(i)
+		_:  # 0 circle — 16 段三角扇
+			verts.append(Vector3(0, 0, 0))
+			for i in range(17):
+				var a = float(i) / 16.0 * TAU
+				verts.append(Vector3(cos(a), sin(a), 0))
+			for i in range(16):
+				idx.append(0); idx.append(i + 1); idx.append(i + 2)
+	var arrays = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_INDEX] = idx
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+func _alloc_mm_slot(shape: int) -> int:
+	if _mm_free_slots[shape].size() > 0:
+		return _mm_free_slots[shape].pop_back()
+	var slot = _mm_next_slot[shape]
+	_mm_next_slot[shape] = slot + 1
+	# 如果超出当前容量，扩展 MultiMesh
+	var cap = _mm_fill[shape].instance_count
+	if slot >= cap:
+		var new_cap = cap + 64
+		_mm_fill[shape].instance_count = new_cap
+		_mm_outline[shape].instance_count = new_cap
+	# 更新可见计数
+	_mm_fill[shape].visible_instance_count = slot + 1
+	_mm_outline[shape].visible_instance_count = slot + 1
+	return slot
+
+
+func _free_mm_slot(id: int):
+	var slot = _mm_slot[id]
+	if slot < 0:
+		return
+	var s = _mm_shape[id]
+	if s < 0 or s > 3:
+		return
+	var off = Transform2D(0, Vector2(0, 0), 0, Vector2(-9999, -9999))
+	_mm_fill[s].set_instance_transform_2d(slot, off)
+	_mm_fill[s].set_instance_color(slot, Color(0, 0, 0, 0))
+	_mm_outline[s].set_instance_transform_2d(slot, off)
+	_mm_outline[s].set_instance_color(slot, Color(0, 0, 0, 0))
+	_mm_free_slots[s].append(slot)
+	_mm_slot[id] = -1
+
+
+func _init_multimesh():
+	for shape in range(4):
+		var mesh = _build_shape_mesh(shape)
+		for layer_idx in range(2):
+			var mm = MultiMesh.new()
+			mm.transform_format = MultiMesh.TRANSFORM_2D
+			mm.use_colors = true
+			mm.mesh = mesh
+			mm.instance_count = MULTIMESH_CAPACITY
+
+			var mmi = MultiMeshInstance2D.new()
+			mmi.multimesh = mm
+			mmi.name = "EnemyMM_s%d_%s" % [shape, "outline" if layer_idx == 0 else "fill"]
+			add_child(mmi)
+
+			if layer_idx == 0:
+				_mm_outline.append(mm)
+				_mmi_outline.append(mmi)
+			else:
+				_mm_fill.append(mm)
+				_mmi_fill.append(mmi)
+
+	# 初始化为不可见
+	var off = Transform2D(0, Vector2(0, 0), 0, Vector2(-9999, -9999))
+	var zero = Color(0, 0, 0, 0)
+	for shape in range(4):
+		for i in MULTIMESH_CAPACITY:
+			_mm_outline[shape].set_instance_transform_2d(i, off)
+			_mm_outline[shape].set_instance_color(i, zero)
+			_mm_fill[shape].set_instance_transform_2d(i, off)
+			_mm_fill[shape].set_instance_color(i, zero)
+
+
+func _update_multimesh():
 	if not is_instance_valid(player):
 		return
+	if _mm_fill[0] == null:
+		return
 	var player_pos = player.global_position
-	var cam = _get_camera()
 	var render_dist_sq = (CULL_DIST * (game_state.map_scale if game_state else 1.0)) ** 2
+	var close_sq = 350.0 * 350.0  # 350px 以内每帧更新（原 200px）
+
+	# 负载均衡：敌人数越多，远程敌人更新频率越低
+	var stride = 1
+	if _alive_count > 250:
+		stride = 4
+	elif _alive_count > 120:
+		stride = 3
+	elif _alive_count > 60:
+		stride = 2
 
 	var n = _pos.size()
 	for i in n:
@@ -463,60 +609,35 @@ func _draw():
 		if dist_sq > render_dist_sq:
 			continue
 
+		# 近战敌人（350px 内）每帧更新，远程敌人按 stride 跳帧
+		if stride > 1 and dist_sq > close_sq and (i + _frame_n) % stride != 0:
+			continue
+
+		var slot = _mm_slot[i]
+		if slot < 0:
+			continue
+
 		var r = BASE_RADIUS * _scale_arr[i]
 		var col = _color[i]
 		var ocol = _outline_color[i]
 		var ow = _outline_width[i]
+		var s = _shape[i]
 
 		# Hit flash
 		if _hit_flash[i] > 0.0:
 			col = Color(3.0, 3.0, 3.0, 1.0)
 
-		match _shape[i]:
-			1: _draw_triangle(i, r, col, ocol, ow, player_pos)
-			2: _draw_diamond(i, r, col, ocol, ow)
-			3: _draw_hexagon(i, r, col, ocol, ow)
-			_:  # 0 circle
-				draw_circle(_pos[i] - global_position, r, col)
-				draw_circle(_pos[i] - global_position, r, ocol, false, ow)
+		var pos = _pos[i]
+		var rot = 0.0
+		if s == 1:  # triangle 指向玩家
+			rot = (player_pos - pos).angle()
+		var t_fill = Transform2D(rot, Vector2(r, r), 0, Vector2(pos.x, pos.y))
+		var t_out = Transform2D(rot, Vector2(r + ow, r + ow), 0, Vector2(pos.x, pos.y))
 
-
-func _draw_triangle(i: int, r: float, col: Color, ocol: Color, ow: float, player_pos: Vector2):
-	var angle = (player_pos - _pos[i]).angle()
-	var pts = PackedVector2Array()
-	for j in range(3):
-		var a = angle + float(j) * TAU / 3.0 - PI / 2.0
-		pts.append(_pos[i] + Vector2(cos(a), sin(a)) * r - global_position)
-	draw_polygon(pts, [col])
-	for j in range(3):
-		var n = (j + 1) % 3
-		draw_line(pts[j], pts[n], ocol, ow)
-
-
-func _draw_diamond(i: int, r: float, col: Color, ocol: Color, ow: float):
-	var offset = _pos[i] - global_position
-	var pts = PackedVector2Array([
-		offset + Vector2(0, -r),
-		offset + Vector2(r * 0.7, 0),
-		offset + Vector2(0, r),
-		offset + Vector2(-r * 0.7, 0),
-	])
-	draw_polygon(pts, [col])
-	for j in range(4):
-		var n = (j + 1) % 4
-		draw_line(pts[j], pts[n], ocol, ow)
-
-
-func _draw_hexagon(i: int, r: float, col: Color, ocol: Color, ow: float):
-	var offset = _pos[i] - global_position
-	var pts = PackedVector2Array()
-	for j in range(6):
-		var a = float(j) * TAU / 6.0 - PI / 2.0
-		pts.append(offset + Vector2(cos(a), sin(a)) * r)
-	draw_polygon(pts, [col])
-	for j in range(6):
-		var n = (j + 1) % 6
-		draw_line(pts[j], pts[n], ocol, ow)
+		_mm_fill[s].set_instance_transform_2d(slot, t_fill)
+		_mm_fill[s].set_instance_color(slot, col)
+		_mm_outline[s].set_instance_transform_2d(slot, t_out)
+		_mm_outline[s].set_instance_color(slot, ocol)
 
 
 func _get_camera() -> Camera2D:
@@ -683,6 +804,50 @@ func get_boss_count() -> int:
 
 # ── Proximity queries for weapons ──
 
+func get_capacity() -> int:
+	return _pos.size()
+
+
+func _ensure_grid():
+	if _grid_frame >= _frame_n:
+		return
+	# 隔帧重建：敌人 2 帧内位移 < 5px，对碰撞检测无影响
+	if _grid_frame >= _frame_n - 1:
+		return
+	_grid_frame = _frame_n
+	_grid.clear()
+	var n = _pos.size()
+	for i in n:
+		if _alive[i] == 0 or (_meta[i] & (1 << Meta.CULLED)):
+			continue
+		var cell = Vector2i(int(_pos[i].x / GRID_CELL), int(_pos[i].y / GRID_CELL))
+		if not _grid.has(cell):
+			_grid[cell] = []
+		_grid[cell].append(i)
+
+
+func get_nearest_with_mask(center: Vector2, max_radius: float, hit_mask: PackedByteArray) -> int:
+	_ensure_grid()
+	var r2 = max_radius * max_radius
+	var best = -1
+	var best_d = r2
+	var cell = Vector2i(int(center.x / GRID_CELL), int(center.y / GRID_CELL))
+
+	# 隔帧重建的网格足以覆盖小半径碰撞检测
+	var cr = ceili(max_radius / GRID_CELL)
+	for dx in range(-cr, cr + 1):
+		for dy in range(-cr, cr + 1):
+			var ids: Array = _grid.get(Vector2i(cell.x + dx, cell.y + dy), [])
+			for eid in ids:
+				if eid >= hit_mask.size() or hit_mask[eid]:
+					continue
+				var d = _pos[eid].distance_squared_to(center)
+				if d <= best_d:
+					best = eid
+					best_d = d
+	return best
+
+
 func query_circle(center: Vector2, radius: float) -> Array[int]:
 
 	var r2 = radius * radius
@@ -727,13 +892,21 @@ func get_nearest_with_exclude(center: Vector2, max_radius: float, exclude: Array
 
 
 func contact_damage_at(center: Vector2, player_radius: float) -> float:
-	var r2 = (player_radius + BASE_RADIUS * 2) ** 2
-	var n = _pos.size()
-	for i in n:
-		if _alive[i] == 0 or _flags[i] & (1 << Flag.FROZEN):
-			continue
-		if _pos[i].distance_squared_to(center) <= r2:
-			return _contact_damage[i]
+	_ensure_grid()
+	var max_r = player_radius + BASE_RADIUS * 2
+	var r2 = max_r * max_r
+	var cell = Vector2i(int(center.x / GRID_CELL), int(center.y / GRID_CELL))
+
+	# 玩家碰撞半径通常 < 64px（GRID_CELL），查中心格 + 相邻格
+	var cr = ceili(max_r / GRID_CELL)
+	for dx in range(-cr, cr + 1):
+		for dy in range(-cr, cr + 1):
+			var ids: Array = _grid.get(Vector2i(cell.x + dx, cell.y + dy), [])
+			for eid in ids:
+				if _flags[eid] & (1 << Flag.FROZEN):
+					continue
+				if _pos[eid].distance_squared_to(center) <= r2:
+					return _contact_damage[eid]
 	return 0.0
 
 

@@ -106,8 +106,6 @@ func _ready():
 	hs.shape = hc
 	hurtbox.add_child(hs)
 	add_child(hurtbox)
-	# body_entered removed; contact damage handled in _process via EnemyManager
-	hurtbox.area_entered.connect(_on_hurt_area)
 
 
 
@@ -585,51 +583,8 @@ func _attract_gems(delta: float):
 
 # ── Hurt / Health ────────────────────────────────────────────────────
 
-func _on_hurt(body: Node):
-	return  # 测试无敌
-	if health <= 0 or invincible > 0:
-		return
-	if body.has_method("get_contact_damage"):
-		health -= max(body.get_contact_damage() * (1.0 - armor), 1.0)
-		invincible = invincible_duration
-		hurt.emit()
-		var dead = false
-		if health <= 0:
-			if revivals > 0:
-				_revive()
-				return
-			health = 0
-			dead = true
-			died.emit()
-		else:
-			AudioManager.play_sfx("player_hurt")
-		if not dead:
-			health_changed.emit(health, max_health)
-
-
-func _on_hurt_area(area: Area2D):
-	if health <= 0 or invincible > 0:
-		return
-	if area.has_method("get_projectile_damage"):
-		var dmg = area.get_projectile_damage()
-		health -= max(dmg * (1.0 - armor * 0.5), 1.0)
-		invincible = invincible_duration
-		hurt.emit()
-		var dead = false
-		if health <= 0:
-			if revivals > 0:
-				_revive()
-				return
-			health = 0
-			dead = true
-			died.emit()
-		else:
-			AudioManager.play_sfx("player_hurt")
-		if not dead:
-			health_changed.emit(health, max_health)
-
-
 func _check_contact_damage(delta: float):
+	return  # temp: 无敌模式，测试性能
 	if health <= 0 or invincible > 0:
 		return
 	if _enemy_manager == null:

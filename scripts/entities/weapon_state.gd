@@ -46,7 +46,7 @@ static var _BASE = {
 	ItemTypes.Type.PENTAGRAM: {"cd": 90.0, "dmg": 0.0, "area": 400.0, "speed": 0.0, "amt": 1},
 	ItemTypes.Type.PEACHONE: {"cd": 1.0, "dmg": 10.0, "area": 30.0, "speed": 200.0, "amt": 4},
 	ItemTypes.Type.EBONY_WINGS: {"cd": 1.0, "dmg": 10.0, "area": 30.0, "speed": 200.0, "amt": 4},
-	ItemTypes.Type.PHIERA_DER_TUPHELLO: {"cd": 1.4, "dmg": 5.0, "area": 8.0, "speed": 500.0, "amt": 1},
+	ItemTypes.Type.PHIERA_DER_TUPHELLO: {"cd": 1.4, "dmg": 5.0, "area": 8.0, "speed": 500.0, "amt": 1, "pierce": 3},
 	ItemTypes.Type.EIGHT_THE_SPARROW: {"cd": 1.4, "dmg": 5.0, "area": 8.0, "speed": 500.0, "amt": 1},
 	ItemTypes.Type.GATTI_AMARI: {"cd": 5.0, "dmg": 10.0, "area": 20.0, "speed": 150.0, "amt": 1},
 	ItemTypes.Type.SONG_OF_MANA: {"cd": 2.0, "dmg": 10.0, "area": 30.0, "speed": 0.0, "amt": 1},

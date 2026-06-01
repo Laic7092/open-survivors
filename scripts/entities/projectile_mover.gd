@@ -14,7 +14,7 @@ var _enemy_manager: Node = null
 var _damage: float = 0.0
 var _hit_radius: float = 6.0
 var _pierce: int = 0
-var _hit_ids: Array[int] = []
+var _hit_mask: PackedByteArray = []
 var _hit_callable: Callable = Callable()
 
 
@@ -30,6 +30,11 @@ func set_hit_config(mgr: Node, dmg: float, radius: float = 6.0, pierce: int = 0,
 	_hit_radius = radius
 	_pierce = pierce
 	_hit_callable = callback
+	_hit_mask.resize(0)
+	# Pre-size mask to current enemy capacity (avoids per-frame resize checks)
+	var cap = mgr.get_capacity() if mgr and mgr.has_method("get_capacity") else 0
+	if cap > 0:
+		_hit_mask.resize(cap)
 
 
 func _physics_process(delta):
@@ -52,24 +57,30 @@ func _physics_process(delta):
 	# Enemy hit polling (replaces body_entered)
 	if _enemy_manager and _damage > 0:
 		var pos = parent.global_position
-		var eid = _enemy_manager.get_nearest_with_exclude(pos, _hit_radius, _hit_ids)
+
+		var eid = _enemy_manager.get_nearest_with_mask(pos, _hit_radius, _hit_mask)
 		if eid >= 0:
 			if _hit_callable.is_valid():
 				var consumed = _hit_callable.call(eid, parent, _damage)
 				if consumed:
-					_hit_ids.append(eid)
-					_pierce -= 1
-					if _pierce <= 0:
+					if _pierce == 0:
 						_hit_registered = true
 						parent.queue_free()
+					else:
+						if _pierce > 0:
+							_pierce -= 1
+						if eid < _hit_mask.size():
+							_hit_mask[eid] = 1
 			else:
 				_enemy_manager.damage(eid, _damage, Vector2.ZERO)
-				if _pierce <= 0:
+				if _pierce == 0:
 					_hit_registered = true
 					parent.queue_free()
 				else:
-					_pierce -= 1
-					_hit_ids.append(eid)
+					if _pierce > 0:
+						_pierce -= 1
+					if eid < _hit_mask.size():
+						_hit_mask[eid] = 1
 
 
 func mark_hit():

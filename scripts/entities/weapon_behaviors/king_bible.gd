@@ -33,6 +33,13 @@ static func fire(w, weapon_manager, player, get_enemies):
 		p.set_meta("orbit_radius", orbit_radius)
 		p.set_meta("orbit_dmg", dmg)
 		player.get_parent().add_child(p)
-		p.body_entered.connect(weapon_manager._on_proj_hit.bind(p, dmg))
+
+		# 轮询检测（敌人是数据驱动，body_entered 不触发）
+		var poll = Node2D.new()
+		poll.set_script(weapon_manager._proj_mover_script)
+		poll.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(w.area * player.area_mult * 0.5, 6.0), 999)
+		poll._max_lifetime = dur + 1.0
+		p.add_child(poll)
+
 		weapon_manager._bible_projectiles.append(p)
 		player.get_tree().create_timer(dur).timeout.connect(weapon_manager._on_bible_expire.bind(p))

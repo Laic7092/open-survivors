@@ -39,19 +39,38 @@ static func fire(w, weapon_manager, player, get_enemies):
 
 	zone.global_position = player.global_position + Vector2(0, 0)
 	player.get_parent().add_child(zone)
+
+	# ── 视觉淡出 ──
 	var tw = player.create_tween()
 	for child in zone.get_children():
 		if child is ColorRect:
 			tw.parallel().tween_property(child, "modulate:a", 0.0, dur)
-	var zone_id = zone.get_instance_id()
-	tw.finished.connect(func():
-		var _x = instance_from_id(zone_id)
-		if _x:
-			_x.queue_free()
+
+	# ── 命中检测：轮询 EnemyManager（敌人是数据驱动，无 physics body）──
+	var tick_timer = Timer.new()
+	tick_timer.wait_time = 0.1
+	tick_timer.autostart = true
+	zone.add_child(tick_timer)
+	tick_timer.timeout.connect(func():
+		if not is_instance_valid(zone):
+			return
+		var enemies = get_enemies.call()
+		var zpos = zone.global_position
+		var hw = area
+		var hh = height / 2.0
+		for e in enemies:
+			if not is_instance_valid(e):
+				continue
+			var epos = e.global_position
+			if abs(epos.x - zpos.x) <= hw and abs(epos.y - zpos.y) <= hh:
+				if e.has_method("take_damage"):
+					e.take_damage(dmg, Vector2.ZERO)
 	)
 
-static func _on_vine_hit(body, zone, dmg):
-	if not is_instance_valid(body) or not is_instance_valid(zone):
-		return
-	if body.has_method("take_damage"):
-		body.take_damage(dmg, Vector2.ZERO)
+	# ── 生命周期清理 ──
+	player.get_tree().create_timer(dur).timeout.connect(func():
+		if is_instance_valid(tick_timer):
+			tick_timer.queue_free()
+		if is_instance_valid(zone):
+			zone.queue_free()
+	)

@@ -11,7 +11,6 @@ static func fire(w, weapon_manager, player, get_enemies):
 
 static func _fire_axe_normal(w, dmg: float, area: float, weapon_manager, player, get_enemies):
 	var count = weapon_manager.get_projectile_count(w.type)
-	# Wiki: "subsequent axes from Amount are thrown in quick succession towards the direction the player is facing in progressively wider arcs"
 	var spawn_dir = player.direction if player.direction.length() > 0 else Vector2.DOWN
 	var h_dir = Vector2(spawn_dir.x, 0.0)
 	if h_dir.length_squared() < 0.01:
@@ -34,9 +33,14 @@ static func _fire_axe_normal(w, dmg: float, area: float, weapon_manager, player,
 		p.global_position = player.global_position + spawn_dir * 20 + side
 		p.rotation = h_dir.angle()
 		player.get_parent().add_child(p)
-		# Wiki: "Each axe can initially hit up to three enemies"
-		p.set_meta("pierce_remaining", w.pierce)
-		p.body_entered.connect(_on_axe_hit.bind(p, dmg))
+
+		# 轮询检测（敌人是数据驱动，body_entered 不触发）
+		var poll = Node2D.new()
+		poll.set_script(weapon_manager._proj_mover_script)
+		poll.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(area, 6.0), w.pierce)
+		poll.set_movement(Vector2.ZERO, 2.0)
+		p.add_child(poll)
+
 		var apex = player.global_position + h_dir * 130 + Vector2(0, -180) + side
 		var tw = player.create_tween()
 		tw.set_parallel(true)
@@ -65,9 +69,14 @@ static func _fire_death_spiral(w, dmg: float, area: float, weapon_manager, playe
 		p.global_position = player.global_position + spawn_dir * 10
 		p.rotation = angle
 		player.get_parent().add_child(p)
-		# Wiki: "Each axe can initially hit up to three enemies"
-		p.set_meta("pierce_remaining", w.pierce)
-		p.body_entered.connect(_on_axe_hit.bind(p, dmg))
+
+		# 轮询检测（敌人是数据驱动，body_entered 不触发）
+		var poll = Node2D.new()
+		poll.set_script(weapon_manager._proj_mover_script)
+		poll.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(area * 1.2, 8.0), w.pierce)
+		poll.set_movement(Vector2.ZERO, 2.0)
+		p.add_child(poll)
+
 		var mid = player.global_position + spawn_dir * 160 + Vector2(0, -120)
 		var tw = player.create_tween()
 		tw.set_parallel(true)
@@ -76,21 +85,7 @@ static func _fire_death_spiral(w, dmg: float, area: float, weapon_manager, playe
 		tw.finished.connect(_on_axe_return.bind(p, area))
 
 
-# ── Custom pierce-aware hit callback ──
-static func _on_axe_hit(body, proj, dmg: float):
-	if not is_instance_valid(body) or not is_instance_valid(proj):
-		return
-	if body.has_method("take_damage"):
-		body.take_damage(dmg, Vector2.ZERO)
-	var remaining = proj.get_meta("pierce_remaining", 3) - 1
-	if remaining <= 0:
-		if is_instance_valid(proj):
-			proj.queue_free()
-	else:
-		proj.set_meta("pierce_remaining", remaining)
-
-
-# ── Arc-done callback (replace weapon_manager._on_axe_arc_done) ──
+# ── Arc-done callback ──
 static func _on_axe_arc_done(proj, area: float):
 	if not is_instance_valid(proj):
 		return
@@ -108,7 +103,7 @@ static func _on_axe_arc_done(proj, area: float):
 	tw.finished.connect(_on_tween_done.bind(proj))
 
 
-# ── Return callback (replace weapon_manager._on_axe_return) ──
+# ── Return callback ──
 static func _on_axe_return(proj, area: float):
 	if not is_instance_valid(proj):
 		return

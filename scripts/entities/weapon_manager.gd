@@ -16,6 +16,7 @@ var _knife_sfx_cooldown: float = 0.0
 var _bible_projectiles: Array[Node2D] = []
 var _bible_angle: float = 0.0
 
+var _enemy_manager_cache = null
 var _enemy_registry_cache = null
 
 # ── 脚本依赖（延迟加载） ──
@@ -81,7 +82,9 @@ func _get_enemies() -> Array:
 
 
 func get_enemy_manager():
-	return _player.get_node("/root/Main/EnemyManager") if _player and _player.has_node("/root/Main/EnemyManager") else null
+	if not _enemy_manager_cache or not is_instance_valid(_enemy_manager_cache):
+		_enemy_manager_cache = _player.get_node("/root/Main/EnemyManager") if _player else null
+	return _enemy_manager_cache
 
 
 func _calc_damage(w: WeaponState) -> float:
@@ -368,11 +371,11 @@ func add_or_upgrade(t: int):
 
 
 func _can_fire(w: WeaponState) -> bool:
-	var enemies = _get_enemies()
-	if enemies.is_empty():
+	var em = get_enemy_manager()
+	if not em or not em.has_method("get_nearest"):
 		return false
-	var ppos = _player.global_position
 
+	# ── 全局武器：无视距离直接开火 ──
 	if w.type == ItemTypes.Type.GARLIC or w.type == ItemTypes.Type.PENTAGRAM or w.type == ItemTypes.Type.LAUREL or w.type == ItemTypes.Type.PAKO_BATTILIAR:
 		return true
 
@@ -387,11 +390,8 @@ func _can_fire(w: WeaponState) -> bool:
 		_:
 			range_limit = 350.0 + w.area * _player.area_mult * 3.0
 
-	var range_sq = range_limit * range_limit
-	for e in enemies:
-		if is_instance_valid(e) and ppos.distance_squared_to(e.global_position) <= range_sq:
-			return true
-	return false
+	# 直接查询 EnemyManager 的 _pos 数组，无需创建代理对象
+	return em.get_nearest(_player.global_position, range_limit) >= 0
 
 
 func process(delta: float):

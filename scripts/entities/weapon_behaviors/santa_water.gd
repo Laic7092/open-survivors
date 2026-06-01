@@ -70,7 +70,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	tw.finished.connect(_on_water_bottle_land.bind(proj))
 
 
-static func _find_nearest(player, enemies: Array) -> Node2D:
+static func _find_nearest(player, enemies: Array):
 	var best = null
 	var min_d_sq = INF
 	var ppos = player.global_position

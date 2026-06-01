@@ -29,7 +29,14 @@ static func fire(w, weapon_manager, player, get_enemies):
 		bird.set_meta("bird_dmg", dmg)
 		bird.set_meta("clockwise", true)
 		player.get_parent().add_child(bird)
-		bird.body_entered.connect(weapon_manager._on_proj_hit.bind(bird, dmg))
+
+		# 轮询检测（敌人是数据驱动，body_entered 不触发）
+		var poll = Node2D.new()
+		poll.set_script(weapon_manager._proj_mover_script)
+		poll.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(w.area * player.area_mult * 0.5, 8.0), 999)
+		poll._max_lifetime = 5.0
+		bird.add_child(poll)
+
 		birds.append(bird)
 	var dur = 4.0 * player.duration_mult
 	player.get_tree().create_timer(dur).timeout.connect(_cleanup.bind(birds))
