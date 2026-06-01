@@ -445,7 +445,7 @@ func die():
 	died.emit()
 	if EnemyRegistry:
 		EnemyRegistry.unregister(self)
-	queue_free()
+	# 不复位场景树，由 SpawnManager.recycle_enemy 处理原地禁用
 
 
 func _explode():

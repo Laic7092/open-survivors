@@ -584,6 +584,7 @@ func _attract_gems(delta: float):
 # ── Hurt / Health ────────────────────────────────────────────────────
 
 func _on_hurt(body: Node):
+	return  # 测试无敌
 	if health <= 0 or invincible > 0:
 		return
 	if body.has_method("get_contact_damage"):

@@ -321,6 +321,8 @@ func _on_enemy_died(enemy: Node2D):
 		call_deferred("_show_arcana_chest_pick")
 	if is_boss:
 		UnlockManager.on_boss_defeated(game_state._stage_id)
+	spawn_manager.recycle_enemy(enemy)
+
 
 
 # ═══════════════════════════════════════════════════════════

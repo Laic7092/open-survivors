@@ -2,6 +2,7 @@ extends Node
 # SpawnManager — 统一生成管理
 # 从 main.gd 拆分：所有敌人/拾取物/遗物/Boss 生成 + 敌人死亡掉落
 # main.gd 持有引用并驱动
+const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
 
 # Enemy data loaded lazily via DataRegistry
 # Relic data loaded lazily via DataRegistry
@@ -22,6 +23,9 @@ const MAX_GEMS: int = 500
 var _enemy_scene = preload("res://scenes/enemy.tscn")
 var _pickup_scene = preload("res://scenes/pickup.tscn")
 var _relic_scene = preload("res://scenes/relic_pickup.tscn")
+
+# 死亡敌人池：原地禁用后回收复用，避免 remove_child/add_child 场景树开销
+var _dead_enemies: Array[Node2D] = []
 
 # 遗物跟踪
 var stage_relics: Array = []
@@ -54,9 +58,49 @@ func setup(p: Node2D, gs: Node, cam: Node, parent: Node2D):
 # ── 敌人生成 ──
 
 func spawn_enemy(type_id: int = 0) -> Node2D:
-	var enemy = _enemy_scene.instantiate()
+	var enemy: Node2D
+	if _dead_enemies.size() > 0:
+		# 从死亡池回收，原地复活
+		enemy = _dead_enemies.pop_back()
+		_revive_enemy(enemy, type_id)
+	else:
+		enemy = _enemy_scene.instantiate()
+		enemy.player = player
+		enemy.game_state = game_state
+		var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
+		var bounds = camera_ctrl.get_camera_bounds()
+		var margin = 60.0
+		var pos: Vector2
+		match randi() % 4:
+			0: pos = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.top - margin)
+			1: pos = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.bottom + margin)
+			2: pos = Vector2(bounds.left - margin, randf_range(bounds.top + margin, bounds.bottom - margin))
+			3: pos = Vector2(bounds.right + margin, randf_range(bounds.top + margin, bounds.bottom - margin))
+		enemy.global_position = _clamp_to_map(pos, 10.0)
+		var wave_bonus = 1.0 + game_state.wave_number * 0.08
+		enemy.set_enemy_type(type_id, game_state.difficulty * curse_mod * wave_bonus)
+		main_node.add_child(enemy)
+	enemy_spawned.emit(enemy)
+	return enemy
+
+
+# 复活一个死亡池中的敌人
+func _revive_enemy(enemy: Node2D, type_id: int):
+	# 清理旧信号
+	for c in enemy.died.get_connections():
+		enemy.died.disconnect(c.callable)
+
 	enemy.player = player
 	enemy.game_state = game_state
+	enemy.visible = true
+	enemy.modulate = Color(1, 1, 1, 1)
+	enemy.scale = Vector2(1, 1)
+	enemy.collision_layer = CollisionLayers.ENEMY
+	enemy.collision_mask = 0
+	enemy.set_physics_process(true)
+	enemy.set_process(true)
+	enemy.add_to_group("enemies")
+
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
 	var bounds = camera_ctrl.get_camera_bounds()
 	var margin = 60.0
@@ -69,9 +113,21 @@ func spawn_enemy(type_id: int = 0) -> Node2D:
 	enemy.global_position = _clamp_to_map(pos, 10.0)
 	var wave_bonus = 1.0 + game_state.wave_number * 0.08
 	enemy.set_enemy_type(type_id, game_state.difficulty * curse_mod * wave_bonus)
-	main_node.add_child(enemy)
-	enemy_spawned.emit(enemy)
-	return enemy
+	EnemyRegistry.register(enemy)
+
+
+# 回收死亡敌人：原地禁用，不复位父节点，不经过 OPM
+func recycle_enemy(enemy: Node2D):
+	if not is_instance_valid(enemy):
+		return
+	enemy.visible = false
+	enemy.set_process(false)
+	enemy.set_physics_process(false)
+	enemy.collision_layer = 0
+	enemy.collision_mask = 0
+	enemy.remove_from_group("enemies")
+	# 保留在 main_node 中，只禁用
+	_dead_enemies.append(enemy)
 
 
 func spawn_boss():
@@ -79,28 +135,33 @@ func spawn_boss():
 		return
 	game_state.boss_spawned = true
 	game_state.boss_spawned_event.emit()
-	
+
 	var boss_type = DataRegistry.enemies().get_boss_type(game_state._stage_id, game_state.game_time)
 	if boss_type < 0:
 		return
-	
-	var enemy = _enemy_scene.instantiate()
-	enemy.player = player
-	enemy.game_state = game_state
-	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
-	enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod)
-	enemy.set_as_boss()
-	
-	var bounds = camera_ctrl.get_camera_bounds()
-	var margin = 80.0
-	var pos: Vector2
-	match randi() % 4:
-		0: pos = Vector2(0, bounds.top - margin)
-		1: pos = Vector2(0, bounds.bottom + margin)
-		2: pos = Vector2(bounds.left - margin, 0)
-		3: pos = Vector2(bounds.right + margin, 0)
-	enemy.global_position = _clamp_to_map(pos, 20.0)
-	main_node.add_child(enemy)
+
+	var enemy: Node2D
+	if _dead_enemies.size() > 0:
+		enemy = _dead_enemies.pop_back()
+		_revive_enemy(enemy, boss_type)
+	else:
+		enemy = _enemy_scene.instantiate()
+		enemy.player = player
+		enemy.game_state = game_state
+		var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
+		enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod)
+		enemy.set_as_boss()
+
+		var bounds = camera_ctrl.get_camera_bounds()
+		var margin = 80.0
+		var pos: Vector2
+		match randi() % 4:
+			0: pos = Vector2(0, bounds.top - margin)
+			1: pos = Vector2(0, bounds.bottom + margin)
+			2: pos = Vector2(bounds.left - margin, 0)
+			3: pos = Vector2(bounds.right + margin, 0)
+		enemy.global_position = _clamp_to_map(pos, 20.0)
+		main_node.add_child(enemy)
 	boss_spawned.emit(boss_type)
 	enemy_spawned.emit(enemy)
 
@@ -111,25 +172,32 @@ func spawn_arcana_boss():
 	var boss_type = DataRegistry.enemies().get_boss_type(game_state._stage_id, game_state.game_time)
 	if boss_type < 0:
 		boss_type = 0
-	
-	var enemy = _enemy_scene.instantiate()
-	enemy.player = player
-	enemy.game_state = game_state
-	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
-	enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod * 1.5)
-	enemy.set_as_boss()
-	enemy.set_meta("arcana_boss", true)
-	
-	var bounds = camera_ctrl.get_camera_bounds()
-	var margin = 80.0
-	var pos: Vector2
-	match randi() % 4:
-		0: pos = Vector2(0, bounds.top - margin)
-		1: pos = Vector2(0, bounds.bottom + margin)
-		2: pos = Vector2(bounds.left - margin, 0)
-		3: pos = Vector2(bounds.right + margin, 0)
-	enemy.global_position = _clamp_to_map(pos, 20.0)
-	main_node.add_child(enemy)
+
+	var enemy: Node2D
+	if _dead_enemies.size() > 0:
+		enemy = _dead_enemies.pop_back()
+		_revive_enemy(enemy, boss_type)
+		enemy.set_as_boss()
+		enemy.set_meta("arcana_boss", true)
+	else:
+		enemy = _enemy_scene.instantiate()
+		enemy.player = player
+		enemy.game_state = game_state
+		var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
+		enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod * 1.5)
+		enemy.set_as_boss()
+		enemy.set_meta("arcana_boss", true)
+
+		var bounds = camera_ctrl.get_camera_bounds()
+		var margin = 80.0
+		var pos: Vector2
+		match randi() % 4:
+			0: pos = Vector2(0, bounds.top - margin)
+			1: pos = Vector2(0, bounds.bottom + margin)
+			2: pos = Vector2(bounds.left - margin, 0)
+			3: pos = Vector2(bounds.right + margin, 0)
+		enemy.global_position = _clamp_to_map(pos, 20.0)
+		main_node.add_child(enemy)
 	enemy_spawned.emit(enemy)
 
 
@@ -183,7 +251,7 @@ func spawn_initial_pickups(hw: float, hh: float):
 func spawn_enemy_drops(enemy: Node2D):
 	if not is_instance_valid(enemy):
 		return
-	
+
 	var is_arcana_boss = enemy.has_meta("arcana_boss") and enemy.get_meta("arcana_boss")
 	if is_arcana_boss:
 		for i in range(5):
@@ -196,7 +264,7 @@ func spawn_enemy_drops(enemy: Node2D):
 			spawn_pickup_at(enemy.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 2)
 		arcana_boss_defeated.emit()
 		return
-	
+
 	var is_boss = enemy.has_method("get_is_boss") and enemy.get_is_boss()
 	if is_boss:
 		for i in range(3):
@@ -223,14 +291,11 @@ func _try_spawn_gem(value: int, pos: Vector2):
 	var gem_count = main_node.get_tree().get_nodes_in_group("gems").size()
 	if gem_count >= MAX_GEMS:
 		_overflow_xp += value
-		# 累积够大时，尝试合并为一大颗
 		if _overflow_xp >= 100:
 			_overflow_xp -= 100
 			_spawn_single_gem(100, pos)
 		return
-	# 正常生成
 	_spawn_single_gem(value, pos)
-	# 如果有溢出，顺便生成
 	if _overflow_xp >= 50 and gem_count < MAX_GEMS - 1:
 		var n = mini(_overflow_xp / 50, 5)
 		for i in range(n):
@@ -254,13 +319,6 @@ func _spawn_single_gem(value: int, pos: Vector2):
 
 # ── 遗物 ──
 
-# 在关卡开始时刷出/登记所有圣物。根据 spawn_type 分派：
-#   immediate    → 直接放置在关卡中
-#   time_based   → 加入延时队列，指定时间到达后刷出
-#   boss_drop    → 加入掉落队列，Boss 死亡时刷出
-#   conditional  → 加入条件队列，满足条件时刷出
-#   merchant     → 加入商人队列，在商人处出售
-#   collection   → 加入探索队列，隐藏于关卡中
 func spawn_stage_relics():
 	stage_relics.clear()
 	_queued_time_relics.clear()
@@ -270,12 +328,12 @@ func spawn_stage_relics():
 	_queued_collection_relics.clear()
 	has_relic_arrow = false
 	relic_arrow_target = Vector2.ZERO
-	
+
 	var stage_id = game_state._stage_id
 	var imm_relics = DataRegistry.relics().get_relics_for_stage_by_type(stage_id, "immediate")
 	for r in imm_relics:
 		_place_relic(r)
-	
+
 	_register_relics_by_type(stage_id, "time_based", _queued_time_relics)
 	_register_relics_by_type(stage_id, "boss_drop", _queued_boss_relics)
 	_register_relics_by_type(stage_id, "conditional", _queued_conditional_relics)
@@ -283,7 +341,6 @@ func spawn_stage_relics():
 	_register_relics_by_type(stage_id, "collection", _queued_collection_relics)
 
 
-# 将指定类型的圣物登记到队列中（跳过已收集的）
 func _register_relics_by_type(stage_id: int, spawn_type: String, queue: Array):
 	var relics = DataRegistry.relics().get_relics_for_stage_by_type(stage_id, spawn_type)
 	for r in relics:
@@ -292,7 +349,6 @@ func _register_relics_by_type(stage_id: int, spawn_type: String, queue: Array):
 		queue.append({"def": r})
 
 
-# 每帧检查延时圣物时间条件，在 main.gd _process 中调用
 func process_delayed_spawns(game_time: float):
 	if _queued_time_relics.is_empty():
 		return
@@ -309,9 +365,6 @@ func process_delayed_spawns(game_time: float):
 			i += 1
 
 
-# ── Boss 掉落圣物 ──
-
-# 在 Boss 死亡时尝试掉落 boss_drop 圣物
 func _try_spawn_boss_drop_relic(boss_pos: Vector2):
 	if _queued_boss_relics.is_empty():
 		return
@@ -323,9 +376,6 @@ func _try_spawn_boss_drop_relic(boss_pos: Vector2):
 	_queued_boss_relics.remove_at(0)
 
 
-# ── 条件圣物 ──
-
-# 每帧检查条件圣物（有条件限制的圣物）
 func process_conditional_relics():
 	if _queued_conditional_relics.is_empty():
 		return
@@ -341,10 +391,6 @@ func process_conditional_relics():
 			i += 1
 
 
-# 评估条件圣物的前置条件
-# condition 格式: { "type": "player_level"|"total_kills"|"wave_number"|"weapon_evolved",
-#                   "value": N,
-#                   "weapon_type": N (only for weapon_evolved) }
 func _evaluate_condition(cond: Dictionary) -> bool:
 	var ctype = cond.get("type", "")
 	var val = cond.get("value", 0)
@@ -363,9 +409,6 @@ func _evaluate_condition(cond: Dictionary) -> bool:
 	return false
 
 
-# ── 商人圣物 ──
-
-# 获取本关可购买的商人圣物列表
 func get_merchant_relics() -> Array:
 	var result: Array = []
 	for entry in _queued_merchant_relics:
@@ -373,7 +416,6 @@ func get_merchant_relics() -> Array:
 	return result
 
 
-# 当玩家从商人处购买圣物后调用
 func on_merchant_relic_bought(relic_id: String):
 	var i = 0
 	while i < _queued_merchant_relics.size():
@@ -384,9 +426,6 @@ func on_merchant_relic_bought(relic_id: String):
 		i += 1
 
 
-# ── 探索圣物 ──
-
-# 放置探索圣物（collection 类型）——隐藏在关卡中，未发现前不可见
 func place_collection_relics(parent_node: Node):
 	for entry in _queued_collection_relics:
 		var r = entry["def"]
@@ -397,14 +436,13 @@ func place_collection_relics(parent_node: Node):
 		var pos = r.get("spawn_pos", Vector2.ZERO)
 		relic.global_position = _clamp_to_map(pos, 30.0)
 		relic.set_meta("collection_relic", true)
-		relic.visible = false  # 初始隐藏（由互动触发发现）
-		relic.process_mode = PROCESS_MODE_DISABLED  # 发现前不处理
+		relic.visible = false
+		relic.process_mode = PROCESS_MODE_DISABLED
 		parent_node.add_child(relic)
 		stage_relics.append(relic)
 	_queued_collection_relics.clear()
 
 
-# 发现隐藏圣物（被玩家触发时调用，如打破墙/开箱）
 func reveal_collection_relic(relic_node: Node2D):
 	if not is_instance_valid(relic_node):
 		return
@@ -415,6 +453,8 @@ func reveal_collection_relic(relic_node: Node2D):
 	if not has_relic_arrow:
 		has_relic_arrow = true
 		relic_arrow_target = relic_node.global_position
+
+
 func _place_relic(r: Dictionary):
 	var rid = r["id"]
 	if RelicManager.has_relic(rid):
@@ -485,15 +525,12 @@ func get_nearest_relic_pos() -> Vector2:
 	return nearest.global_position if is_instance_valid(nearest) else Vector2.ZERO
 
 
-# ── 工具 ──
-
 func _clamp_to_map(pos: Vector2, margin: float = 40.0) -> Vector2:
 	var hw = game_state.map_width / 2.0 - margin
 	var hh = game_state.map_height / 2.0 - margin
 	return Vector2(clamp(pos.x, -hw, hw), clamp(pos.y, -hh, hh))
 
 
-# 获取敌人类型的基础 XP 值（固定值，不随难度缩放，对齐 VS Wiki）
 func _get_enemy_base_xp(enemy: Node2D) -> int:
 	if not is_instance_valid(enemy):
 		return 1
