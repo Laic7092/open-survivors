@@ -22,8 +22,6 @@ var _minimap: Control
 var _map_text: Label
 var _grimoire_header: Label
 var _grimoire_container: VBoxContainer
-var _weapons_container: VBoxContainer
-var _passives_container: VBoxContainer
 var _resume_btn: Button
 var _quit_btn: Button
 var _stat_labels: Array[Label] = []
@@ -51,6 +49,12 @@ func _ready():
 	_title.text = I18N.t("pause.title")
 	_resume_btn.text = I18N.t("pause.resume")
 	_quit_btn.text = I18N.t("pause.quit")
+
+
+func _input(event):
+	if visible and event.is_action_pressed("ui_cancel"):
+		_on_resume_pressed()
+		get_viewport().set_input_as_handled()
 
 
 func _resize_outer():
@@ -166,40 +170,18 @@ func _build_stat_labels():
 		_col1.add_child(lbl)
 		return lbl
 
-	var add_spacer = func():
-		var sp = Control.new()
-		sp.custom_minimum_size = Vector2(0, 8)
-		_col1.add_child(sp)
-
 	add_section.call(I18N.t("pause.character"))
 	_stat_labels.append(add_val.call())
 	_stat_labels.append(add_val.call())
 
-	add_spacer.call()
-	add_section.call(I18N.t("pause.run_stats"))
-	_stat_labels.append(add_val.call())
-	_stat_labels.append(add_val.call())
+	# Spacer between sections
+	var sp001 = Control.new()
+	sp001.custom_minimum_size = Vector2(0, 8)
+	_col1.add_child(sp001)
 
-	var gold_lbl = add_val.call()
-	gold_lbl.theme_type_variation = &"GoldLabel"
-	_stat_labels.append(gold_lbl)
-
-	add_spacer.call()
 	add_section.call(I18N.t("pause.combat_stats"))
 	for i in 16:
 		_stat_labels.append(add_val.call())
-
-	add_spacer.call()
-	add_section.call(I18N.t("pause.weapons"))
-	_weapons_container = VBoxContainer.new()
-	_weapons_container.add_theme_constant_override("separation", 1)
-	_col1.add_child(_weapons_container)
-
-	add_spacer.call()
-	add_section.call(I18N.t("pause.passives"))
-	_passives_container = VBoxContainer.new()
-	_passives_container.add_theme_constant_override("separation", 1)
-	_col1.add_child(_passives_container)
 
 
 func _build_minimap_area():
@@ -300,43 +282,22 @@ func _update_stats():
 	_stat_labels[0].text = char_i18n + " — " + char_weapon
 	_stat_labels[1].text = I18N.t("pause.level") % [player.level, player.xp, player.xp_to_next]
 
-	var main = get_parent().get_parent()
-	var kills = 0
-	var run_time = 0.0
-	if is_instance_valid(main) and main.has_method("get_game_state"):
-		var gs = main.get_game_state()
-		kills = gs.total_kills
-		run_time = gs.game_time
-	elif is_instance_valid(main):
-		# 向后兼容
-		kills = main.total_kills if "total_kills" in main else 0
-		run_time = main.game_time if "game_time" in main else 0.0
-	var m = int(run_time) / 60
-	var s = int(run_time) % 60
-	var gold_amt = PowerUpManager.run_gold if PowerUpManager else 0
-
-	_stat_labels[2].text = I18N.t("pause.kills") % kills
-	_stat_labels[3].text = I18N.t("pause.time") % [m, s]
-	_stat_labels[4].text = I18N.t("pause.gold") % gold_amt
-
-	var hp = player.health
-	var max_hp = player.max_health
-	_stat_labels[5].text = I18N.t("pause.hp") % [hp, max_hp]
-	_stat_labels[6].text = I18N.t("pause.regen") % player.recovery
-	_stat_labels[7].text = I18N.t("pause.dmg") % player.might
-	_stat_labels[8].text = I18N.t("pause.spd") % player.move_speed
-	_stat_labels[9].text = I18N.t("pause.area") % player.area_mult
-	_stat_labels[10].text = I18N.t("pause.proj_spd") % player.speed_mult
-	_stat_labels[11].text = I18N.t("pause.duration") % player.duration_mult
-	_stat_labels[12].text = I18N.t("pause.cd") % int((1.0 - player.cooldown_mult) * 100)
-	_stat_labels[13].text = I18N.t("pause.amount") % player.projectile_bonus
-	_stat_labels[14].text = I18N.t("pause.armor") % player.armor
-	_stat_labels[15].text = I18N.t("pause.growth") % player.growth_mult
-	_stat_labels[16].text = I18N.t("pause.luck") % (player.luck * 100)
-	_stat_labels[17].text = I18N.t("pause.greed") % (player.greed_mult * 100)
-	_stat_labels[18].text = I18N.t("pause.magnet") % player.pickup_range
-	_stat_labels[19].text = I18N.t("pause.curse") % (player.curse * 100)
-	_stat_labels[20].text = I18N.t("pause.revivals") % player.revivals
+	_stat_labels[2].text = I18N.t("pause.hp") % [player.health, player.max_health]
+	_stat_labels[3].text = I18N.t("pause.regen") % player.recovery
+	_stat_labels[4].text = I18N.t("pause.dmg") % player.might
+	_stat_labels[5].text = I18N.t("pause.spd") % player.move_speed
+	_stat_labels[6].text = I18N.t("pause.area") % player.area_mult
+	_stat_labels[7].text = I18N.t("pause.proj_spd") % player.speed_mult
+	_stat_labels[8].text = I18N.t("pause.duration") % player.duration_mult
+	_stat_labels[9].text = I18N.t("pause.cd") % int((1.0 - player.cooldown_mult) * 100)
+	_stat_labels[10].text = I18N.t("pause.amount") % player.projectile_bonus
+	_stat_labels[11].text = I18N.t("pause.armor") % player.armor
+	_stat_labels[12].text = I18N.t("pause.growth") % player.growth_mult
+	_stat_labels[13].text = I18N.t("pause.luck") % (player.luck * 100)
+	_stat_labels[14].text = I18N.t("pause.greed") % (player.greed_mult * 100)
+	_stat_labels[15].text = I18N.t("pause.magnet") % player.pickup_range
+	_stat_labels[16].text = I18N.t("pause.curse") % (player.curse * 100)
+	_stat_labels[17].text = I18N.t("pause.revivals") % player.revivals
 
 
 func _setup_minimap():
@@ -407,35 +368,6 @@ func _setup_minimap():
 		_grimoire_header.visible = false
 		_grimoire_container.visible = false
 
-	# Weapons list
-	for c in _weapons_container.get_children():
-		c.queue_free()
-	if player.weapon_manager:
-		for ws in player.weapon_manager.weapons:
-			var lbl = Label.new()
-			var name = I18N.t(_wpn_i18n_key(ws.type))
-			var evo_str = " *" if ws.evolved else ""
-			lbl.text = "%s Lv.%d%s" % [name, ws.level, evo_str]
-			lbl.add_theme_font_size_override("font_size", 13)
-			_weapons_container.add_child(lbl)
-
-	# Passives list
-	for c in _passives_container.get_children():
-		c.queue_free()
-	if player.passive_inventory:
-		var passives = player.passive_inventory.get_all()
-		if passives.is_empty():
-			var lbl = Label.new()
-			lbl.text = I18N.t("pause.none")
-			lbl.add_theme_font_size_override("font_size", 13)
-			_passives_container.add_child(lbl)
-		else:
-			for pt in passives:
-				var lbl = Label.new()
-				var name = I18N.t(_pass_i18n_key(pt))
-				lbl.text = "%s Lv.%d" % [name, passives[pt]]
-				lbl.add_theme_font_size_override("font_size", 13)
-				_passives_container.add_child(lbl)
 
 
 # ═══════════════════════════════════════════

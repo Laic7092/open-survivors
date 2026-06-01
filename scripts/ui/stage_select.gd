@@ -50,6 +50,12 @@ func _ready():
 	_update_toggle_states()
 
 
+func _input(event):
+	if visible and event.is_action_pressed("ui_cancel"):
+		_on_back()
+		get_viewport().set_input_as_handled()
+
+
 func _clear_info_panel():
 	_stage_name.text = ""
 	_stage_mods.text = ""

@@ -45,13 +45,13 @@ func play_sfx(name: String):
 	sfx_players[0].play()
 
 
-func play_bgm(stream: AudioStream):
-	bgm_player.stream = stream
-	bgm_player.play()
+func play_bgm(_stream: AudioStream):
+	# BGM disabled
+	pass
 
 
 func stop_bgm():
-	bgm_player.stop()
+	pass
 
 
 func set_bgm_volume(db: float):

@@ -67,6 +67,12 @@ func _ready():
 	_rebuild_grid()
 
 
+func _input(event):
+	if visible and event.is_action_pressed("ui_cancel"):
+		_on_back()
+		get_viewport().set_input_as_handled()
+
+
 func _rebuild_grid():
 	for c in _grid.get_children():
 		c.queue_free()

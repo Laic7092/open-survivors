@@ -24,6 +24,12 @@ func _ready():
 	get_viewport().size_changed.connect(_rebuild)
 
 
+func _input(event):
+	if visible and event.is_action_pressed("ui_cancel"):
+		_on_back()
+		get_viewport().set_input_as_handled()
+
+
 func _build_tabs():
 	_tabs_data = [
 		{"label": I18N.t("collection.tab_weapons"), "entries": _build_weapon_entries()},

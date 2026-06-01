@@ -180,7 +180,6 @@ func _draw():
 		draw_rect(Rect2(-bar_w / 2, bar_y, min(bar_w, bar_w * hp_pct), bar_h), hp_color)
 
 	if weapon_manager.whip_vis_time > 0:
-		var progress = 1.0 - (weapon_manager.whip_vis_time / 0.1)
 		var alpha = min(weapon_manager.whip_vis_time * 10, 0.6)
 		var w_area = weapon_manager.whip_vis_area
 		var whip_evolved = false
@@ -190,29 +189,27 @@ func _draw():
 				break
 		var base_color = Color(1.0, 0.2, 0.2) if whip_evolved else Color(1, 1, 1)
 
-		# Sine-wave whip curve
-		var arc_r = w_area * 2.0
-		var arc_angle = PI * 0.6
-		var facing = Vector2.UP
-		var angle0 = facing.angle() - arc_angle * 0.5
-		var angle1 = facing.angle() + arc_angle * 0.5
-		var segs = 24
+		# 矩形渲染 — 匹配新矩形伤害判定
+		var rect_len = w_area * 2.0
+		var rect_half_w = w_area * 0.6
+		var facing_dir = direction if direction.length() > 0 else Vector2.DOWN
+		var perp_dir = facing_dir.orthogonal()
 
-		var pts: PackedVector2Array = []
-		for i in range(segs + 1):
-			var t = float(i) / segs
-			var a = angle0 + (angle1 - angle0) * t
-			var r = arc_r * t
-			var perp = Vector2(-sin(a), cos(a))
-			var sine_amp = 14.0 * sin(t * PI)
-			var sine_phase = t * 4.0 * PI + progress * 6.0
-			var offset = perp * sin(sine_phase) * sine_amp
-			pts.push_back(Vector2(cos(a), sin(a)) * r + offset)
+		var far_r = facing_dir * rect_len + perp_dir * rect_half_w
+		var far_l = facing_dir * rect_len - perp_dir * rect_half_w
+		var near_l = -perp_dir * rect_half_w
+		var near_r = perp_dir * rect_half_w
+		var corners = PackedVector2Array([far_r, far_l, near_l, near_r])
 
-		draw_polyline(pts, Color(base_color.r, base_color.g, base_color.b, alpha * 0.25), 10.0, true)
-		draw_polyline(pts, Color(base_color.r, base_color.g, base_color.b, alpha * 0.7), 3.0, true)
-		if pts.size() > 0:
-			draw_circle(pts[pts.size() - 1], 3.0, Color(base_color.r, base_color.g, base_color.b, alpha))
+		# 半透明填充区域
+		draw_polygon(corners, [Color(base_color.r, base_color.g, base_color.b, alpha * 0.2)])
+		# 矩形四条边
+		draw_line(far_r, far_l, Color(base_color.r, base_color.g, base_color.b, alpha * 0.6), 2.0, true)
+		draw_line(far_l, near_l, Color(base_color.r, base_color.g, base_color.b, alpha * 0.4), 1.5, true)
+		draw_line(near_l, near_r, Color(base_color.r, base_color.g, base_color.b, alpha * 0.2), 1.0, true)
+		draw_line(near_r, far_r, Color(base_color.r, base_color.g, base_color.b, alpha * 0.4), 1.5, true)
+		# 远端端点
+		draw_circle(facing_dir * rect_len, 3.0, Color(base_color.r, base_color.g, base_color.b, alpha))
 	for w in weapon_manager.weapons:
 		if w.type == UpgradeType.GARLIC:
 			var pulse = 0.4 + sin(Time.get_ticks_msec() * 0.004) * 0.15

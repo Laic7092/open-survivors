@@ -3,7 +3,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	var count = 2 + (w.level - 1)
 	if w.evolved:
 		count += 2
-	var orbit_radius = 60.0 + w.area * player.area_mult * 0.5
+	var orbit_radius = 60.0 + w.area * player.area_mult * 0.8
 	var dmg = weapon_manager._calc_damage(w)
 	var dur = 2.5 * player.duration_mult
 
@@ -16,10 +16,10 @@ static func fire(w, weapon_manager, player, get_enemies):
 		p.collision_mask = 4
 		var s = CollisionShape2D.new()
 		var c = CircleShape2D.new()
-		c.radius = max(w.area * player.area_mult * 0.5, 6.0)
+		c.radius = max(w.area * player.area_mult * 0.25, 6.0)
 		s.shape = c
 		p.add_child(s)
-		var orb_sz = max(w.area * player.area_mult * 0.8, 10.0)
+		var orb_sz = max(w.area * player.area_mult * 0.4, 10.0)
 		var vis = weapon_manager._make_emoji_node("📖", orb_sz)
 		p.add_child(vis)
 		if w.evolved:
@@ -37,7 +37,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		# 轮询检测（敌人是数据驱动，body_entered 不触发）
 		var poll = Node2D.new()
 		poll.set_script(weapon_manager._proj_mover_script)
-		poll.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(w.area * player.area_mult * 0.5, 6.0), 999)
+		poll.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(w.area * player.area_mult * 0.25, 6.0), 999)
 		poll._max_lifetime = dur + 1.0
 		p.add_child(poll)
 

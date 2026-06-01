@@ -17,6 +17,9 @@ var _knife_sfx_cooldown: float = 0.0
 var _bible_projectiles: Array[Node2D] = []
 var _bible_angle: float = 0.0
 
+# ── 大蒜：每个敌人独立命中 CD（enemy_id → 剩余 CD 时间） ──
+var _garlic_hit_timers: Dictionary = {}
+
 var _enemy_manager_cache = null
 var _enemy_registry_cache = null
 
@@ -377,8 +380,13 @@ func _can_fire(w: WeaponState) -> bool:
 		return false
 
 	# ── 全局武器：无视距离直接开火 ──
-	if w.type == ItemTypes.Type.GARLIC or w.type == ItemTypes.Type.PENTAGRAM or w.type == ItemTypes.Type.LAUREL or w.type == ItemTypes.Type.PAKO_BATTILIAR:
+	# 大蒜不走此通道，由 _process_garlic 每帧处理（每个敌人独立 CD）
+	if w.type == ItemTypes.Type.PENTAGRAM or w.type == ItemTypes.Type.LAUREL or w.type == ItemTypes.Type.PAKO_BATTILIAR:
 		return true
+
+	# ── 大蒜：不走普通武器循环，由 _process_garlic 每帧处理 ──
+	if w.type == ItemTypes.Type.GARLIC:
+		return false
 
 	var range_limit: float
 	match w.type:
@@ -422,6 +430,48 @@ func process(delta: float):
 				p.global_position = _player.global_position + Vector2(cos(angle), sin(angle)) * radius
 			i -= 1
 	_update_bird_orbits(delta)
+	_process_garlic(delta)
+
+
+func _process_garlic(delta: float):
+	# 每帧处理大蒜光环：每个敌人独立 CD，敌人进入光环立即受伤
+	var w = _find_weapon(ItemTypes.Type.GARLIC)
+	if not w:
+		# 没有大蒜武器时清理残留计时器
+		_garlic_hit_timers.clear()
+		return
+	var em = get_enemy_manager()
+	if not em or not em.has_method("query_circle"):
+		return
+
+	# 递减所有敌人的个人 CD
+	var dead: Array = []
+	for eid in _garlic_hit_timers.keys():
+		_garlic_hit_timers[eid] -= delta
+		if _garlic_hit_timers[eid] <= 0:
+			if not em.is_alive(eid):
+				dead.append(eid)
+	for eid in dead:
+		_garlic_hit_timers.erase(eid)
+
+	# 扫描光环内的敌人
+	var effective_area = w.area * _player.area_mult
+	var ppos = _player.global_position
+	var ids = em.query_circle(ppos, effective_area + 14.0)
+	var hit_delay = w.cooldown * _player.cooldown_mult
+
+	for eid in ids:
+		var enemy_r = em.get_radius(eid)
+		var thr = effective_area + enemy_r
+		if ppos.distance_squared_to(em.get_pos(eid)) <= thr * thr:
+			var remaining = _garlic_hit_timers.get(eid, -1.0)
+			if remaining <= 0.0:
+				# 首次进入光环 或 个人 CD 已到 → 立即出伤
+				var dmg = _calc_damage(w)
+				em.damage(eid, dmg, Vector2.ZERO)
+				if w.evolved:
+					_player.health = min(_player.health + 1.0, _player.max_health)
+				_garlic_hit_timers[eid] = hit_delay
 
 
 func _update_bird_orbits(delta: float):

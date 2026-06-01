@@ -6,7 +6,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 
 	if w.evolved:
 		var count = 2 + weapon_manager.get_projectile_count(w.type)
-		var max_range_hsq: float = (500.0 + w.area * player.area_mult * 5.0) * (500.0 + w.area * player.area_mult * 5.0)
+		var max_range_hsq: float = (500.0 * w.area * player.speed_mult / 40.0) * (500.0 * w.area * player.speed_mult / 40.0)
 		var ppos = player.global_position
 		var in_range: Array = []
 		for e in enemies:
@@ -50,7 +50,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 			tw.finished.connect(weapon_manager._on_tween_done.bind(sword))
 		return
 
-	var max_range_csq: float = (450.0 + w.area * player.area_mult * 5.0) * (450.0 + w.area * player.area_mult * 5.0)
+	var max_range_csq: float = (350.0 * w.area * player.speed_mult / 40.0) * (350.0 * w.area * player.speed_mult / 40.0)
 	var nearest = null
 	var min_dist = max_range_csq
 	var ppos = player.global_position
@@ -67,7 +67,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	var count = weapon_manager.get_projectile_count(w.type)
 	# 非进化形态：飞向最近敌人方向，穿透所有敌人，不弹回
 	var fire_dir = (nearest.global_position - player.global_position).normalized()
-	var travel_range = 450.0 + w.area * player.area_mult * 5.0
+	var travel_range = 350.0 * w.area * player.speed_mult / 40.0
 	var travel_speed = max(w.speed * 1.5, 100.0)
 	var travel_time = travel_range / travel_speed
 
@@ -111,9 +111,17 @@ static func fire(w, weapon_manager, player, get_enemies):
 			if not _x:
 				return
 			var p_node = _x as Node2D
+			if not is_instance_valid(p_node):
+				return
 			var ret_tw = player.create_tween()
-			ret_tw.tween_property(p_node, "global_position", player.global_position, 0.4)
-			ret_tw.parallel().tween_property(p_node, "rotation", deg_to_rad(360), 0.4).as_relative()
+			ret_tw.set_parallel(false)
+			# 拆成 6 段短 tween，每段开始时重新捕获 player 当前位置
+			# 不需要每帧回调，但能追踪玩家移动
+			var segment_cnt = 6
+			var seg_time = travel_time * 1.2 / float(segment_cnt)
+			for j in range(segment_cnt):
+				ret_tw.tween_property(p_node, "global_position", player.global_position, seg_time)
+				ret_tw.parallel().tween_property(p_node, "rotation", deg_to_rad(360.0 / float(segment_cnt)), seg_time).as_relative()
 			ret_tw.finished.connect(func():
 				if is_instance_valid(p_node):
 					p_node.queue_free()

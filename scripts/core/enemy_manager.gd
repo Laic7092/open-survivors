@@ -856,9 +856,8 @@ func cell_has_enemies(center: Vector2, radius: float) -> bool:
 
 func get_nearest_with_mask(center: Vector2, max_radius: float, hit_mask: PackedByteArray) -> int:
 	_ensure_grid()
-	var r2 = max_radius * max_radius
 	var best = -1
-	var best_d = r2
+	var best_d = INF
 	var cx = int(center.x / GRID_CELL)
 	var cy = int(center.y / GRID_CELL)
 	var base_key = cx * GRID_KEY_MULT + cy
@@ -881,7 +880,9 @@ func get_nearest_with_mask(center: Vector2, max_radius: float, hit_mask: PackedB
 				var dx_v = p.x - cxf
 				var dy_v = p.y - cyf
 				var d = dx_v * dx_v + dy_v * dy_v
-				if d <= best_d:
+				# 圆-圆碰撞检测：投射物边界 + 敌人边界
+				var combined_r = max_radius + BASE_RADIUS * _scale_arr[eid]
+				if d <= combined_r * combined_r and d < best_d:
 					best = eid
 					best_d = d
 	return best

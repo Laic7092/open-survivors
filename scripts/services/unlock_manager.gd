@@ -199,8 +199,6 @@ func _run_check(cond_type: int):
 
 
 func _conditions_met(def) -> bool:
-	if def.unlock_type == UnlockTypes.UnlockableType.ITEM and def.conditions.is_empty():
-		return true
 	if def.conditions.is_empty():
 		return false
 	for cond in def.conditions:

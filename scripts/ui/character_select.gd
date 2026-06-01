@@ -19,6 +19,12 @@ func _ready():
 	get_viewport().size_changed.connect(_rebuild_cards)
 
 
+func _input(event):
+	if visible and event.is_action_pressed("ui_cancel"):
+		_on_back()
+		get_viewport().set_input_as_handled()
+
+
 func _rebuild_cards():
 	_clear_cards()
 
