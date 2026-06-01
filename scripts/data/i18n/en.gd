@@ -353,6 +353,11 @@ static func get_data() -> Dictionary:
 		"levelup.evolve": "⚡ EVOLVE! ⚡",
 		"levelup.evo_arrow": " → ",
 		"levelup.gold_desc": "All slots full!",
+		"levelup.reroll": "Reroll (%d)",
+		"levelup.skip": "Skip (%d)",
+		"levelup.banish": "Banish (%d)",
+		"levelup.limit_break": "LIMIT BREAK",
+		"levelup.chicken_desc": "Restore HP",
 
 		"item.whip_name": "Whip",
 		"item.wand_name": "Magic Wand",

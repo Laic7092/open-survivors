@@ -55,9 +55,9 @@ var _alive := PackedByteArray()
 var _dmg_txt_skip := PackedByteArray()
 
 # Bit flags per entity byte: is_boss, instant_kill_resist, debuff_resist,
-# has_hp_x_level, has_three_lives, is_fixed_dir, is_self_destruct, frozen
+# has_hp_x_level, has_three_lives, is_fixed_dir, is_self_destruct, frozen, harmless
 var _flags := PackedByteArray()
-enum Flag { BOSS, IK_RESIST, DEBUFF_RESIST, HP_X_LEVEL, THREE_LIVES, FIXED_DIR, SELF_DESTRUCT, FROZEN }
+enum Flag { BOSS, IK_RESIST, DEBUFF_RESIST, HP_X_LEVEL, THREE_LIVES, FIXED_DIR, SELF_DESTRUCT, FROZEN, HARMLESS }
 
 # Meta flags byte: is_wave_enemy, is_arcana_boss, culled, has_fixed_dir
 var _meta := PackedByteArray()
@@ -196,6 +196,9 @@ func spawn(type_id: int, pos: Vector2,
 	if t.has_three_lives: fl |= 1 << Flag.THREE_LIVES
 	if t.is_fixed_direction: fl |= 1 << Flag.FIXED_DIR
 	if t.is_self_destruct: fl |= 1 << Flag.SELF_DESTRUCT
+	if PowerUpManager and randf() < PowerUpManager.get_stat_bonuses()["defang_pct"]:
+		_contact_damage[id] = 0.0
+		fl |= 1 << Flag.HARMLESS
 	_flags[id] = fl
 
 	# Meta flags
@@ -349,8 +352,9 @@ func _process(delta):
 		var effective_speed = speed_mod
 
 		# ── 近战减速：越靠近 Player 越慢 → 分散到更多格子，提升空间网格性能 ──
-		# 近战减速（直接用 dist_sq 避免 sqrt）
-		var crowding_factor = clampf((dist_sq - 3600.0) / 28800.0, 0.3, 1.0)
+		var crowding_factor = 1.0
+		if dist_sq < 400.0:
+			crowding_factor = 0.1
 		effective_speed *= crowding_factor
 
 		# Stationary or off-turn
@@ -444,7 +448,7 @@ func _explode(id: int):
 		var dist = pos.distance_to(player.global_position)
 		if dist < radius:
 			if player.has_method("take_damage_direct"):
-				player.take_damage_direct(dmg * 0.3)
+				player.take_damage_direct(dmg)
 			elif player.has_method("_on_hurt"):
 				player._on_hurt(null)
 	# Visual
@@ -810,6 +814,8 @@ func get_capacity() -> int:
 	return _pos.size()
 
 
+const GRID_KEY_MULT := 10007  # prime, > max cells per axis
+
 func _ensure_grid():
 	if _grid_frame >= _frame_n:
 		return
@@ -819,33 +825,62 @@ func _ensure_grid():
 	_grid_frame = _frame_n
 	_grid.clear()
 	var n = _pos.size()
+	var px = _pos
+	var al = _alive
+	var mt = _meta
 	for i in n:
-		if _alive[i] == 0 or (_meta[i] & (1 << Meta.CULLED)):
+		if al[i] == 0 or (mt[i] & (1 << Meta.CULLED)):
 			continue
-		var cell = Vector2i(int(_pos[i].x / GRID_CELL), int(_pos[i].y / GRID_CELL))
-		if not _grid.has(cell):
-			_grid[cell] = []
-		_grid[cell].append(i)
+		var key = int(px[i].x / GRID_CELL) * GRID_KEY_MULT + int(px[i].y / GRID_CELL)
+		var arr = _grid.get(key)
+		if arr == null:
+			arr = []
+			_grid[key] = arr
+		arr.append(i)
 
+
+
+func cell_has_enemies(center: Vector2, radius: float) -> bool:
+	_ensure_grid()
+	var cx = int(center.x / GRID_CELL)
+	var cy = int(center.y / GRID_CELL)
+	var base_key = cx * GRID_KEY_MULT + cy
+	var cr = ceili(radius / GRID_CELL)
+	var step = GRID_KEY_MULT
+	for dx in range(-cr, cr + 1):
+		var row_key = base_key + dx * step
+		for dy in range(-cr, cr + 1):
+			if _grid.has(row_key + dy):
+				return true
+	return false
 
 func get_nearest_with_mask(center: Vector2, max_radius: float, hit_mask: PackedByteArray) -> int:
 	_ensure_grid()
 	var r2 = max_radius * max_radius
 	var best = -1
 	var best_d = r2
-	var cell = Vector2i(int(center.x / GRID_CELL), int(center.y / GRID_CELL))
-
-	# 隔帧重建的网格足以覆盖小半径碰撞检测
+	var cx = int(center.x / GRID_CELL)
+	var cy = int(center.y / GRID_CELL)
+	var base_key = cx * GRID_KEY_MULT + cy
 	var cr = ceili(max_radius / GRID_CELL)
+	var mask_size = hit_mask.size()
+	var px = _pos
+	var cxf = center.x
+	var cyf = center.y
+	var step = GRID_KEY_MULT
 	for dx in range(-cr, cr + 1):
+		var row_key = base_key + dx * step
 		for dy in range(-cr, cr + 1):
-			var ids = _grid.get(Vector2i(cell.x + dx, cell.y + dy))
+			var ids = _grid.get(row_key + dy)
 			if not ids:
 				continue
 			for eid in ids:
-				if eid >= hit_mask.size() or hit_mask[eid]:
+				if eid >= mask_size or hit_mask[eid]:
 					continue
-				var d = _pos[eid].distance_squared_to(center)
+				var p = px[eid]
+				var dx_v = p.x - cxf
+				var dy_v = p.y - cyf
+				var d = dx_v * dx_v + dy_v * dy_v
 				if d <= best_d:
 					best = eid
 					best_d = d
@@ -856,17 +891,28 @@ func query_circle(center: Vector2, radius: float) -> Array[int]:
 	_ensure_grid()
 	var r2 = radius * radius
 	var result: Array[int] = []
-	var cell = Vector2i(int(center.x / GRID_CELL), int(center.y / GRID_CELL))
+	var cx = int(center.x / GRID_CELL)
+	var cy = int(center.y / GRID_CELL)
+	var base_key = cx * GRID_KEY_MULT + cy
 	var cr = ceili(radius / GRID_CELL)
+	var px = _pos
+	var al = _alive
+	var cxf = center.x
+	var cyf = center.y
+	var step = GRID_KEY_MULT
 	for dx in range(-cr, cr + 1):
+		var row_key = base_key + dx * step
 		for dy in range(-cr, cr + 1):
-			var ids = _grid.get(Vector2i(cell.x + dx, cell.y + dy))
+			var ids = _grid.get(row_key + dy)
 			if not ids:
 				continue
 			for eid in ids:
-				if _alive[eid] == 0:
+				if al[eid] == 0:
 					continue
-				if _pos[eid].distance_squared_to(center) <= r2:
+				var p = px[eid]
+				var dx_v = p.x - cxf
+				var dy_v = p.y - cyf
+				if dx_v * dx_v + dy_v * dy_v <= r2:
 					result.append(eid)
 	return result
 
@@ -905,20 +951,34 @@ func contact_damage_at(center: Vector2, player_radius: float) -> float:
 	_ensure_grid()
 	var max_r = player_radius + BASE_RADIUS * 2
 	var r2 = max_r * max_r
-	var cell = Vector2i(int(center.x / GRID_CELL), int(center.y / GRID_CELL))
+	var cx = int(center.x / GRID_CELL)
+	var cy = int(center.y / GRID_CELL)
+	var base_key = cx * GRID_KEY_MULT + cy
 
 	# 玩家碰撞半径通常 < 64px（GRID_CELL），查中心格 + 相邻格
 	var cr = ceili(max_r / GRID_CELL)
+	var px = _pos
+	var fl = _flags
+	var cd = _contact_damage
+	var cxf = center.x
+	var cyf = center.y
+	var step = GRID_KEY_MULT
 	for dx in range(-cr, cr + 1):
+		var row_key = base_key + dx * step
 		for dy in range(-cr, cr + 1):
-			var ids = _grid.get(Vector2i(cell.x + dx, cell.y + dy))
+			var ids = _grid.get(row_key + dy)
 			if not ids:
 				continue
 			for eid in ids:
-				if _flags[eid] & (1 << Flag.FROZEN):
+				if fl[eid] & (1 << Flag.FROZEN):
 					continue
-				if _pos[eid].distance_squared_to(center) <= r2:
-					return _contact_damage[eid]
+				if fl[eid] & (1 << Flag.HARMLESS):
+					continue
+				var p = px[eid]
+				var dx_v = p.x - cxf
+				var dy_v = p.y - cyf
+				if dx_v * dx_v + dy_v * dy_v <= r2:
+					return cd[eid]
 	return 0.0
 
 

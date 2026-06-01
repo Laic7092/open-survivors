@@ -265,12 +265,14 @@ func _process(delta):
 	if _frame_count % 60 == 0:
 		UnlockManager.on_game_time_updated(game_state.game_time)
 	
-	if not EventBus.get_config("endless_mode", false) and game_state.game_time >= game_state.stage_time_limit:
-		_on_stage_complete()
-		return
-	
 	# ── 子系统更新 ──
 	wave_system.process(delta)
+	
+	# 无 wave_defs 的关卡用时间限制触发结算；有 wave_defs 的由 Reaper 终结
+	var _has_wave_defs = game_state.stage_data.has("wave_defs") and not game_state.stage_data["wave_defs"].is_empty()
+	if not EventBus.get_config("endless_mode", false) and not _has_wave_defs and game_state.game_time >= game_state.stage_time_limit:
+		_on_stage_complete()
+		return
 	curse_system.process(delta)
 	camera_ctrl.process(delta)
 	pickup_timer.process(delta)
@@ -279,7 +281,7 @@ func _process(delta):
 	
 	# ── Boss 检测 ──
 	# 数据驱动关卡（wave_defs）由波次系统管理 Boss，跳过此处
-	var _has_wave_defs = game_state.stage_data.has("wave_defs") and not game_state.stage_data["wave_defs"].is_empty()
+	_has_wave_defs = game_state.stage_data.has("wave_defs") and not game_state.stage_data["wave_defs"].is_empty()
 	if not _has_wave_defs and not game_state.boss_spawned and game_state.game_time >= 900.0:
 		var boss_t = DataRegistry.enemies().get_boss_type(game_state._stage_id, game_state.game_time)
 		if boss_t >= 0:

@@ -23,7 +23,7 @@ const POWERUPS := {
 	"luck":      {"name": "Luck",      "desc": "+10% luck",               "max_lv": 3, "base_cost": 600},
 	"growth":    {"name": "Growth",    "desc": "+3% XP gain",             "max_lv": 5, "base_cost": 900},
 	"greed":     {"name": "Greed",     "desc": "+10% gold earned",       "max_lv": 5, "base_cost": 200},
-	"armor":     {"name": "Armor",     "desc": "+1 damage reduction",     "max_lv": 3, "base_cost": 600},
+	"armor":     {"name": "Armor",     "desc": "Reduces incoming damage by 1 per rank (max -3)",     "max_lv": 3, "base_cost": 600},
 	"curse":     {"name": "Curse",     "desc": "+10% enemy difficulty",   "max_lv": 5, "base_cost": 1666},
 	"revival":   {"name": "Revival",   "desc": "+1 revive (50% HP)",     "max_lv": 1, "base_cost": 10000},
 	# ── Special stat boosts ──

@@ -363,6 +363,11 @@ static func get_data() -> Dictionary:
 		"levelup.evolve": "⚡ 进化！⚡",
 		"levelup.evo_arrow": " → ",
 		"levelup.gold_desc": "所有格子已满！",
+		"levelup.reroll": "重掷 (%d)",
+		"levelup.skip": "跳过 (%d)",
+		"levelup.banish": "放逐 (%d)",
+		"levelup.limit_break": "极限突破",
+		"levelup.chicken_desc": "恢复HP",
 
 		# ── Item Names ──
 		"item.whip_name": "鞭子",

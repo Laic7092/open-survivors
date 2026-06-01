@@ -60,6 +60,10 @@ func _physics_process(delta):
 	if _enemy_manager and _damage > 0:
 		var pos = _parent.global_position
 
+		# 快速空单元格跳过：附近格子无敌人则省去完整查询
+		if _enemy_manager.has_method("cell_has_enemies") and not _enemy_manager.cell_has_enemies(pos, _hit_radius):
+			return
+
 		var eid = _enemy_manager.get_nearest_with_mask(pos, _hit_radius, _hit_mask)
 		if eid >= 0:
 			if _hit_callable.is_valid():

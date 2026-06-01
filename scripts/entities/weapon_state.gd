@@ -264,7 +264,7 @@ static var _LIMIT_BREAKS := {
 			{"stat": "area_pct", "value": 2.5, "rarity": 10, "max_total": 1000.0},
 			{"stat": "speed_pct", "value": 5.0, "rarity": 10, "max_total": 300.0},
 			{"stat": "amt", "value": 1, "rarity": 1, "max_total": 20},
-			{"stat": "pierce", "value": 1, "rarity": 5, "max_total": 10},
+			{"stat": "pierce", "value": 1, "rarity": 5, "max_total": -1},
 			{"stat": "base_dmg", "value": 0.5, "rarity": -1, "max_total": -1},
 		],
 	},

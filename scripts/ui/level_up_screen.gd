@@ -595,6 +595,3 @@ static func _limit_break_stat_suffix(key: String) -> String:
 # ── 委托到 DataRegistry ──
 static func _evo_i18n_key(weapon_type: int) -> String:
 	return DataRegistry.items().item_evo_key(weapon_type)
-
-
-

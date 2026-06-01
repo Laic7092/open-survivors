@@ -52,25 +52,10 @@ static func _fire_knife(w, weapon_manager, player, dmg: float, area: float, dir:
 	p.rotation = dir.angle()
 	player.get_parent().add_child(p)
 	
-	# Custom hit callback for pierce tracking
-	p.body_entered.connect(_on_knife_hit.bind(p, dmg))
-	
 	# Wiki: "They cannot pass through walls" — linear travel
 	var mover = Node2D.new()
 	mover.set_script(weapon_manager._proj_mover_script)
-	mover.set_movement(dir * w.speed, 500.0 / max(w.speed, 1.0))
-	mover.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 6.0, w.pierce)
+	var spd = w.speed * player.speed_mult
+	mover.set_movement(dir * spd, 500.0 / max(spd, 1.0))
+	mover.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(area, 6.0), w.pierce)
 	p.add_child(mover)
-
-
-static func _on_knife_hit(body, proj, dmg: float):
-	if not is_instance_valid(body) or not is_instance_valid(proj):
-		return
-	if body.has_method("take_damage"):
-		body.take_damage(dmg, Vector2.ZERO)
-	var remaining = proj.get_meta("pierce_remaining", 1) - 1
-	if remaining <= 0:
-		if is_instance_valid(proj):
-			proj.queue_free()
-	else:
-		proj.set_meta("pierce_remaining", remaining)

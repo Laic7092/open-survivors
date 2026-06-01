@@ -165,7 +165,7 @@ static func calc_enemy_hp(base_hp: float, diff_factor: float, curse_level: int) 
 
 
 static func calc_enemy_damage(base_dmg: float, diff_factor: float, curse_level: int) -> float:
-	var dmg = base_dmg * 0.1
+	var dmg = base_dmg
 	if curse_level > 0:
 		dmg *= (1.0 + curse_level * 0.15 * 0.75)
 	return dmg

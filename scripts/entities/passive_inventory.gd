@@ -71,7 +71,7 @@ func recalculate(player):
 			ItemTypes.Type.SPELLBINDER:
 				player.duration_mult += 0.10 * lv
 			ItemTypes.Type.ARMOR:
-				player.armor = 0.08 * lv  # 8% 减伤/lv
+				player.armor = lv  # 平坦减伤 -1/lv (最大-5)
 			ItemTypes.Type.BRACER:
 				player.speed_mult += 0.10 * lv
 			ItemTypes.Type.SKULL:

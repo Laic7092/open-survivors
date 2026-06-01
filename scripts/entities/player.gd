@@ -24,7 +24,7 @@ var recovery: float = 0.0           # HP/s 回复 (Wiki: 0 HP/s)
 var armor: float = 0.0             # 减伤 (Wiki: 0)
 var move_speed: float = 200.0      # 移动速度 px/s (Wiki: 100% = 200px/s)
 var revivals: int = 0              # 复活次数 (Wiki: 0)
-var invincible_duration: float = 0.3  # 受伤无敌时间 (Parm Aegis)
+var invincible_duration: float = 1.0  # 受伤无敌时间
 var charm: int = 0                 # 敌人生成数增加
 
 # ── 百分比乘算 stats (1.0 = 100%) ──
@@ -328,7 +328,7 @@ func recalculate_stats():
 	magnet_level = 0
 	pickup_range = 80.0
 	charm = 0
-	invincible_duration = 0.3
+	invincible_duration = 1.0
 	gold_fever_duration_bonus = 0.0
 	_crit_chance = 0.0
 	
@@ -363,6 +363,15 @@ func recalculate_stats():
 		move_speed += 200.0 * b["move_speed_pct"]
 		growth_mult += b["growth_pct"]
 		armor += b["armor"]
+		speed_mult += b["projectile_speed_pct"]
+		duration_mult += b["duration_pct"]
+		projectile_bonus += b["amount"]
+		pickup_range += 80.0 * b["magnet_pct"]
+		luck += b["luck_pct"]
+		greed_mult += b["greed_pct"]
+		curse += b["curse_pct"]
+		revivals += b["revivals"]
+		charm += b["charm"]
 	
 	# L3: Passive items（passive_inventory 从基线重算所有 stat）
 	passive_inventory.recalculate(self)
@@ -584,7 +593,6 @@ func _attract_gems(delta: float):
 # ── Hurt / Health ────────────────────────────────────────────────────
 
 func _check_contact_damage(delta: float):
-	return  # temp: 无敌模式，测试性能
 	if health <= 0 or invincible > 0:
 		return
 	if _enemy_manager == null:
@@ -593,7 +601,7 @@ func _check_contact_damage(delta: float):
 		return
 	var dmg = _enemy_manager.contact_damage_at(global_position, 12.0)
 	if dmg > 0:
-		health -= max(dmg * (1.0 - armor), 1.0)
+		health -= max(dmg - armor, 1.0)
 		invincible = invincible_duration
 		hurt.emit()
 		if health <= 0:
@@ -656,6 +664,15 @@ func _apply_powerup_stats():
 	move_speed += 200.0 * b["move_speed_pct"]
 	growth_mult += b["growth_pct"]
 	armor += b["armor"]
+	speed_mult += b["projectile_speed_pct"]
+	duration_mult += b["duration_pct"]
+	projectile_bonus += b["amount"]
+	pickup_range += 80.0 * b["magnet_pct"]
+	luck += b["luck_pct"]
+	greed_mult += b["greed_pct"]
+	curse += b["curse_pct"]
+	revivals += b["revivals"]
+	charm += b["charm"]
 
 
 func _apply_powerup_bonuses():

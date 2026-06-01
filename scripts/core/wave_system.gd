@@ -9,8 +9,9 @@ extends Node
 
 const GameState = preload("res://scripts/core/game_state.gd")
 
-const HARD_CAP: int = 350          # 紧急天花板
+const HARD_CAP_BASE: int = 350     # 紧急天花板基数
 const CAP_BUFFER: int = 50         # 软上限距硬上限缓冲距离
+var _charm_extra: int = 0          # 由 Charm PowerUp 附加的封顶增量
 # 外部依赖：由 main.gd 注入
 var game_state: GameState
 var player: Node2D
@@ -234,7 +235,9 @@ func _try_trigger_next_wave():
 	gs.wave_number += 1
 
 	# 更新参数
-	_wave_minimum = wd.get("enemy_minimum", 1)
+	var charm_val = player.get_charm() if is_instance_valid(player) and player.has_method("get_charm") else 0
+	_charm_extra = charm_val
+	_wave_minimum = wd.get("enemy_minimum", 1) + charm_val
 	_enforce_cooldown = 0.0  # 新波次立即响应
 	_wave_interval = wd.get("interval", 0.5)
 
@@ -275,12 +278,13 @@ func _spawn_continuous_batch():
 		return
 
 	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
+	var hard_cap = HARD_CAP_BASE + _charm_extra
 	# 紧急天花板：决不允许超过
-	if alive >= HARD_CAP:
+	if alive >= hard_cap:
 		return
 
 	# 软上限：在硬上限下方留出缓冲带，避免触碰紧急天花板
-	var limit_cap = mini(HARD_CAP - CAP_BUFFER, int(_wave_minimum * 1.1) + 10)
+	var limit_cap = mini(hard_cap - CAP_BUFFER, int(_wave_minimum * 1.1) + 10)
 	if alive >= limit_cap:
 		return
 
@@ -317,7 +321,7 @@ func _check_minimum_enforcement():
 	if needed <= 0:
 		return
 
-	if alive >= HARD_CAP:
+	if alive >= HARD_CAP_BASE + _charm_extra:
 		return
 
 	var batch = clampi(needed, 1, 10)
@@ -379,7 +383,7 @@ func _trigger_map_event(ev: Dictionary):
 
 	# 事件也必须尊重硬上限，避免在已满时继续堆怪
 	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
-	var available = HARD_CAP - alive
+	var available = HARD_CAP_BASE + _charm_extra - alive
 	if available <= 0:
 		return
 
