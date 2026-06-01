@@ -59,6 +59,7 @@ static func _fire_knife(w, weapon_manager, player, dmg: float, area: float, dir:
 	var mover = Node2D.new()
 	mover.set_script(weapon_manager._proj_mover_script)
 	mover.set_movement(dir * w.speed, 500.0 / max(w.speed, 1.0))
+	mover.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 6.0, w.pierce)
 	p.add_child(mover)
 
 

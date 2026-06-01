@@ -82,6 +82,7 @@ var passive_inventory
 var hurtbox: Area2D
 
 var _ft_scene = preload("res://scenes/floating_text.tscn")
+var _enemy_manager: Node = null
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
 const ItemTypes = preload("res://scripts/data/item_types.gd")
@@ -105,7 +106,7 @@ func _ready():
 	hs.shape = hc
 	hurtbox.add_child(hs)
 	add_child(hurtbox)
-	hurtbox.body_entered.connect(_on_hurt)
+	# body_entered removed; contact damage handled in _process via EnemyManager
 	hurtbox.area_entered.connect(_on_hurt_area)
 
 
@@ -152,6 +153,7 @@ func _process(delta):
 		if health != old:
 			health_changed.emit(health, max_health)
 	weapon_manager.process(delta)
+	_check_contact_damage(delta)
 	_attract_gems(delta)
 	_mark_visual_dirty_if_needed()
 
@@ -627,16 +629,40 @@ func _on_hurt_area(area: Area2D):
 			health_changed.emit(health, max_health)
 
 
-func _damage_nearby_enemies(amount: float):
-	var enemies = EnemyRegistry.get_all() if EnemyRegistry else []
-	var pos = global_position
-	for e in enemies:
-		if not is_instance_valid(e):
-			continue
-		if pos.distance_to(e.global_position) < 100.0:
-			if e.has_method("take_damage"):
-				e.take_damage(amount, Vector2.ZERO)
+func _check_contact_damage(delta: float):
+	if health <= 0 or invincible > 0:
+		return
+	if _enemy_manager == null:
+		_update_enemy_manager_ref()
+	if _enemy_manager == null:
+		return
+	var dmg = _enemy_manager.contact_damage_at(global_position, 12.0)
+	if dmg > 0:
+		health -= max(dmg * (1.0 - armor), 1.0)
+		invincible = invincible_duration
+		hurt.emit()
+		if health <= 0:
+			died.emit()
+		else:
+			AudioManager.play_sfx("player_hurt")
+		health_changed.emit(health, max_health)
 
+
+func _update_enemy_manager_ref():
+	var main = get_parent()
+	if main and main.has_node("EnemyManager"):
+		_enemy_manager = main.get_node("EnemyManager")
+
+
+
+func _damage_nearby_enemies(amount: float):
+	if _enemy_manager == null:
+		_update_enemy_manager_ref()
+	if _enemy_manager == null:
+		return
+	var ids = _enemy_manager.query_circle(global_position, 100.0)
+	for eid in ids:
+		_enemy_manager.damage(eid, amount, Vector2.ZERO)
 
 func show_floating_text(txt: String, col: Color = Color.WHITE, sz: int = 16):
 	if is_inside_tree() and ObjectPoolManager:

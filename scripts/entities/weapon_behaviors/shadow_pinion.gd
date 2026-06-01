@@ -18,7 +18,6 @@ static func fire(w, weapon_manager, player, get_enemies):
 		zone.add_child(vis)
 		zone.global_position = player.global_position
 		player.get_parent().add_child(zone)
-		zone.body_entered.connect(_on_shadow_hit.bind(zone, dmg))
 		var tw = player.create_tween()
 		tw.tween_property(vis, "modulate:a", 0.0, 0.5)
 		var zone_id = zone.get_instance_id()
@@ -43,7 +42,6 @@ static func fire(w, weapon_manager, player, get_enemies):
 		zone.add_child(vis)
 		zone.global_position = trail_pos
 		player.get_parent().add_child(zone)
-		zone.body_entered.connect(_on_shadow_hit.bind(zone, dmg * 0.5))
 		var tw = player.create_tween()
 		tw.tween_property(vis, "modulate:a", 0.0, 0.3)
 		var zone_id = zone.get_instance_id()

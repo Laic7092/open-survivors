@@ -1,57 +1,63 @@
 extends Node
-# EnemyRegistry — autoload singleton
-# Tracks all alive enemies via register/unregister.
-# Dictionary-based for O(1) register/unregister performance.
+# EnemyRegistry — autoload singleton (shim delegating to EnemyManager)
+# All tracking is now in EnemyManager. This file provides backward compat.
 
 signal boss_count_changed(count: int)
 
 var is_crowded: bool = false
 const CROWDED_THRESHOLD: int = 150
 
-var _enemies: Dictionary = {}  # instance_id -> Node
-var _boss_count: int = 0
+var _enemy_manager: Node = null
 
 
 func _ready():
 	process_mode = PROCESS_MODE_WHEN_PAUSED
 
 
-func register(e: Node):
-	var id = e.get_instance_id()
-	_enemies[id] = e
-	if not is_crowded and _enemies.size() > CROWDED_THRESHOLD:
-		is_crowded = true
-	if e.has_method("get_is_boss") and e.get_is_boss():
-		_boss_count += 1
-		boss_count_changed.emit(_boss_count)
+func _get_mgr() -> Node:
+	if _enemy_manager == null:
+		_enemy_manager = _find_enemy_manager()
+	return _enemy_manager
 
 
-func unregister(e: Node):
-	var id = e.get_instance_id()
-	if _enemies.erase(id):
-		if is_crowded and _enemies.size() <= CROWDED_THRESHOLD:
-			is_crowded = false
-		if e.has_method("get_is_boss") and e.get_is_boss():
-			_boss_count = max(0, _boss_count - 1)
-			boss_count_changed.emit(_boss_count)
+func _find_enemy_manager() -> Node:
+	var tree = Engine.get_main_loop()
+	if tree and tree.has_method("get_current_scene"):
+		var scene = tree.get_current_scene()
+		if scene:
+			return scene.find_child("EnemyManager", true, false)
+	return null
 
 
-func get_all() -> Array[Node]:
-	return _enemies.values().duplicate()
+func register(_e: Node):
+	pass  # managed by EnemyManager internally
 
 
-# Fast path: returns values array (new allocation but no copy of references)
+func unregister(_e: Node):
+	pass
+
+
+func get_all() -> Array:
+	var mgr = _get_mgr()
+	if mgr and mgr.has_method("get_proxies"):
+		return mgr.get_proxies()
+	return []
+
+
 func get_all_ref() -> Array:
-	return _enemies.values()
+	return get_all()
 
 
 func is_empty() -> bool:
-	return _enemies.is_empty()
+	var mgr = _get_mgr()
+	return mgr.get_count() <= 0 if mgr else true
 
 
 func get_count() -> int:
-	return _enemies.size()
+	var mgr = _get_mgr()
+	return mgr.get_count() if mgr else 0
 
 
 func get_boss_count() -> int:
-	return _boss_count
+	var mgr = _get_mgr()
+	return mgr.get_boss_count() if mgr else 0

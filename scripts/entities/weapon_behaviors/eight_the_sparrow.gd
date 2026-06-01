@@ -22,11 +22,11 @@ static func fire(w, weapon_manager, player, get_enemies):
 			p.rotation = dir.angle()
 			p.set_meta("piercing", true)
 			player.get_parent().add_child(p)
-			p.body_entered.connect(_on_piercing_hit.bind(p, w, weapon_manager, dmg))
 			var mover = Node2D.new()
 			mover.set_script(weapon_manager._proj_mover_script)
 			var spd = w.speed * player.speed_mult
 			mover.set_movement(dir * spd, 600.0 / max(spd, 1.0))
+			mover.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 6.0, w.pierce)
 			p.add_child(mover)
 
 static func _on_piercing_hit(body, proj, w, weapon_manager, dmg: float):

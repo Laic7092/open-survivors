@@ -23,4 +23,5 @@ static func fire(w, weapon_manager, player, get_enemies):
 		mover.set_script(weapon_manager._proj_mover_script)
 		var spd = w.speed * player.speed_mult
 		mover.set_movement(dir.rotated(angle) * spd, 400.0 / max(spd, 1.0))
+		mover.set_hit_config(weapon_manager.get_enemy_manager(), level_scaled, 6.0, 0)
 		p.add_child(mover)

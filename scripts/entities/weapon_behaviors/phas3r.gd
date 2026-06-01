@@ -21,7 +21,6 @@ static func fire(w, weapon_manager, player, get_enemies):
 		zone.global_position = player.global_position + dir * area + offset
 		zone.rotation = dir.angle()
 		player.get_parent().add_child(zone)
-		zone.body_entered.connect(_on_phaser_hit.bind(zone, dmg))
 		var tw = player.create_tween()
 		tw.tween_property(vis, "modulate:a", 0.0, 0.8)
 		var zone_id = zone.get_instance_id()

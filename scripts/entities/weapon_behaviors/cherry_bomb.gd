@@ -21,7 +21,6 @@ static func fire(w, weapon_manager, player, get_enemies):
 		p.set_meta("bomb_area", area)
 		p.set_meta("bomb_evolved", w.evolved)
 		player.get_parent().add_child(p)
-		p.body_entered.connect(_on_bomb_hit.bind(p, weapon_manager))
 		var spd = w.speed * player.speed_mult
 		var dist = 80.0
 		var target = p.global_position + dir * dist

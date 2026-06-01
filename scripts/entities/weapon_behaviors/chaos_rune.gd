@@ -24,7 +24,10 @@ static func fire(w, weapon_manager, player, get_enemies):
 		var dist = 20.0 + i * 15.0
 		p.global_position = player.global_position + dir * dist
 		player.get_parent().add_child(p)
-		p.body_entered.connect(weapon_manager._on_proj_hit_and_free.bind(p, dmg))
+		var _hit = Node2D.new()
+		_hit.set_script(weapon_manager._proj_mover_script)
+		_hit.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 20.0, 0)
+		p.add_child(_hit)
 		var tw = player.create_tween()
 		tw.tween_property(p, "modulate:a", 0.0, 0.5 * duration_factor)
 		tw.finished.connect(weapon_manager._on_tween_done.bind(p))

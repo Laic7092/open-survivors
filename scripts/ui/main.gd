@@ -116,13 +116,20 @@ func _ready():
 	spawn_manager = SpawnManager.new()
 	add_child(spawn_manager)
 	spawn_manager.setup(player, game_state, camera_ctrl, self)
-	spawn_manager.enemy_spawned.connect(_on_enemy_spawned)
 	spawn_manager.boss_spawned.connect(_on_boss_spawned)
-	
+
+	# ── EnemyManager ──
+	var em = preload("res://scripts/entities/enemy_manager.gd").new()
+	em.name = "EnemyManager"
+	add_child(em)
+	em.setup(player, game_state, camera_ctrl)
+	spawn_manager.enemy_manager = em
+	em.enemy_killed.connect(_on_enemy_killed)
+
 	# ── Core 系统 ──
 	wave_system = WaveSystem.new()
 	add_child(wave_system)
-	wave_system.setup(game_state, player, spawn_manager.spawn_enemy, camera_ctrl)
+	wave_system.setup(game_state, player, spawn_manager.spawn_enemy, camera_ctrl, em)
 	
 	curse_system = CurseSystem.new()
 	add_child(curse_system)
@@ -226,9 +233,10 @@ func _on_map_ready():
 		var pool = DataRegistry.enemies().get_types_for_stage(game_state._stage_id, 0.0)
 		for i in range(starting):
 			var t = DataRegistry.enemies().pick_weighted(pool) if not pool.is_empty() else 11
-			var e = spawn_manager.spawn_enemy(t)
-			if e:
-				e.is_wave_enemy = false
+			var eid = spawn_manager.spawn_enemy(t)
+			var _em = get_enemy_manager()
+			if eid >= 0 and _em:
+				_em.set_meta_flag(eid, "is_wave_enemy", false)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -299,29 +307,25 @@ func _on_boss_spawned(_boss_type: int):
 	camera_ctrl.shake(8.0, 1.0)
 
 
-func _on_enemy_spawned(enemy: Node2D):
-	enemy.died.connect(_on_enemy_died.bind(enemy))
+func _on_enemy_killed(id: int, type_id: int, pos: Vector2, is_boss: bool, xp_value: int):
+	if game_state:
+		game_state.add_kill()
+	EventBus.enemy_killed.emit(type_id, pos, is_boss)
 
+	# 掉落物
+	var em = get_enemy_manager()
+	var is_arcana = em and em.get_flag(id, "is_arcana_boss")
+	spawn_manager.spawn_enemy_drops_data(pos, xp_value, type_id, is_boss, is_arcana)
 
-func _on_enemy_died(enemy: Node2D):
-	if not is_instance_valid(enemy):
-		return
-	game_state.add_kill()
-	var is_boss = enemy.has_method("get_is_boss") and enemy.get_is_boss()
-	var enemy_type = enemy.enemy_type_id if "enemy_type_id" in enemy else -1
-	EventBus.enemy_killed.emit(enemy_type, enemy.global_position, is_boss)
-	
-	var is_arcana_boss = enemy.has_meta("arcana_boss") and enemy.get_meta("arcana_boss")
-	
-	# 掉落物（委托给 SpawnManager）
-	spawn_manager.spawn_enemy_drops(enemy)
-	
-	# 进度/UI（main.gd 保留）
-	if is_arcana_boss:
+	# 进度/UI
+	if is_arcana:
 		call_deferred("_show_arcana_chest_pick")
 	if is_boss:
-		UnlockManager.on_boss_defeated(game_state._stage_id)
-	spawn_manager.recycle_enemy(enemy)
+		UnlockManager.on_boss_defeated(game_state._stage_id if game_state else 0)
+
+
+func get_enemy_manager():
+	return $EnemyManager
 
 
 

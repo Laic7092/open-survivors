@@ -39,7 +39,6 @@ static func fire(w, weapon_manager, player, get_enemies):
 
 	zone.global_position = player.global_position + Vector2(0, 0)
 	player.get_parent().add_child(zone)
-	zone.body_entered.connect(_on_vine_hit.bind(zone, dmg))
 	var tw = player.create_tween()
 	for child in zone.get_children():
 		if child is ColorRect:

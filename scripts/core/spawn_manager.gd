@@ -2,13 +2,11 @@ extends Node
 # SpawnManager — 统一生成管理
 # 从 main.gd 拆分：所有敌人/拾取物/遗物/Boss 生成 + 敌人死亡掉落
 # main.gd 持有引用并驱动
-const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
 
 # Enemy data loaded lazily via DataRegistry
 # Relic data loaded lazily via DataRegistry
 # Item data loaded lazily via DataRegistry
 
-signal enemy_spawned(enemy: Node2D)
 signal boss_spawned(boss_type: int)
 signal arcana_boss_defeated
 
@@ -16,16 +14,13 @@ var player: Node2D
 var game_state: Node  # GameState
 var camera_ctrl: Node  # CameraController
 var main_node: Node2D  # 父节点（main.gd）
+var enemy_manager: Node  # EnemyManager, set by main.gd after creation
 
 var _overflow_xp: int = 0
 const MAX_GEMS: int = 500
 
-var _enemy_scene = preload("res://scenes/enemy.tscn")
 var _pickup_scene = preload("res://scenes/pickup.tscn")
 var _relic_scene = preload("res://scenes/relic_pickup.tscn")
-
-# 死亡敌人池：原地禁用后回收复用，避免 remove_child/add_child 场景树开销
-var _dead_enemies: Array[Node2D] = []
 
 # 遗物跟踪
 var stage_relics: Array = []
@@ -57,77 +52,29 @@ func setup(p: Node2D, gs: Node, cam: Node, parent: Node2D):
 
 # ── 敌人生成 ──
 
-func spawn_enemy(type_id: int = 0) -> Node2D:
-	var enemy: Node2D
-	if _dead_enemies.size() > 0:
-		# 从死亡池回收，原地复活
-		enemy = _dead_enemies.pop_back()
-		_revive_enemy(enemy, type_id)
-	else:
-		enemy = _enemy_scene.instantiate()
-		enemy.player = player
-		enemy.game_state = game_state
-		var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
-		var bounds = camera_ctrl.get_camera_bounds()
-		var margin = 60.0
-		var pos: Vector2
-		match randi() % 4:
-			0: pos = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.top - margin)
-			1: pos = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.bottom + margin)
-			2: pos = Vector2(bounds.left - margin, randf_range(bounds.top + margin, bounds.bottom - margin))
-			3: pos = Vector2(bounds.right + margin, randf_range(bounds.top + margin, bounds.bottom - margin))
-		enemy.global_position = _clamp_to_map(pos, 10.0)
-		var wave_bonus = 1.0 + game_state.wave_number * 0.08
-		enemy.set_enemy_type(type_id, game_state.difficulty * curse_mod * wave_bonus)
-		main_node.add_child(enemy)
-	enemy_spawned.emit(enemy)
-	return enemy
+func spawn_enemy(type_id: int = 0, force_boss: bool = false) -> int:
+	return spawn_enemy_full(type_id, false)
 
 
-# 复活一个死亡池中的敌人
-func _revive_enemy(enemy: Node2D, type_id: int):
-	# 清理旧信号
-	for c in enemy.died.get_connections():
-		enemy.died.disconnect(c.callable)
+func spawn_enemy_full(type_id: int, force_boss: bool) -> int:
+	if not enemy_manager:
+		return -1
+	var wave_bonus = 1.0 + game_state.wave_number * 0.08
+	return _spawn_at_edge(type_id, 60.0, wave_bonus, force_boss)
 
-	enemy.player = player
-	enemy.game_state = game_state
-	enemy.visible = true
-	enemy.modulate = Color(1, 1, 1, 1)
-	enemy.scale = Vector2(1, 1)
-	enemy.collision_layer = CollisionLayers.ENEMY
-	enemy.collision_mask = 0
-	enemy.set_physics_process(true)
-	enemy.set_process(true)
-	enemy.add_to_group("enemies")
 
+func _spawn_at_edge(type_id: int, margin: float, wave_bonus: float, force_boss: bool = false) -> int:
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
 	var bounds = camera_ctrl.get_camera_bounds()
-	var margin = 60.0
 	var pos: Vector2
 	match randi() % 4:
 		0: pos = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.top - margin)
 		1: pos = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.bottom + margin)
 		2: pos = Vector2(bounds.left - margin, randf_range(bounds.top + margin, bounds.bottom - margin))
 		3: pos = Vector2(bounds.right + margin, randf_range(bounds.top + margin, bounds.bottom - margin))
-	enemy.global_position = _clamp_to_map(pos, 10.0)
-	var wave_bonus = 1.0 + game_state.wave_number * 0.08
-	enemy.set_enemy_type(type_id, game_state.difficulty * curse_mod * wave_bonus)
-	EnemyRegistry.register(enemy)
-
-
-# 回收死亡敌人：原地禁用，不复位父节点，不经过 OPM
-func recycle_enemy(enemy: Node2D):
-	if not is_instance_valid(enemy):
-		return
-	enemy.visible = false
-	enemy.set_process(false)
-	enemy.set_physics_process(false)
-	enemy.collision_layer = 0
-	enemy.collision_mask = 0
-	enemy.remove_from_group("enemies")
-	# 保留在 main_node 中，只禁用
-	_dead_enemies.append(enemy)
+	pos = _clamp_to_map(pos, 10.0)
+	var diff = game_state.difficulty * curse_mod * wave_bonus
+	return enemy_manager.spawn(type_id, pos, player, game_state, camera_ctrl, diff, force_boss)
 
 
 func spawn_boss():
@@ -140,65 +87,47 @@ func spawn_boss():
 	if boss_type < 0:
 		return
 
-	var enemy: Node2D
-	if _dead_enemies.size() > 0:
-		enemy = _dead_enemies.pop_back()
-		_revive_enemy(enemy, boss_type)
-	else:
-		enemy = _enemy_scene.instantiate()
-		enemy.player = player
-		enemy.game_state = game_state
-		var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
-		enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod)
-		enemy.set_as_boss()
+	if not enemy_manager:
+		return
 
-		var bounds = camera_ctrl.get_camera_bounds()
-		var margin = 80.0
-		var pos: Vector2
-		match randi() % 4:
-			0: pos = Vector2(0, bounds.top - margin)
-			1: pos = Vector2(0, bounds.bottom + margin)
-			2: pos = Vector2(bounds.left - margin, 0)
-			3: pos = Vector2(bounds.right + margin, 0)
-		enemy.global_position = _clamp_to_map(pos, 20.0)
-		main_node.add_child(enemy)
+	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
+	var bounds = camera_ctrl.get_camera_bounds()
+	var margin = 80.0
+	var pos: Vector2
+	match randi() % 4:
+		0: pos = Vector2(0, bounds.top - margin)
+		1: pos = Vector2(0, bounds.bottom + margin)
+		2: pos = Vector2(bounds.left - margin, 0)
+		3: pos = Vector2(bounds.right + margin, 0)
+	pos = _clamp_to_map(pos, 20.0)
+	var diff = game_state.difficulty * curse_mod
+	var eid = enemy_manager.spawn(boss_type, pos, player, game_state, camera_ctrl, diff, true); enemy_manager.set_meta_flag(eid, "is_arcana_boss", true)
+	# Bosses spawned via spawn_boss don't get wave_bonus
 	boss_spawned.emit(boss_type)
-	enemy_spawned.emit(enemy)
 
 
 func spawn_arcana_boss():
 	if ArcanaManager.get_active_count() >= 3:
 		return
+	if not enemy_manager:
+		return
+
 	var boss_type = DataRegistry.enemies().get_boss_type(game_state._stage_id, game_state.game_time)
 	if boss_type < 0:
 		boss_type = 0
 
-	var enemy: Node2D
-	if _dead_enemies.size() > 0:
-		enemy = _dead_enemies.pop_back()
-		_revive_enemy(enemy, boss_type)
-		enemy.set_as_boss()
-		enemy.set_meta("arcana_boss", true)
-	else:
-		enemy = _enemy_scene.instantiate()
-		enemy.player = player
-		enemy.game_state = game_state
-		var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
-		enemy.set_enemy_type(boss_type, game_state.difficulty * curse_mod * 1.5)
-		enemy.set_as_boss()
-		enemy.set_meta("arcana_boss", true)
-
-		var bounds = camera_ctrl.get_camera_bounds()
-		var margin = 80.0
-		var pos: Vector2
-		match randi() % 4:
-			0: pos = Vector2(0, bounds.top - margin)
-			1: pos = Vector2(0, bounds.bottom + margin)
-			2: pos = Vector2(bounds.left - margin, 0)
-			3: pos = Vector2(bounds.right + margin, 0)
-		enemy.global_position = _clamp_to_map(pos, 20.0)
-		main_node.add_child(enemy)
-	enemy_spawned.emit(enemy)
+	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
+	var bounds = camera_ctrl.get_camera_bounds()
+	var margin = 80.0
+	var pos: Vector2
+	match randi() % 4:
+		0: pos = Vector2(0, bounds.top - margin)
+		1: pos = Vector2(0, bounds.bottom + margin)
+		2: pos = Vector2(bounds.left - margin, 0)
+		3: pos = Vector2(bounds.right + margin, 0)
+	pos = _clamp_to_map(pos, 20.0)
+	var diff = game_state.difficulty * curse_mod * 1.5
+	var eid = enemy_manager.spawn(boss_type, pos, player, game_state, camera_ctrl, diff, true); enemy_manager.set_meta_flag(eid, "is_arcana_boss", true)
 
 
 # ── 拾取物生成 ──
@@ -248,43 +177,36 @@ func spawn_initial_pickups(hw: float, hh: float):
 		spawn_pickup_at(pos, pt)
 
 
-func spawn_enemy_drops(enemy: Node2D):
-	if not is_instance_valid(enemy):
-		return
-
-	var is_arcana_boss = enemy.has_meta("arcana_boss") and enemy.get_meta("arcana_boss")
-	if is_arcana_boss:
+func spawn_enemy_drops_data(pos: Vector2, xp_value: int, type_id: int, is_boss: bool, is_arcana: bool = false):
+	if is_arcana:
 		for i in range(5):
 			var gem = ObjectPoolManager.borrow_gem()
-			gem.value = max(enemy.xp_value / 3, 5)
+			gem.value = maxi(xp_value / 3, 5)
 			gem.player = player
-			gem.global_position = enemy.global_position + Vector2(randf_range(-30, 30), randf_range(-30, 30))
+			gem.global_position = pos + Vector2(randf_range(-30, 30), randf_range(-30, 30))
 			main_node.call_deferred("add_child", gem)
 		for i in range(2):
-			spawn_pickup_at(enemy.global_position + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 2)
+			spawn_pickup_at(pos + Vector2(randf_range(-20, 20), randf_range(-20, 20)), 2)
 		arcana_boss_defeated.emit()
 		return
-
-	var is_boss = enemy.has_method("get_is_boss") and enemy.get_is_boss()
 	if is_boss:
 		for i in range(3):
 			var gem = ObjectPoolManager.borrow_gem()
-			gem.value = max(enemy.xp_value / 3, 5)
+			gem.value = maxi(xp_value / 3, 5)
 			gem.player = player
-			gem.global_position = enemy.global_position + Vector2(randf_range(-30, 30), randf_range(-30, 30))
+			gem.global_position = pos + Vector2(randf_range(-30, 30), randf_range(-30, 30))
 			main_node.call_deferred("add_child", gem)
-		spawn_pickup_at(enemy.global_position, 0)
-		_try_spawn_boss_drop_relic(enemy.global_position)
+		spawn_pickup_at(pos, 0)
+		_try_spawn_boss_drop_relic(pos)
 	else:
-		# XP 宝石掉落：固定值（对齐 VS Wiki），不随难度缩放
-		var base_xp = _get_enemy_base_xp(enemy)
+		var base_xp = xp_value
 		if base_xp <= 0:
 			base_xp = 1
 		if randf() < 0.60:
-			_try_spawn_gem(base_xp, enemy.global_position)
+			_try_spawn_gem(base_xp, pos)
 		if randf() < 0.001:
 			var pt = 4 + randi() % 3
-			spawn_pickup_at(enemy.global_position, pt)
+			spawn_pickup_at(pos, pt)
 
 
 func _try_spawn_gem(value: int, pos: Vector2):

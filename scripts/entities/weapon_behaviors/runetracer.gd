@@ -29,7 +29,10 @@ static func fire(w, weapon_manager, player, get_enemies):
 			wall.add_child(glow)
 			wall.global_position = player.global_position + perp * side * 30
 			player.get_parent().add_child(wall)
-			wall.body_entered.connect(weapon_manager._on_proj_hit.bind(wall, dmg * 0.3))
+			var _hit = Node2D.new()
+			_hit.set_script(weapon_manager._proj_mover_script)
+			_hit.set_hit_config(weapon_manager.get_enemy_manager(), dmg * 0.3, 10.0, -1)
+			wall.add_child(_hit)
 			var wall_id = wall.get_instance_id()
 			player.get_tree().create_timer(wall_dur).timeout.connect(func():
 				var _x = instance_from_id(wall_id)
@@ -103,6 +106,10 @@ static func fire(w, weapon_manager, player, get_enemies):
 		p.set_meta("rune_dmg", dmg)
 
 		player.get_parent().add_child(p)
+		var _hit2 = Node2D.new()
+		_hit2.set_script(weapon_manager._proj_mover_script)
+		_hit2.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 6.0, -1)
+		p.add_child(_hit2)
 
 		# ── 开火闪光 ──
 		var spark = ColorRect.new()
@@ -121,7 +128,6 @@ static func fire(w, weapon_manager, player, get_enemies):
 		)
 
 		# ── 命中连接 ──
-		p.body_entered.connect(weapon_manager._on_proj_hit.bind(p, dmg))
 
 		# ── Updater（作为投射物的子节点） ──
 		var updater = Node2D.new()

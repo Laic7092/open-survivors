@@ -74,11 +74,14 @@ func _register_behaviors():
 
 
 func _get_enemies() -> Array:
-	if _enemy_registry_cache == null:
-		_enemy_registry_cache = EnemyRegistry
-	if _enemy_registry_cache != null and _enemy_registry_cache.get_count() > 0:
-		return _enemy_registry_cache.get_all_ref()
+	var em = get_enemy_manager()
+	if em and em.has_method("get_proxies"):
+		return em.get_proxies()
 	return []
+
+
+func get_enemy_manager():
+	return _player.get_node("/root/Main/EnemyManager") if _player and _player.has_node("/root/Main/EnemyManager") else null
 
 
 func _calc_damage(w: WeaponState) -> float:

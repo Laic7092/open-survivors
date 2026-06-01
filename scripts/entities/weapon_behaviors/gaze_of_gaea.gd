@@ -16,7 +16,6 @@ static func fire(w, weapon_manager, player, get_enemies):
 	zone.add_child(vis)
 	zone.global_position = player.global_position + player.direction * 40
 	player.get_parent().add_child(zone)
-	zone.body_entered.connect(_on_gaea_hit.bind(zone, dmg))
 	var tw = player.create_tween()
 	tw.tween_property(vis, "modulate:a", 0.0, dur)
 	var zone_id = zone.get_instance_id()

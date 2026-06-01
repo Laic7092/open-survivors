@@ -24,7 +24,6 @@ static func fire(w, weapon_manager, player, get_enemies):
 			zone.add_child(s)
 			zone.global_position = pos
 			player.get_parent().add_child(zone)
-			zone.body_entered.connect(_on_light_hit.bind(zone, dmg))
 			var tw = player.create_tween()
 			tw.tween_property(light, "modulate:a", 0.0, 1.0)
 			var zone_id = zone.get_instance_id()

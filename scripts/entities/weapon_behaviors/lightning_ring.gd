@@ -56,7 +56,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 			var last = chained[-1]
 			if not is_instance_valid(last):
 				break
-			var next_target: Node2D = null
+			var next_target = null
 			var min_d_sq = INF
 			var last_pos = last.global_position
 			for e in enemies:

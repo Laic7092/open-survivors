@@ -39,7 +39,10 @@ static func fire(w, weapon_manager, player, get_enemies):
 			sword.add_child(tip)
 			sword.global_position = e.global_position + Vector2(randf_range(-30, 30), -200)
 			player.get_parent().add_child(sword)
-			sword.body_entered.connect(weapon_manager._on_proj_hit.bind(sword, dmg))
+			var _hit = Node2D.new()
+			_hit.set_script(weapon_manager._proj_mover_script)
+			_hit.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 10.0, -1)
+			sword.add_child(_hit)
 			var tw = player.create_tween()
 			tw.tween_property(sword, "global_position", e.global_position, 0.25)
 			tw.parallel().tween_property(sword, "rotation", deg_to_rad(360), 0.25).as_relative()
@@ -47,7 +50,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		return
 
 	var max_range_csq: float = (450.0 + w.area * player.area_mult * 5.0) * (450.0 + w.area * player.area_mult * 5.0)
-	var nearest: Node2D = null
+	var nearest = null
 	var min_dist = max_range_csq
 	var ppos = player.global_position
 	for e in enemies:
@@ -91,7 +94,10 @@ static func fire(w, weapon_manager, player, get_enemies):
 		p.add_child(bar_v)
 		p.global_position = player.global_position
 		player.get_parent().add_child(p)
-		p.body_entered.connect(weapon_manager._on_proj_hit.bind(p, dmg))
+		var _hit2 = Node2D.new()
+		_hit2.set_script(weapon_manager._proj_mover_script)
+		_hit2.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 10.0, -1)
+		p.add_child(_hit2)
 
 		var end_pos = p.global_position + dir * travel_range
 		var tw = player.create_tween()

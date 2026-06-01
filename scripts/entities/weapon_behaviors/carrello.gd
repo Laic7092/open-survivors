@@ -33,7 +33,6 @@ static func _bounce_move(proj, dir, w, dmg, bounces, player, weapon_manager):
 		tw.finished.connect(_bounce.bind(proj, dir.rotated(PI * 0.25 * (1 if randi() % 2 == 0 else -1)), w, dmg, bounces - 1, player, weapon_manager))
 	else:
 		tw.finished.connect(weapon_manager._on_tween_done.bind(proj))
-	proj.body_entered.connect(weapon_manager._on_proj_hit_and_free.bind(proj, dmg))
 
 static func _bounce(proj, new_dir, w, dmg, bounces, player, weapon_manager):
 	if is_instance_valid(proj):

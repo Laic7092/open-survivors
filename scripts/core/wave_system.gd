@@ -13,7 +13,8 @@ const GameState = preload("res://scripts/core/game_state.gd")
 var game_state: GameState
 var player: Node2D
 var camera_ctrl: Node
-var spawn_enemy_func: Callable  # func(type_id: int) -> Node2D
+var spawn_enemy_func: Callable  # func(type_id: int, force_boss: bool = false) -> int
+var enemy_manager: Node  # EnemyManager, resolved from scene
 
 # ── 敌人名称 → 类型 ID 映射 ──
 const ENEMY_NAME_MAP := {
@@ -143,11 +144,12 @@ signal wave_started(wave_number: int)
 signal wave_event_triggered(event_type: String, event_data: Dictionary)
 
 
-func setup(gs: GameState, p: Node2D, spawn_func: Callable, cam: Node = null):
+func setup(gs: GameState, p: Node2D, spawn_func: Callable, cam: Node = null, em: Node = null):
 	game_state = gs
 	player = p
 	camera_ctrl = cam
 	spawn_enemy_func = spawn_func
+	enemy_manager = em
 
 	var stage_data = gs.stage_data
 	if stage_data.has("wave_defs") and not stage_data["wave_defs"].is_empty():
@@ -295,9 +297,9 @@ func _spawn_continuous_batch():
 		batch_size = maxi(1, int(batch_size * bs))
 	for _i in range(batch_size):
 		var type_id = _wave_enemy_types[randi() % _wave_enemy_types.size()]
-		var enemy = spawn_enemy_func.call(type_id)
-		if is_instance_valid(enemy):
-			enemy.is_wave_enemy = true
+		var eid = spawn_enemy_func.call(type_id)
+		if eid >= 0:
+			enemy_manager.set_meta_flag(eid, "is_wave_enemy", true) if enemy_manager else null
 
 
 # 硬下限检测：场上少于 minimum 时立刻补满
@@ -317,9 +319,9 @@ func _check_minimum_enforcement():
 	var batch = clampi(needed, 1, 10)
 	for _i in range(batch):
 		var type_id = _wave_enemy_types[randi() % _wave_enemy_types.size()]
-		var enemy = spawn_enemy_func.call(type_id)
-		if is_instance_valid(enemy):
-			enemy.is_wave_enemy = true
+		var eid = spawn_enemy_func.call(type_id)
+		if eid >= 0:
+			enemy_manager.set_meta_flag(eid, "is_wave_enemy", true) if enemy_manager else null
 
 
 func _spawn_boss_if_needed():
@@ -327,10 +329,10 @@ func _spawn_boss_if_needed():
 		return
 	_wave_boss_spawned = true
 
-	var enemy = spawn_enemy_func.call(_wave_boss_id)
-	if is_instance_valid(enemy):
-		enemy.set_as_boss()
-		enemy.is_wave_enemy = true
+	var eid = spawn_enemy_func.call(_wave_boss_id, true)
+	if eid >= 0:
+	
+		enemy_manager.set_meta_flag(eid, "is_wave_enemy", true) if enemy_manager else null
 
 
 # ═══════════════════════════════════════════════════════════
@@ -411,9 +413,9 @@ static func _sort_by_wave_event_delay(a: Dictionary, b: Dictionary) -> bool:
 func _spawn_burst(type_id: int, count: int):
 	var batch = mini(count, 8)
 	for _i in range(batch):
-		var e = spawn_enemy_func.call(type_id)
-		if is_instance_valid(e):
-			e.is_wave_enemy = false
+		var eid = spawn_enemy_func.call(type_id)
+		if eid >= 0:
+			enemy_manager.set_meta_flag(eid, "is_wave_enemy", false) if enemy_manager else null
 
 
 func _spawn_wall(type_id: int, count: int):
@@ -425,10 +427,10 @@ func _spawn_wall(type_id: int, count: int):
 	var x = bounds.left - 80.0 if side == 0 else bounds.right + 80.0
 	var spacing = (bounds.bottom - bounds.top) / max(count, 1)
 	for i in range(count):
-		var e = spawn_enemy_func.call(type_id)
-		if is_instance_valid(e):
-			e.is_wave_enemy = false
-			e.global_position = Vector2(x, bounds.top + spacing * i + spacing * 0.5)
+		var eid = spawn_enemy_func.call(type_id)
+		if eid >= 0:
+			enemy_manager.set_meta_flag(eid, "is_wave_enemy", false) if enemy_manager else null
+
 
 
 func _spawn_swarm(type_id: int, count: int):
@@ -440,17 +442,9 @@ func _spawn_swarm(type_id: int, count: int):
 	var margin = 80.0
 	var batch = mini(count, 10)
 	for _i in range(batch):
-		var e = spawn_enemy_func.call(type_id)
-		if is_instance_valid(e):
-			e.is_wave_enemy = false
-			match side:
-				0: e.global_position = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.top - margin)
-				1: e.global_position = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.bottom + margin)
-				2: e.global_position = Vector2(bounds.left - margin, randf_range(bounds.top + margin, bounds.bottom - margin))
-				3: e.global_position = Vector2(bounds.right + margin, randf_range(bounds.top + margin, bounds.bottom - margin))
-
-
-# ═══════════════════════════════════════════════════════════
+		var eid = spawn_enemy_func.call(type_id)
+		if eid >= 0:
+			enemy_manager.set_meta_flag(eid, "is_wave_enemy", false) if enemy_manager else null
 #  通用逻辑
 # ═══════════════════════════════════════════════════════════
 

@@ -71,7 +71,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 
 
 static func _find_nearest(player, enemies: Array) -> Node2D:
-	var best: Node2D = null
+	var best = null
 	var min_d_sq = INF
 	var ppos = player.global_position
 	for e in enemies:
