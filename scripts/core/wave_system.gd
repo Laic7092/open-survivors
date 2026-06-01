@@ -9,6 +9,8 @@ extends Node
 
 const GameState = preload("res://scripts/core/game_state.gd")
 
+const HARD_CAP: int = 350          # 紧急天花板
+const CAP_BUFFER: int = 50         # 软上限距硬上限缓冲距离
 # 外部依赖：由 main.gd 注入
 var game_state: GameState
 var player: Node2D
@@ -182,7 +184,7 @@ func process(delta: float):
 		return
 
 	# 地图事件（时间触发）
-	_process_map_events()
+	# _process_map_events() — disabled
 
 	if _wave_defs.is_empty():
 		return  # 无 wave_defs 的关卡不做任何事
@@ -272,21 +274,21 @@ func _spawn_continuous_batch():
 	if _wave_enemy_types.is_empty():
 		return
 
-	# ═══ 300 敌人上限 ═══
 	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
-	if alive >= 300:
+	# 紧急天花板：决不允许超过
+	if alive >= HARD_CAP:
 		return
 
-	# ═══ 软上限 ═══
-	var soft_cap = int(_wave_minimum * 1.1) + 10
-	if alive >= soft_cap:
+	# 软上限：在硬上限下方留出缓冲带，避免触碰紧急天花板
+	var limit_cap = mini(HARD_CAP - CAP_BUFFER, int(_wave_minimum * 1.1) + 10)
+	if alive >= limit_cap:
 		return
 
-	# ═══ 动态节流：填充率 >30% 启动，二次曲线加速 ═══
+	# 动态节流：填充率 >30% 启动，二次曲线加速
 	var fill_pct = float(alive) / float(max(_wave_minimum, 1))
 	if fill_pct > 0.3:
-		var t = (fill_pct - 0.3) / 0.7  # 0..1，超标量
-		var throttle = int(lerpf(1.0, 8.0, t * t))  # 二次加速
+		var t = (fill_pct - 0.3) / 0.7
+		var throttle = int(lerpf(1.0, 8.0, t * t))
 		if Engine.get_physics_frames() % throttle != 0:
 			return
 
@@ -308,12 +310,14 @@ func _check_minimum_enforcement():
 		return
 
 	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
-	var needed = _wave_minimum - alive
+	# 迟滞目标：在 minimum 上方 5%（10~25）留出缓冲带，避免 299↔300 抽搐
+	var hysteresis = clampi(ceili(_wave_minimum * 0.05), 10, 25)
+	var target = _wave_minimum + hysteresis
+	var needed = target - alive
 	if needed <= 0:
 		return
 
-	# ═══ 300 敌人上限：硬下限补怪也检查 ═══
-	if alive >= 300:
+	if alive >= HARD_CAP:
 		return
 
 	var batch = clampi(needed, 1, 10)
@@ -322,6 +326,16 @@ func _check_minimum_enforcement():
 		var eid = spawn_enemy_func.call(type_id)
 		if eid >= 0:
 			enemy_manager.set_meta_flag(eid, "is_wave_enemy", true) if enemy_manager else null
+
+	# 自适应冷却：离目标越近，冷却越长（减少微调频率）
+	alive = EnemyRegistry.get_count() if EnemyRegistry else 0
+	var still_needed = target - alive
+	if still_needed <= 5:
+		_enforce_cooldown = 4.0
+	elif still_needed <= 20:
+		_enforce_cooldown = 2.5
+	else:
+		_enforce_cooldown = 1.5
 
 
 func _spawn_boss_if_needed():
@@ -363,8 +377,14 @@ func _trigger_map_event(ev: Dictionary):
 	if ev_type.is_empty():
 		return
 
+	# 事件也必须尊重硬上限，避免在已满时继续堆怪
+	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
+	var available = HARD_CAP - alive
+	if available <= 0:
+		return
+
 	var count = ev.get("count", 1)
-	var total = ev.get("total", count)
+	var total = mini(ev.get("total", count), available)
 	# Allow explicit "unit" field to specify enemy, fallback to event type lookup
 	var enemy_name = ev.get("unit", "")
 	if enemy_name.is_empty():
@@ -390,16 +410,26 @@ func _trigger_map_event(ev: Dictionary):
 # ═══════════════════════════════════════════════════════════
 
 func _process_wave_events(delta: float):
-	if _wave_events.is_empty() or _wave_event_index >= _wave_events.size():
+	if _wave_events.is_empty():
 		return
 
 	_wave_elapsed += delta
-	while _wave_event_index < _wave_events.size():
-		var ev = _wave_events[_wave_event_index]
-		if _wave_elapsed < ev.get("delay", 0.0):
-			break
-		_wave_event_index += 1
+	for ev in _wave_events:
+		var repeats = ev.get("repeats", 1)
+		var fired = ev.get("_fired", 0)
+		if fired >= repeats:
+			continue
+
+		var next_delay = ev.get("_next_delay", ev.get("delay", 0.0))
+		if _wave_elapsed < next_delay:
+			continue
+
+		ev["_fired"] = fired + 1
 		_trigger_map_event(ev)
+
+		if fired + 1 < repeats:
+			var interval = ev.get("duration", ev.get("delay", 1.0))
+			ev["_next_delay"] = next_delay + interval
 
 
 static func _sort_by_wave_event_delay(a: Dictionary, b: Dictionary) -> bool:
@@ -425,8 +455,9 @@ func _spawn_wall(type_id: int, count: int):
 	var bounds = camera_ctrl.get_camera_bounds()
 	var side = randi() % 2
 	var x = bounds.left - 80.0 if side == 0 else bounds.right + 80.0
-	var spacing = (bounds.bottom - bounds.top) / max(count, 1)
-	for i in range(count):
+	var capped = mini(count, 30)  # wall 密度上限
+	var spacing = (bounds.bottom - bounds.top) / max(capped, 1)
+	for i in range(capped):
 		var eid = spawn_enemy_func.call(type_id)
 		if eid >= 0:
 			enemy_manager.set_meta_flag(eid, "is_wave_enemy", false) if enemy_manager else null

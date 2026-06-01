@@ -800,7 +800,7 @@ func _on_water_tick(zone: Area2D, area: float, dmg: float, evolved: bool):
 	if not is_instance_valid(zone):
 		return
 	var src_pos = zone.global_position
-	var nearest: Node2D = null
+	var nearest = null
 	var min_d_sq = INF
 	var area_sq = area * area
 	for e in _get_enemies():

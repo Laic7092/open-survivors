@@ -69,6 +69,8 @@ var _boss_count: int = 0
 
 var _proxy_pool: Array[EnemyProxy] = []
 var _proxy_pool_idx: int = 0
+var _cached_proxies: Array = []
+var _proxy_frame: int = -1
 var _frame_n: int = 0
 
 # Spatial grid for proximity queries
@@ -837,7 +839,9 @@ func get_nearest_with_mask(center: Vector2, max_radius: float, hit_mask: PackedB
 	var cr = ceili(max_radius / GRID_CELL)
 	for dx in range(-cr, cr + 1):
 		for dy in range(-cr, cr + 1):
-			var ids: Array = _grid.get(Vector2i(cell.x + dx, cell.y + dy), [])
+			var ids = _grid.get(Vector2i(cell.x + dx, cell.y + dy))
+			if not ids:
+				continue
 			for eid in ids:
 				if eid >= hit_mask.size() or hit_mask[eid]:
 					continue
@@ -849,15 +853,21 @@ func get_nearest_with_mask(center: Vector2, max_radius: float, hit_mask: PackedB
 
 
 func query_circle(center: Vector2, radius: float) -> Array[int]:
-
+	_ensure_grid()
 	var r2 = radius * radius
 	var result: Array[int] = []
-	var n = _pos.size()
-	for i in n:
-		if _alive[i] == 0:
-			continue
-		if _pos[i].distance_squared_to(center) <= r2:
-			result.append(i)
+	var cell = Vector2i(int(center.x / GRID_CELL), int(center.y / GRID_CELL))
+	var cr = ceili(radius / GRID_CELL)
+	for dx in range(-cr, cr + 1):
+		for dy in range(-cr, cr + 1):
+			var ids = _grid.get(Vector2i(cell.x + dx, cell.y + dy))
+			if not ids:
+				continue
+			for eid in ids:
+				if _alive[eid] == 0:
+					continue
+				if _pos[eid].distance_squared_to(center) <= r2:
+					result.append(eid)
 	return result
 
 
@@ -901,7 +911,9 @@ func contact_damage_at(center: Vector2, player_radius: float) -> float:
 	var cr = ceili(max_r / GRID_CELL)
 	for dx in range(-cr, cr + 1):
 		for dy in range(-cr, cr + 1):
-			var ids: Array = _grid.get(Vector2i(cell.x + dx, cell.y + dy), [])
+			var ids = _grid.get(Vector2i(cell.x + dx, cell.y + dy))
+			if not ids:
+				continue
 			for eid in ids:
 				if _flags[eid] & (1 << Flag.FROZEN):
 					continue
@@ -913,8 +925,11 @@ func contact_damage_at(center: Vector2, player_radius: float) -> float:
 # ── EnemyProxy for backward compat ──
 
 func get_proxies() -> Array:
+	if _proxy_frame == _frame_n:
+		return _cached_proxies
+	_proxy_frame = _frame_n
 	_proxy_pool_idx = 0
-	var result: Array = []
+	_cached_proxies.clear()
 	var n = _pos.size()
 	for i in n:
 		if _alive[i] == 0:
@@ -927,8 +942,8 @@ func get_proxies() -> Array:
 			_proxy_pool.append(proxy)
 		_proxy_pool_idx += 1
 		proxy.setup(self, i)
-		result.append(proxy)
-	return result
+		_cached_proxies.append(proxy)
+	return _cached_proxies
 
 
 # ═══════════════════════════════════════════════════════════════════
