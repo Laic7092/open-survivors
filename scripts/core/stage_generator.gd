@@ -3,8 +3,8 @@ extends Node
 # 从 main.gd 中拆分出的地图/装饰/交互元素生成逻辑
 
 const GameState = preload("res://scripts/core/game_state.gd")
-const Prop = preload("res://scripts/entities/prop.gd")
-const PropManager = preload("res://scripts/map/prop_manager.gd")
+const Prop = preload("res://scripts/map/prop.gd")
+const PropManager = preload("res://scripts/core/prop_manager.gd")
 const BreakableWall = preload("res://scripts/map/breakable_wall.gd")
 const TreasureChest = preload("res://scripts/map/treasure_chest.gd")
 const HealingFountain = preload("res://scripts/map/healing_fountain.gd")

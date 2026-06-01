@@ -7,7 +7,7 @@ signal enemy_killed(id: int, type_id: int, pos: Vector2, is_boss: bool, xp_value
 signal boss_count_changed(count: int)
 
 const CollisionLayers = preload("res://scripts/data/collision_layers.gd")
-const EnemyProxy = preload("res://scripts/entities/enemy_proxy.gd")
+const EnemyProxy = preload("res://scripts/entities/enemy/enemy_proxy.gd")
 
 const KNOCKBACK_DECAY: float = 6.0
 const KNOCKBACK_STRENGTH: float = 300.0

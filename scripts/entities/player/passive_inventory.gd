@@ -1,3 +1,4 @@
+extends RefCounted
 const ItemTypes = preload("res://scripts/data/item_types.gd")
 var _passives: Dictionary = {}
 

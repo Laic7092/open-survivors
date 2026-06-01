@@ -1,3 +1,4 @@
+extends RefCounted
 class_name WeaponState
 
 const ItemTypes = preload("res://scripts/data/item_types.gd")

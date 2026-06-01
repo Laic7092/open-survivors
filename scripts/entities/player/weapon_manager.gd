@@ -1,3 +1,4 @@
+extends RefCounted
 # WeaponManager — 武器逻辑编排器
 # 每种武器的 fire 逻辑在独立的 weapon_behaviors/ 脚本中
 # 通过 _behaviors 字典 {type: script} 查表分发
@@ -20,11 +21,11 @@ var _enemy_manager_cache = null
 var _enemy_registry_cache = null
 
 # ── 脚本依赖（延迟加载） ──
-var _proj_vis_script = preload("res://scripts/entities/proj_vis.gd")
-var _proj_mover_script = preload("res://scripts/entities/projectile_mover.gd")
-var _explosion_fx_script = preload("res://scripts/entities/explosion_fx.gd")
-var _emoji_node_script = preload("res://scripts/entities/emoji_node.gd")
-var _fireball_node_script = preload("res://scripts/entities/fireball_node.gd")
+var _proj_vis_script = preload("res://scripts/entities/fx/proj_vis.gd")
+var _proj_mover_script = preload("res://scripts/entities/projectile/projectile_mover.gd")
+var _explosion_fx_script = preload("res://scripts/entities/fx/explosion_fx.gd")
+var _emoji_node_script = preload("res://scripts/entities/fx/emoji_node.gd")
+var _fireball_node_script = preload("res://scripts/entities/projectile/fireball_node.gd")
 
 # ── 行为注册表 ──
 var _behaviors: Dictionary = {}
@@ -83,7 +84,7 @@ func _get_enemies() -> Array:
 
 func get_enemy_manager():
 	if not _enemy_manager_cache or not is_instance_valid(_enemy_manager_cache):
-		_enemy_manager_cache = _player.get_node("/root/Main/EnemyManager") if _player else null
+		_enemy_manager_cache = EventBus.get_config("enemy_manager", null)
 	return _enemy_manager_cache
 
 

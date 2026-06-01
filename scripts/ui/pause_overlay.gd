@@ -3,9 +3,9 @@ extends Control
 signal toggle_pause
 signal quit_to_menu
 
-const WeaponManager = preload("res://scripts/entities/weapon_manager.gd")
+const WeaponManager = preload("res://scripts/entities/player/weapon_manager.gd")
 # Character data loaded lazily via DataRegistry
-const Player = preload("res://scripts/entities/player.gd")
+const Player = preload("res://scripts/entities/player/player.gd")
 const MinimapScript = preload("res://scripts/ui/minimap.gd")
 
 # Scene nodes (Outer is the root container — defined in .tscn)
@@ -22,6 +22,8 @@ var _minimap: Control
 var _map_text: Label
 var _grimoire_header: Label
 var _grimoire_container: VBoxContainer
+var _weapons_container: VBoxContainer
+var _passives_container: VBoxContainer
 var _resume_btn: Button
 var _quit_btn: Button
 var _stat_labels: Array[Label] = []
@@ -184,8 +186,20 @@ func _build_stat_labels():
 
 	add_spacer.call()
 	add_section.call(I18N.t("pause.combat_stats"))
-	for i in 6:
+	for i in 16:
 		_stat_labels.append(add_val.call())
+
+	add_spacer.call()
+	add_section.call(I18N.t("pause.weapons"))
+	_weapons_container = VBoxContainer.new()
+	_weapons_container.add_theme_constant_override("separation", 1)
+	_col1.add_child(_weapons_container)
+
+	add_spacer.call()
+	add_section.call(I18N.t("pause.passives"))
+	_passives_container = VBoxContainer.new()
+	_passives_container.add_theme_constant_override("separation", 1)
+	_col1.add_child(_passives_container)
 
 
 func _build_minimap_area():
@@ -308,11 +322,21 @@ func _update_stats():
 	var hp = player.health
 	var max_hp = player.max_health
 	_stat_labels[5].text = I18N.t("pause.hp") % [hp, max_hp]
-	_stat_labels[6].text = I18N.t("pause.dmg") % player.might
-	_stat_labels[7].text = I18N.t("pause.spd") % player.move_speed
-	_stat_labels[8].text = I18N.t("pause.area") % player.area_mult
-	_stat_labels[9].text = I18N.t("pause.cd") % int((1.0 - player.cooldown_mult) * 100)
-	_stat_labels[10].text = I18N.t("pause.armor") % player.armor
+	_stat_labels[6].text = I18N.t("pause.regen") % player.recovery
+	_stat_labels[7].text = I18N.t("pause.dmg") % player.might
+	_stat_labels[8].text = I18N.t("pause.spd") % player.move_speed
+	_stat_labels[9].text = I18N.t("pause.area") % player.area_mult
+	_stat_labels[10].text = I18N.t("pause.proj_spd") % player.speed_mult
+	_stat_labels[11].text = I18N.t("pause.duration") % player.duration_mult
+	_stat_labels[12].text = I18N.t("pause.cd") % int((1.0 - player.cooldown_mult) * 100)
+	_stat_labels[13].text = I18N.t("pause.amount") % player.projectile_bonus
+	_stat_labels[14].text = I18N.t("pause.armor") % player.armor
+	_stat_labels[15].text = I18N.t("pause.growth") % player.growth_mult
+	_stat_labels[16].text = I18N.t("pause.luck") % (player.luck * 100)
+	_stat_labels[17].text = I18N.t("pause.greed") % (player.greed_mult * 100)
+	_stat_labels[18].text = I18N.t("pause.magnet") % player.pickup_range
+	_stat_labels[19].text = I18N.t("pause.curse") % (player.curse * 100)
+	_stat_labels[20].text = I18N.t("pause.revivals") % player.revivals
 
 
 func _setup_minimap():
@@ -382,6 +406,36 @@ func _setup_minimap():
 	else:
 		_grimoire_header.visible = false
 		_grimoire_container.visible = false
+
+	# Weapons list
+	for c in _weapons_container.get_children():
+		c.queue_free()
+	if player.weapon_manager:
+		for ws in player.weapon_manager.weapons:
+			var lbl = Label.new()
+			var name = I18N.t(_wpn_i18n_key(ws.type))
+			var evo_str = " *" if ws.evolved else ""
+			lbl.text = "%s Lv.%d%s" % [name, ws.level, evo_str]
+			lbl.add_theme_font_size_override("font_size", 13)
+			_weapons_container.add_child(lbl)
+
+	# Passives list
+	for c in _passives_container.get_children():
+		c.queue_free()
+	if player.passive_inventory:
+		var passives = player.passive_inventory.get_all()
+		if passives.is_empty():
+			var lbl = Label.new()
+			lbl.text = I18N.t("pause.none")
+			lbl.add_theme_font_size_override("font_size", 13)
+			_passives_container.add_child(lbl)
+		else:
+			for pt in passives:
+				var lbl = Label.new()
+				var name = I18N.t(_pass_i18n_key(pt))
+				lbl.text = "%s Lv.%d" % [name, passives[pt]]
+				lbl.add_theme_font_size_override("font_size", 13)
+				_passives_container.add_child(lbl)
 
 
 # ═══════════════════════════════════════════

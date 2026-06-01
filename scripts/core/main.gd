@@ -11,7 +11,7 @@ const CameraController = preload("res://scripts/core/camera_controller.gd")
 const StageGenerator = preload("res://scripts/core/stage_generator.gd")
 const SpawnManager = preload("res://scripts/core/spawn_manager.gd")
 const PickupTimer = preload("res://scripts/core/pickup_timer.gd")
-const LevelUpService = preload("res://scripts/core/level_up_service.gd")
+const LevelUpService = preload("res://scripts/services/level_up_service.gd")
 
 # ── 外部依赖 ──
 # Data defs loaded lazily via DataRegistry (autoload)
@@ -119,12 +119,13 @@ func _ready():
 	spawn_manager.boss_spawned.connect(_on_boss_spawned)
 
 	# ── EnemyManager ──
-	var em = preload("res://scripts/entities/enemy_manager.gd").new()
+	var em = preload("res://scripts/core/enemy_manager.gd").new()
 	em.name = "EnemyManager"
 	add_child(em)
 	em.setup(player, game_state, camera_ctrl)
 	spawn_manager.enemy_manager = em
 	em.enemy_killed.connect(_on_enemy_killed)
+	EventBus.set_config("enemy_manager", em)
 
 	# ── Core 系统 ──
 	wave_system = WaveSystem.new()

@@ -396,7 +396,7 @@ func spawn_stage_items():
 	var items = game_state.stage_data.get("stage_items", [])
 	if items.is_empty():
 		return
-	var item_script = preload("res://scripts/entities/stage_item_pickup.gd")
+	var item_script = preload("res://scripts/entities/pickup/stage_item_pickup.gd")
 	for it in items:
 		var t = it.get("type", -1)
 		var is_wpn = it.get("is_weapon", true)

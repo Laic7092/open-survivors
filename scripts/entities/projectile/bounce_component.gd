@@ -1,26 +1,32 @@
 extends Node2D
-# RuneTracer 更新器（极简版）
-# 弹跳边界跟随玩家位置滞后更新（每 0.5s），不走场景树
+# Generic bounce component for projectiles.
+# Attach as a child of any projectile that bounces off screen edges.
+# Configure meta keys, max bounces, and optional bounce callback.
 
-# 弹跳边界（世界坐标，定时刷新）
+# Meta keys
+var direction_meta: String = "bounce_dir"
+var speed_meta: String = "bounce_speed"
+var bounce_count_meta: String = "bounce_count"
+
+var max_bounces: int = 6
+var visuals_node: String = "Visuals"
+# callback(pos: Vector2, projectile_parent: Node) — called on each bounce
+var on_bounce: Callable
+
 var _bounce_left: float = 0.0
 var _bounce_right: float = 0.0
 var _bounce_top: float = 0.0
 var _bounce_bottom: float = 0.0
 
-# 边界刷新计时
 var _bounds_timer: float = 0.0
 var _bounds_interval: float = 0.5
 
-# 缓存的玩家引用
 var _player: Node2D = null
 
 
 func _ready():
 	var proj = get_parent()
-	# 缓存玩家引用
 	_player = _find_player(proj)
-	# 初始边界
 	_refresh_bounds()
 
 
@@ -37,7 +43,7 @@ func _process(delta):
 		_cleanup()
 		return
 
-	_on_runetracer_tick(proj, delta)
+	_tick(proj, delta)
 
 
 func _refresh_bounds():
@@ -49,7 +55,6 @@ func _refresh_bounds():
 	var vp_size = vp.get_visible_rect().size
 	var cam_pos = cam.global_position
 
-	# 移速加成：有缓存 player 则取 speed_mult
 	var speed_bonus = 0.0
 	if is_instance_valid(_player) and _player.has_method(&"get_speed_mult"):
 		speed_bonus = _player.speed_mult
@@ -62,51 +67,22 @@ func _refresh_bounds():
 	_bounce_bottom = cam_pos.y + vp_size.y / 2.0 + margin
 
 
-func _bounce_effect(pos: Vector2, parent: Node):
-	var ring = ColorRect.new()
-	ring.color = Color(0.95, 0.85, 1.0, 0.8)
-	var rs = 16.0
-	ring.size = Vector2.ONE * rs
-	ring.global_position = pos - ring.size / 2
-	ring.rotation = deg_to_rad(45.0)
-	parent.add_child(ring)
-	var tw = create_tween()
-	tw.tween_property(ring, "scale", Vector2.ONE * 0.2, 0.1)
-	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.15)
-	var ring_id = ring.get_instance_id()
-	tw.finished.connect(func():
-		var _x = instance_from_id(ring_id)
-		if _x:
-			_x.queue_free()
-	)
-	# 兜底：tween 被 kill（updater 被清理）时 finished 不触发，
-	# 定时器确保残留菱形最终被清理
-	ring.get_tree().create_timer(0.3).timeout.connect(func():
-		var _x = instance_from_id(ring_id)
-		if _x:
-			_x.queue_free()
-	)
-
-
-func _on_runetracer_tick(proj: Node2D, delta: float):
-	var dir: Vector2 = proj.get_meta("rune_dir", Vector2.DOWN)
-	var speed: float = proj.get_meta("rune_speed", 400.0)
-	var bounces: int = proj.get_meta("rune_bounces", 0)
+func _tick(proj: Node2D, delta: float):
+	var dir: Vector2 = proj.get_meta(direction_meta, Vector2.DOWN)
+	var speed: float = proj.get_meta(speed_meta, 400.0)
+	var bounces: int = proj.get_meta(bounce_count_meta, 0)
 
 	proj.global_position += dir * speed * delta
 
-	# 视觉旋转
-	var vis = proj.get_node_or_null("Visuals")
+	var vis = proj.get_node_or_null(visuals_node)
 	if vis:
 		vis.rotation = dir.angle()
 
-	# ── 定时刷新边界（不每帧走）──
 	_bounds_timer += delta
 	if _bounds_timer >= _bounds_interval:
 		_bounds_timer = 0.0
 		_refresh_bounds()
 
-	# ── 边界反弹 ──
 	var bounced = false
 
 	if proj.global_position.x < _bounce_left:
@@ -129,12 +105,12 @@ func _on_runetracer_tick(proj: Node2D, delta: float):
 
 	if bounced:
 		bounces += 1
-		proj.set_meta("rune_dir", dir)
-		proj.set_meta("rune_bounces", bounces)
-		AudioManager.play_sfx("wpn_bounce")
-		_bounce_effect(proj.global_position, proj.get_parent())
+		proj.set_meta(direction_meta, dir)
+		proj.set_meta(bounce_count_meta, bounces)
+		if on_bounce.is_valid():
+			on_bounce.call(proj.global_position, proj.get_parent())
 
-	if bounces >= 6:
+	if bounces >= max_bounces:
 		_cleanup()
 
 

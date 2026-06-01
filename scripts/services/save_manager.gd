@@ -62,6 +62,7 @@ func _load():
 	
 	_cache = data
 	_ensure_structure()
+	current_slot = _cache.get("current_slot", "1")
 	
 	# Migrate from v1 (profile+slots) or flat format to v2 (slots only)
 	_migrate_if_needed()

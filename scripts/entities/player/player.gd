@@ -90,8 +90,8 @@ const UpgradeType = ItemTypes.Type
 
 
 func _ready():
-	weapon_manager = preload("res://scripts/entities/weapon_manager.gd").new(self)
-	passive_inventory = preload("res://scripts/entities/passive_inventory.gd").new()
+	weapon_manager = preload("res://scripts/entities/player/weapon_manager.gd").new(self)
+	passive_inventory = preload("res://scripts/entities/player/passive_inventory.gd").new()
 
 	collision_layer = CollisionLayers.PLAYER
 	collision_mask = 0
@@ -189,29 +189,30 @@ func _draw():
 				whip_evolved = true
 				break
 		var base_color = Color(1.0, 0.2, 0.2) if whip_evolved else Color(1, 1, 1)
-		
-		# Arc-shaped whip visual matching hitbox in whip.gd
+
+		# Sine-wave whip curve
 		var arc_r = w_area * 2.0
-		var arc_angle = PI * 0.6  # ~108°
-		var facing = direction.normalized() if direction.length() > 0 else Vector2.DOWN
+		var arc_angle = PI * 0.6
+		var facing = Vector2.UP
 		var angle0 = facing.angle() - arc_angle * 0.5
 		var angle1 = facing.angle() + arc_angle * 0.5
-		var segs = 12
-		
-		# Filled arc (triangle fan)
-		var pts: PackedVector2Array = [Vector2.ZERO]
+		var segs = 24
+
+		var pts: PackedVector2Array = []
 		for i in range(segs + 1):
-			var a = angle0 + (angle1 - angle0) * (float(i) / segs)
-			pts.push_back(Vector2(cos(a), sin(a)) * arc_r)
-		draw_polygon(pts, PackedColorArray([Color(base_color.r, base_color.g, base_color.b, alpha * 0.15)]))
-		
-		# Arc outline
-		draw_arc(Vector2.ZERO, arc_r, angle0, angle1, segs, base_color, 2.5, true)
-		
-		# Pulse effect (shrinking arc)
-		var pulse_inset = progress * arc_r * 0.15
-		var pulse_r = max(arc_r - pulse_inset, 4.0)
-		draw_arc(Vector2.ZERO, pulse_r, angle0, angle1, segs, Color(base_color.r, base_color.g, base_color.b, alpha * 0.4), 1.5, true)
+			var t = float(i) / segs
+			var a = angle0 + (angle1 - angle0) * t
+			var r = arc_r * t
+			var perp = Vector2(-sin(a), cos(a))
+			var sine_amp = 14.0 * sin(t * PI)
+			var sine_phase = t * 4.0 * PI + progress * 6.0
+			var offset = perp * sin(sine_phase) * sine_amp
+			pts.push_back(Vector2(cos(a), sin(a)) * r + offset)
+
+		draw_polyline(pts, Color(base_color.r, base_color.g, base_color.b, alpha * 0.25), 10.0, true)
+		draw_polyline(pts, Color(base_color.r, base_color.g, base_color.b, alpha * 0.7), 3.0, true)
+		if pts.size() > 0:
+			draw_circle(pts[pts.size() - 1], 3.0, Color(base_color.r, base_color.g, base_color.b, alpha))
 	for w in weapon_manager.weapons:
 		if w.type == UpgradeType.GARLIC:
 			var pulse = 0.4 + sin(Time.get_ticks_msec() * 0.004) * 0.15
@@ -525,7 +526,7 @@ func heal(amount: float):
 
 # ── XP ───────────────────────────────────────────────────────────────
 
-const LevelUpService = preload("res://scripts/core/level_up_service.gd")
+const LevelUpService = preload("res://scripts/services/level_up_service.gd")
 
 
 func add_xp(value: int):
@@ -612,9 +613,7 @@ func _check_contact_damage(delta: float):
 
 
 func _update_enemy_manager_ref():
-	var main = get_parent()
-	if main and main.has_node("EnemyManager"):
-		_enemy_manager = main.get_node("EnemyManager")
+	_enemy_manager = EventBus.get_config("enemy_manager", null)
 
 
 

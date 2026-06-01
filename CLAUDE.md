@@ -14,17 +14,27 @@ OpenSurvivors — a Vampire Survivors-like roguelite built with Godot 4.6 (GDScr
 
 All game content is data-driven. RefCounted scripts under `scripts/data/` define items, enemies, stages, relics, arcanas, characters, and unlocks — adding content means adding data, not logic. Stage definitions are lazy-loaded from `scripts/data/stages/stage_{id}.gd`.
 
-### Autoloads
+### Services (`scripts/services/`)
 
-`EventBus` — cross-module signal bus + runtime config key-value store. `SaveManager`, `PowerUpManager` (meta-progression), `I18N` (`.t()` for strings), `RelicManager`, `ArcanaManager`, `SceneManager`, `EnemyRegistry`, `ObjectPoolManager`, `AudioManager`.
+Autoloads (global singletons). `EventBus` — cross-module signal bus + runtime config key-value store. `SaveManager`, `PowerUpManager` (meta-progression), `I18N` (`.t()` for strings), `RelicManager`, `ArcanaManager`, `SceneManager`, `EnemyRegistry`, `ObjectPoolManager`, `AudioManager`, `DataRegistry`, `UnlockManager`, `LevelUpService`.
 
 ### Core (`scripts/core/`)
 
-`main.gd` wires everything at scene start: creates `GameState`, `WaveSystem`, `CurseSystem`, `StageGenerator`, `CameraController`, feeds them player ref + spawn callbacks. `GameState` holds all runtime state (time, kills, difficulty, wave/curse state). `StageGenerator` builds the map: background, themed props, boundary walls, interactables (chests, fountains, hazards, boosts, breakable walls).
+Game runtime systems (Nodes, children of Main). `main.gd` wires everything at scene start: creates `GameState`, `WaveSystem`, `CurseSystem`, `StageGenerator`, `CameraController`, feeds them player ref + spawn callbacks. `GameState` holds all runtime state (time, kills, difficulty, wave/curse state). `StageGenerator` builds the map. `EnemyManager` — data-driven enemy system (array-based batch processing).
 
 ### Entities (`scripts/entities/`)
 
-`player.gd` (CharacterBody2D) owns two RefCounted objects: `WeaponManager` (processes all weapons per frame) and `PassiveInventory` (recalculates stats on upgrade). Weapons are `WeaponState` objects tracking type/level/cooldown/evolved. `enemy.gd` is data-driven: type determines stats, shape, behavior (chase/wavy/stationary), ranged attacks.
+Organized by type:
+- `player/` — `player.gd` (CharacterBody2D) owns two RefCounted objects: `WeaponManager` and `PassiveInventory`. Weapons are `WeaponState` objects.
+- `enemy/` — `enemy_proxy.gd`, `enemy_projectile.gd`
+- `pickup/` — `pickup.gd`, `xp_gem.gd`, `relic_entity.gd`, `stage_item_pickup.gd`
+- `fx/` — `floating_text.gd`, `emoji_node.gd`, `explosion_fx.gd`, `proj_vis.gd`
+- `projectile/` — `projectile_mover.gd`, `fireball_node.gd`, `runetracer_updater.gd`
+- `weapon_behaviors/` — 41 static weapon fire logic scripts
+
+### Map (`scripts/map/`)
+
+Scene elements: `prop.gd`, `breakable_wall.gd`, `healing_fountain.gd`, `treasure_chest.gd`, `hazard_zone.gd`, `boost_zone.gd`, `interactable.gd`.
 
 ### Key Patterns
 

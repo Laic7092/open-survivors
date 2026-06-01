@@ -118,7 +118,7 @@ func apply_effect():
 		PickupType.ROSARY:
 			_show_text(I18N.t("pickup.rosary"), Color(0.3, 0.5, 1.0), 20)
 			AudioManager.play_sfx("pickup_rosary")
-			var _em = get_node_or_null("/root/Main/EnemyManager")
+			var _em = EventBus.get_config("enemy_manager", null)
 			if _em:
 				for _eid in _em.query_all_ids():
 					_em.kill(_eid)
@@ -127,10 +127,10 @@ func apply_effect():
 			_show_text(I18N.t("pickup.orologion"), Color(0.5, 0.8, 1.0), 20)
 			AudioManager.play_sfx("pickup_orologion")
 			EventBus.set_config("freeze_timer", 10.0)
-			var _em = get_node_or_null("/root/Main/EnemyManager")
+			var _em = EventBus.get_config("enemy_manager", null)
 			if _em:
 				for _eid in _em.query_all_ids():
-						_em.freeze(_eid, 10.0)
+					_em.freeze(_eid, 10.0)
 
 		PickupType.VACUUM:
 			_show_text(I18N.t("pickup.vacuum"), Color(0.2, 0.8, 0.9), 20)

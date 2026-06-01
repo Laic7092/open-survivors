@@ -106,7 +106,7 @@ func _emit_nduja_fire():
 			if e.has_method("take_damage"):
 				var dmg = 10.0 * (player.might if player.has_method("get_curse") else 1.0)
 				e.take_damage(dmg, player.global_position)
-	var fb = preload("res://scripts/entities/fireball_node.gd").new()
+	var fb = preload("res://scripts/entities/projectile/fireball_node.gd").new()
 	fb.fb_size = 8.0
 	fb.seed_offset = randi()
 	fb.global_position = area.global_position

@@ -108,6 +108,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		player.get_parent().add_child(p)
 		var _hit2 = Node2D.new()
 		_hit2.set_script(weapon_manager._proj_mover_script)
+		_hit2.set_movement(Vector2.ZERO, 9999.0)
 		_hit2.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(area * 0.8, 12.0), -1)
 		p.add_child(_hit2)
 
@@ -127,10 +128,36 @@ static func fire(w, weapon_manager, player, get_enemies):
 				_x.queue_free()
 		)
 
-		# ── 命中连接 ──
-
-		# ── Updater（作为投射物的子节点） ──
-		var updater = Node2D.new()
-		updater.name = "RuneTracerUpdater"
-		updater.set_script(preload("res://scripts/entities/runetracer_updater.gd"))
-		p.add_child(updater)
+		# ── Bounce component（作为投射物的子节点） ──
+		var bouncer = Node2D.new()
+		bouncer.name = "BounceComponent"
+		bouncer.set_script(preload("res://scripts/entities/projectile/bounce_component.gd"))
+		bouncer.direction_meta = "rune_dir"
+		bouncer.speed_meta = "rune_speed"
+		bouncer.bounce_count_meta = "rune_bounces"
+		bouncer.max_bounces = 6
+		bouncer.visuals_node = "Visuals"
+		bouncer.on_bounce = func(pos: Vector2, parent: Node):
+			AudioManager.play_sfx("wpn_bounce")
+			var ring = ColorRect.new()
+			ring.color = Color(0.95, 0.85, 1.0, 0.8)
+			var rs = 16.0
+			ring.size = Vector2.ONE * rs
+			ring.global_position = pos - ring.size / 2
+			ring.rotation = deg_to_rad(45.0)
+			parent.add_child(ring)
+			var tween = parent.create_tween()
+			tween.tween_property(ring, "scale", Vector2.ONE * 0.2, 0.1)
+			tween.parallel().tween_property(ring, "modulate:a", 0.0, 0.15)
+			var ring_id = ring.get_instance_id()
+			tween.finished.connect(func():
+				var _x = instance_from_id(ring_id)
+				if _x:
+					_x.queue_free()
+			)
+			ring.get_tree().create_timer(0.3).timeout.connect(func():
+				var _x = instance_from_id(ring_id)
+				if _x:
+					_x.queue_free()
+			)
+		p.add_child(bouncer)

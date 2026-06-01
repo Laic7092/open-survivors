@@ -26,6 +26,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		player.get_parent().add_child(p)
 		var _hit = Node2D.new()
 		_hit.set_script(weapon_manager._proj_mover_script)
+		_hit.set_movement(Vector2.ZERO, 0.5 * duration_factor + 0.5)
 		_hit.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 20.0, 0)
 		p.add_child(_hit)
 		var tw = player.create_tween()

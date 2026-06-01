@@ -4,7 +4,7 @@ extends RefCounted
 # 对齐 Vampire Survivors Wiki: https://vampire.survivors.wiki/w/Level_up
 
 const ItemTypes = preload("res://scripts/data/item_types.gd")
-const _WeaponManager = preload("res://scripts/entities/weapon_manager.gd")
+const _WeaponManager = preload("res://scripts/entities/player/weapon_manager.gd")
 
 # ── Choice 类型 ──
 enum ChoiceType {

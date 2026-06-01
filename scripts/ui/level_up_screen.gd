@@ -9,10 +9,10 @@ signal gold_selected(amount: int)
 signal chicken_selected(amount: int)
 signal limit_break_selected(weapon_type: int, option: Dictionary)
 
-const LevelUpService = preload("res://scripts/core/level_up_service.gd")
+const LevelUpService = preload("res://scripts/services/level_up_service.gd")
 const IconGenerator = preload("res://scripts/ui/icon_generator.gd")
 const UiUtils = preload("res://scripts/ui/ui_utils.gd")
-const WeaponManagerScript = preload("res://scripts/entities/weapon_manager.gd")
+const WeaponManagerScript = preload("res://scripts/entities/player/weapon_manager.gd")
 
 const MAX_WEAPONS = 6
 const MAX_PASSIVES = 6

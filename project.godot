@@ -16,18 +16,18 @@ config/features=PackedStringArray("4.6")
 
 [autoload]
 
-SaveManager="*res://scripts/managers/save_manager.gd"
-AudioManager="*res://scripts/managers/audio_manager.gd"
-PowerUpManager="*res://scripts/managers/powerup_manager.gd"
-I18N="*res://scripts/managers/i18n.gd"
-RelicManager="*res://scripts/managers/relic_manager.gd"
-ArcanaManager="*res://scripts/managers/arcana_manager.gd"
-SceneManager="*res://scripts/managers/scene_manager.gd"
-EnemyRegistry="*res://scripts/managers/enemy_registry.gd"
-ObjectPoolManager="*res://scripts/managers/object_pool_manager.gd"
-DataRegistry="*res://scripts/core/data_registry.gd"
-EventBus="*res://scripts/core/event_bus.gd"
-UnlockManager="*res://scripts/managers/unlock_manager.gd"
+SaveManager="*res://scripts/services/save_manager.gd"
+AudioManager="*res://scripts/services/audio_manager.gd"
+PowerUpManager="*res://scripts/services/powerup_manager.gd"
+I18N="*res://scripts/services/i18n.gd"
+RelicManager="*res://scripts/services/relic_manager.gd"
+ArcanaManager="*res://scripts/services/arcana_manager.gd"
+SceneManager="*res://scripts/services/scene_manager.gd"
+EnemyRegistry="*res://scripts/services/enemy_registry.gd"
+ObjectPoolManager="*res://scripts/services/object_pool_manager.gd"
+DataRegistry="*res://scripts/services/data_registry.gd"
+EventBus="*res://scripts/services/event_bus.gd"
+UnlockManager="*res://scripts/services/unlock_manager.gd"
 
 [display]
 

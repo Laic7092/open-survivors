@@ -41,6 +41,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 			player.get_parent().add_child(sword)
 			var _hit = Node2D.new()
 			_hit.set_script(weapon_manager._proj_mover_script)
+			_hit.set_movement(Vector2.ZERO, 2.0)
 			_hit.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 10.0, -1)
 			sword.add_child(_hit)
 			var tw = player.create_tween()
@@ -96,6 +97,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		player.get_parent().add_child(p)
 		var _hit2 = Node2D.new()
 		_hit2.set_script(weapon_manager._proj_mover_script)
+		_hit2.set_movement(Vector2.ZERO, travel_time + 1.5)
 		_hit2.set_hit_config(weapon_manager.get_enemy_manager(), dmg, 10.0, -1)
 		p.add_child(_hit2)
 
@@ -106,6 +108,14 @@ static func fire(w, weapon_manager, player, get_enemies):
 		var p_id = p.get_instance_id()
 		tw.finished.connect(func():
 			var _x = instance_from_id(p_id)
-			if _x:
-				_x.queue_free()
+			if not _x:
+				return
+			var p_node = _x as Node2D
+			var ret_tw = player.create_tween()
+			ret_tw.tween_property(p_node, "global_position", player.global_position, 0.4)
+			ret_tw.parallel().tween_property(p_node, "rotation", deg_to_rad(360), 0.4).as_relative()
+			ret_tw.finished.connect(func():
+				if is_instance_valid(p_node):
+					p_node.queue_free()
+			)
 		)
