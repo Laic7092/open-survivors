@@ -18,4 +18,6 @@ func _draw():
 		return
 	var f = ThemeDB.get_project_theme().default_font if ThemeDB.get_project_theme() else ThemeDB.get_default_theme().default_font
 	if f:
-		draw_string(f, Vector2(-emoji_size * 0.4, emoji_size * 0.35), emoji, HORIZONTAL_ALIGNMENT_CENTER, -1, _font_size, Color(1, 1, 1, 0.95))
+		var ts = f.get_string_size(emoji, HORIZONTAL_ALIGNMENT_LEFT, -1, _font_size)
+		var pos = Vector2(-ts.x * 0.5, ts.y * 0.35)
+		draw_string(f, pos, emoji, HORIZONTAL_ALIGNMENT_CENTER, ts.x, _font_size, Color(1, 1, 1, 0.95))

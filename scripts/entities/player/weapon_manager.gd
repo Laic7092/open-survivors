@@ -597,7 +597,7 @@ func can_evolve(weapon_type: int) -> bool:
 	var ok = false
 	var passive_lv = _player.passive_inventory.get_level(passive_type)
 	if passive_lv > 0:
-		ok = passive_lv >= recipe["passive_level"]
+		ok = true
 	else:
 		var other_w = _find_weapon(passive_type)
 		ok = other_w != null and other_w.level >= recipe["passive_level"]

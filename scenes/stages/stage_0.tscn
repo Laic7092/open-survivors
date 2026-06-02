@@ -1,0 +1,605 @@
+[gd_scene format=3]
+
+[node name="MapScene" type="Node2D"]
+
+# ═══════════════════════════════════════════════════
+# 底色
+# ═══════════════════════════════════════════════════
+[node name="Sky" type="ColorRect" parent="."]
+position = Vector2(0, 0)
+size = Vector2(19200, 14400)
+color = Color(0.06, 0.06, 0.15, 1)
+z_index = -100
+
+[node name="GroundBase" type="ColorRect" parent="."]
+position = Vector2(0, 0)
+size = Vector2(19200, 14400)
+color = Color(0.08, 0.12, 0.06, 1)
+z_index = -80
+
+# ═══════════════════════════════════════════════════
+# 草地纹理（大量散布的绿色小点）
+# ═══════════════════════════════════════════════════
+[node name="Grass_01" type="ColorRect" parent="."]
+position = Vector2(300, 300)
+size = Vector2(1200, 800)
+color = Color(0.10, 0.22, 0.07, 0.5)
+z_index = -75
+[node name="Grass_02" type="ColorRect" parent="."]
+position = Vector2(2500, 500)
+size = Vector2(900, 600)
+color = Color(0.12, 0.25, 0.08, 0.45)
+z_index = -75
+[node name="Grass_03" type="ColorRect" parent="."]
+position = Vector2(5000, 300)
+size = Vector2(1500, 1000)
+color = Color(0.10, 0.20, 0.07, 0.5)
+z_index = -75
+[node name="Grass_04" type="ColorRect" parent="."]
+position = Vector2(8000, 200)
+size = Vector2(1000, 700)
+color = Color(0.11, 0.23, 0.08, 0.4)
+z_index = -75
+[node name="Grass_05" type="ColorRect" parent="."]
+position = Vector2(11000, 400)
+size = Vector2(1300, 900)
+color = Color(0.10, 0.21, 0.07, 0.5)
+z_index = -75
+[node name="Grass_06" type="ColorRect" parent="."]
+position = Vector2(14000, 300)
+size = Vector2(1400, 800)
+color = Color(0.12, 0.24, 0.08, 0.45)
+z_index = -75
+[node name="Grass_07" type="ColorRect" parent="."]
+position = Vector2(17000, 500)
+size = Vector2(800, 1100)
+color = Color(0.10, 0.22, 0.07, 0.5)
+z_index = -75
+[node name="Grass_08" type="ColorRect" parent="."]
+position = Vector2(200, 3000)
+size = Vector2(1400, 1200)
+color = Color(0.11, 0.23, 0.08, 0.45)
+z_index = -75
+[node name="Grass_09" type="ColorRect" parent="."]
+position = Vector2(4000, 2500)
+size = Vector2(1000, 800)
+color = Color(0.10, 0.20, 0.07, 0.5)
+z_index = -75
+[node name="Grass_10" type="ColorRect" parent="."]
+position = Vector2(16000, 2500)
+size = Vector2(1200, 900)
+color = Color(0.12, 0.25, 0.08, 0.45)
+z_index = -75
+[node name="Grass_11" type="ColorRect" parent="."]
+position = Vector2(3000, 10000)
+size = Vector2(1500, 1200)
+color = Color(0.10, 0.22, 0.07, 0.5)
+z_index = -75
+[node name="Grass_12" type="ColorRect" parent="."]
+position = Vector2(8000, 11000)
+size = Vector2(1800, 1000)
+color = Color(0.11, 0.24, 0.08, 0.45)
+z_index = -75
+[node name="Grass_13" type="ColorRect" parent="."]
+position = Vector2(13000, 10500)
+size = Vector2(1500, 1300)
+color = Color(0.10, 0.21, 0.07, 0.5)
+z_index = -75
+[node name="Grass_14" type="ColorRect" parent="."]
+position = Vector2(16500, 10000)
+size = Vector2(1200, 1100)
+color = Color(0.12, 0.25, 0.08, 0.45)
+z_index = -75
+[node name="Grass_15" type="ColorRect" parent="."]
+position = Vector2(300, 7000)
+size = Vector2(800, 1400)
+color = Color(0.10, 0.22, 0.07, 0.5)
+z_index = -75
+
+# ═══════════════════════════════════════════════════
+# 森林地面：深色树影区域
+# ═══════════════════════════════════════════════════
+[node name="Shade_01" type="ColorRect" parent="."]
+position = Vector2(1500, 1500)
+size = Vector2(2000, 1500)
+color = Color(0.05, 0.08, 0.04, 0.4)
+z_index = -70
+[node name="Shade_02" type="ColorRect" parent="."]
+position = Vector2(14000, 1500)
+size = Vector2(3000, 2000)
+color = Color(0.05, 0.08, 0.04, 0.35)
+z_index = -70
+[node name="Shade_03" type="ColorRect" parent="."]
+position = Vector2(1000, 10000)
+size = Vector2(2500, 2500)
+color = Color(0.05, 0.08, 0.04, 0.4)
+z_index = -70
+[node name="Shade_04" type="ColorRect" parent="."]
+position = Vector2(15500, 10000)
+size = Vector2(3000, 2500)
+color = Color(0.05, 0.08, 0.04, 0.35)
+z_index = -70
+
+# ═══════════════════════════════════════════════════
+# 树林剪影（暗绿色竖条模拟远树）
+# ═══════════════════════════════════════════════════
+
+# NW 林区
+[node name="Tree_NW_01" type="ColorRect" parent="."]
+position = Vector2(400, 200)
+size = Vector2(40, 500)
+color = Color(0.03, 0.10, 0.02, 0.7)
+z_index = -60
+[node name="Tree_NW_02" type="ColorRect" parent="."]
+position = Vector2(600, 250)
+size = Vector2(30, 400)
+color = Color(0.04, 0.12, 0.03, 0.65)
+z_index = -60
+[node name="Tree_NW_03" type="ColorRect" parent="."]
+position = Vector2(900, 150)
+size = Vector2(50, 600)
+color = Color(0.03, 0.10, 0.02, 0.7)
+z_index = -60
+[node name="Tree_NW_04" type="ColorRect" parent="."]
+position = Vector2(1200, 200)
+size = Vector2(35, 450)
+color = Color(0.04, 0.11, 0.03, 0.65)
+z_index = -60
+[node name="Tree_NW_05" type="ColorRect" parent="."]
+position = Vector2(1600, 180)
+size = Vector2(45, 550)
+color = Color(0.03, 0.10, 0.02, 0.7)
+z_index = -60
+[node name="Tree_NW_06" type="ColorRect" parent="."]
+position = Vector2(2000, 300)
+size = Vector2(30, 400)
+color = Color(0.04, 0.12, 0.03, 0.6)
+z_index = -60
+[node name="Tree_NW_07" type="ColorRect" parent="."]
+position = Vector2(300, 1200)
+size = Vector2(50, 500)
+color = Color(0.03, 0.10, 0.02, 0.65)
+z_index = -60
+[node name="Tree_NW_08" type="ColorRect" parent="."]
+position = Vector2(800, 1400)
+size = Vector2(40, 450)
+color = Color(0.04, 0.11, 0.03, 0.6)
+z_index = -60
+[node name="Tree_NW_09" type="ColorRect" parent="."]
+position = Vector2(1500, 1100)
+size = Vector2(35, 400)
+color = Color(0.03, 0.10, 0.02, 0.65)
+z_index = -60
+[node name="Tree_NW_10" type="ColorRect" parent="."]
+position = Vector2(2300, 1200)
+size = Vector2(40, 500)
+color = Color(0.04, 0.12, 0.03, 0.6)
+z_index = -60
+
+# N 林区
+[node name="Tree_N_01" type="ColorRect" parent="."]
+position = Vector2(4000, 150)
+size = Vector2(45, 550)
+color = Color(0.03, 0.10, 0.02, 0.7)
+z_index = -60
+[node name="Tree_N_02" type="ColorRect" parent="."]
+position = Vector2(4500, 250)
+size = Vector2(35, 450)
+color = Color(0.04, 0.11, 0.03, 0.65)
+z_index = -60
+[node name="Tree_N_03" type="ColorRect" parent="."]
+position = Vector2(5500, 180)
+size = Vector2(50, 600)
+color = Color(0.03, 0.10, 0.02, 0.7)
+z_index = -60
+[node name="Tree_N_04" type="ColorRect" parent="."]
+position = Vector2(6500, 200)
+size = Vector2(40, 500)
+color = Color(0.04, 0.12, 0.03, 0.65)
+z_index = -60
+[node name="Tree_N_05" type="ColorRect" parent="."]
+position = Vector2(4000, 800)
+size = Vector2(40, 500)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+[node name="Tree_N_06" type="ColorRect" parent="."]
+position = Vector2(5000, 700)
+size = Vector2(35, 450)
+color = Color(0.04, 0.11, 0.03, 0.55)
+z_index = -60
+[node name="Tree_N_07" type="ColorRect" parent="."]
+position = Vector2(6000, 600)
+size = Vector2(45, 500)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+
+# NE 林区
+[node name="Tree_NE_01" type="ColorRect" parent="."]
+position = Vector2(15000, 200)
+size = Vector2(50, 600)
+color = Color(0.03, 0.10, 0.02, 0.7)
+z_index = -60
+[node name="Tree_NE_02" type="ColorRect" parent="."]
+position = Vector2(15500, 150)
+size = Vector2(40, 550)
+color = Color(0.04, 0.12, 0.03, 0.65)
+z_index = -60
+[node name="Tree_NE_03" type="ColorRect" parent="."]
+position = Vector2(16000, 250)
+size = Vector2(35, 480)
+color = Color(0.03, 0.10, 0.02, 0.7)
+z_index = -60
+[node name="Tree_NE_04" type="ColorRect" parent="."]
+position = Vector2(16800, 200)
+size = Vector2(50, 550)
+color = Color(0.04, 0.11, 0.03, 0.65)
+z_index = -60
+[node name="Tree_NE_05" type="ColorRect" parent="."]
+position = Vector2(17500, 180)
+size = Vector2(40, 600)
+color = Color(0.03, 0.10, 0.02, 0.7)
+z_index = -60
+[node name="Tree_NE_06" type="ColorRect" parent="."]
+position = Vector2(18200, 300)
+size = Vector2(60, 500)
+color = Color(0.04, 0.12, 0.03, 0.65)
+z_index = -60
+[node name="Tree_NE_07" type="ColorRect" parent="."]
+position = Vector2(15000, 1000)
+size = Vector2(40, 500)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+[node name="Tree_NE_08" type="ColorRect" parent="."]
+position = Vector2(15800, 1100)
+size = Vector2(35, 450)
+color = Color(0.04, 0.11, 0.03, 0.55)
+z_index = -60
+[node name="Tree_NE_09" type="ColorRect" parent="."]
+position = Vector2(17000, 1000)
+size = Vector2(45, 500)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+[node name="Tree_NE_10" type="ColorRect" parent="."]
+position = Vector2(18000, 900)
+size = Vector2(50, 550)
+color = Color(0.04, 0.12, 0.03, 0.6)
+z_index = -60
+
+# W 林区
+[node name="Tree_W_01" type="ColorRect" parent="."]
+position = Vector2(200, 4000)
+size = Vector2(45, 550)
+color = Color(0.03, 0.10, 0.02, 0.65)
+z_index = -60
+[node name="Tree_W_02" type="ColorRect" parent="."]
+position = Vector2(250, 5000)
+size = Vector2(40, 450)
+color = Color(0.04, 0.11, 0.03, 0.6)
+z_index = -60
+[node name="Tree_W_03" type="ColorRect" parent="."]
+position = Vector2(300, 6000)
+size = Vector2(50, 500)
+color = Color(0.03, 0.10, 0.02, 0.65)
+z_index = -60
+[node name="Tree_W_04" type="ColorRect" parent="."]
+position = Vector2(200, 7500)
+size = Vector2(40, 550)
+color = Color(0.04, 0.12, 0.03, 0.6)
+z_index = -60
+[node name="Tree_W_05" type="ColorRect" parent="."]
+position = Vector2(250, 8500)
+size = Vector2(35, 400)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+[node name="Tree_W_06" type="ColorRect" parent="."]
+position = Vector2(1500, 4000)
+size = Vector2(40, 450)
+color = Color(0.04, 0.11, 0.03, 0.55)
+z_index = -60
+[node name="Tree_W_07" type="ColorRect" parent="."]
+position = Vector2(1000, 6000)
+size = Vector2(45, 500)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+
+# E 林区
+[node name="Tree_E_01" type="ColorRect" parent="."]
+position = Vector2(18500, 3000)
+size = Vector2(50, 600)
+color = Color(0.03, 0.10, 0.02, 0.65)
+z_index = -60
+[node name="Tree_E_02" type="ColorRect" parent="."]
+position = Vector2(18700, 4500)
+size = Vector2(40, 500)
+color = Color(0.04, 0.11, 0.03, 0.6)
+z_index = -60
+[node name="Tree_E_03" type="ColorRect" parent="."]
+position = Vector2(18600, 5500)
+size = Vector2(45, 550)
+color = Color(0.03, 0.10, 0.02, 0.65)
+z_index = -60
+[node name="Tree_E_04" type="ColorRect" parent="."]
+position = Vector2(18800, 7000)
+size = Vector2(50, 450)
+color = Color(0.04, 0.12, 0.03, 0.6)
+z_index = -60
+[node name="Tree_E_05" type="ColorRect" parent="."]
+position = Vector2(18500, 8000)
+size = Vector2(40, 500)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+[node name="Tree_E_06" type="ColorRect" parent="."]
+position = Vector2(17500, 4000)
+size = Vector2(40, 500)
+color = Color(0.04, 0.11, 0.03, 0.55)
+z_index = -60
+[node name="Tree_E_07" type="ColorRect" parent="."]
+position = Vector2(17000, 6000)
+size = Vector2(45, 550)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+
+# S 林区
+[node name="Tree_S_01" type="ColorRect" parent="."]
+position = Vector2(3000, 13000)
+size = Vector2(50, 500)
+color = Color(0.03, 0.10, 0.02, 0.65)
+z_index = -60
+[node name="Tree_S_02" type="ColorRect" parent="."]
+position = Vector2(5000, 13200)
+size = Vector2(40, 450)
+color = Color(0.04, 0.11, 0.03, 0.6)
+z_index = -60
+[node name="Tree_S_03" type="ColorRect" parent="."]
+position = Vector2(4500, 13500)
+size = Vector2(35, 500)
+color = Color(0.03, 0.10, 0.02, 0.65)
+z_index = -60
+[node name="Tree_S_04" type="ColorRect" parent="."]
+position = Vector2(13000, 13000)
+size = Vector2(45, 550)
+color = Color(0.04, 0.12, 0.03, 0.6)
+z_index = -60
+[node name="Tree_S_05" type="ColorRect" parent="."]
+position = Vector2(14000, 13500)
+size = Vector2(40, 450)
+color = Color(0.03, 0.10, 0.02, 0.65)
+z_index = -60
+[node name="Tree_S_06" type="ColorRect" parent="."]
+position = Vector2(15500, 13200)
+size = Vector2(50, 500)
+color = Color(0.04, 0.11, 0.03, 0.6)
+z_index = -60
+[node name="Tree_S_07" type="ColorRect" parent="."]
+position = Vector2(16500, 13500)
+size = Vector2(40, 550)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+[node name="Tree_S_08" type="ColorRect" parent="."]
+position = Vector2(7500, 13700)
+size = Vector2(45, 400)
+color = Color(0.04, 0.11, 0.03, 0.55)
+z_index = -60
+[node name="Tree_S_09" type="ColorRect" parent="."]
+position = Vector2(11000, 13500)
+size = Vector2(40, 450)
+color = Color(0.03, 0.10, 0.02, 0.6)
+z_index = -60
+
+# ═══════════════════════════════════════════════════
+# 小径（蜿蜒的土路）
+# ═══════════════════════════════════════════════════
+[node name="Path_01" type="ColorRect" parent="."]
+position = Vector2(0, 6900)
+size = Vector2(4000, 130)
+color = Color(0.18, 0.14, 0.08, 0.3)
+z_index = -65
+[node name="Path_02" type="ColorRect" parent="."]
+position = Vector2(3500, 6800)
+size = Vector2(1300, 160)
+color = Color(0.18, 0.14, 0.08, 0.3)
+z_index = -65
+[node name="Path_03" type="ColorRect" parent="."]
+position = Vector2(4500, 6900)
+size = Vector2(120, 140)
+color = Color(0.18, 0.14, 0.08, 0.25)
+z_index = -65
+[node name="Path_04" type="ColorRect" parent="."]
+position = Vector2(6000, 6950)
+size = Vector2(2000, 120)
+color = Color(0.18, 0.14, 0.08, 0.3)
+z_index = -65
+[node name="Path_05" type="ColorRect" parent="."]
+position = Vector2(7500, 6900)
+size = Vector2(500, 180)
+color = Color(0.18, 0.14, 0.08, 0.25)
+z_index = -65
+[node name="Path_06" type="ColorRect" parent="."]
+position = Vector2(9000, 7000)
+size = Vector2(130, 3000)
+color = Color(0.18, 0.14, 0.08, 0.25)
+z_index = -65
+[node name="Path_07" type="ColorRect" parent="."]
+position = Vector2(10000, 6900)
+size = Vector2(3000, 130)
+color = Color(0.18, 0.14, 0.08, 0.3)
+z_index = -65
+[node name="Path_08" type="ColorRect" parent="."]
+position = Vector2(12500, 6850)
+size = Vector2(2000, 140)
+color = Color(0.18, 0.14, 0.08, 0.25)
+z_index = -65
+[node name="Path_09" type="ColorRect" parent="."]
+position = Vector2(15000, 6950)
+size = Vector2(4200, 120)
+color = Color(0.18, 0.14, 0.08, 0.3)
+z_index = -65
+
+# ═══════════════════════════════════════════════════
+# 中央空地（玩家出生区 — 保持开阔）
+# ═══════════════════════════════════════════════════
+[node name="Clearing" type="ColorRect" parent="."]
+position = Vector2(7500, 5800)
+size = Vector2(4000, 2500)
+color = Color(0.10, 0.14, 0.07, 0.3)
+z_index = -65
+
+# ═══════════════════════════════════════════════════
+# 池塘
+# ═══════════════════════════════════════════════════
+[node name="Pond_BG" type="ColorRect" parent="."]
+position = Vector2(3800, 7800)
+size = Vector2(600, 350)
+color = Color(0.04, 0.06, 0.18, 0.6)
+z_index = -60
+[node name="Pond_Mid" type="ColorRect" parent="."]
+position = Vector2(3900, 7900)
+size = Vector2(450, 220)
+color = Color(0.05, 0.07, 0.22, 0.7)
+z_index = -60
+[node name="Pond_FG" type="ColorRect" parent="."]
+position = Vector2(4000, 7950)
+size = Vector2(300, 150)
+color = Color(0.06, 0.08, 0.25, 0.75)
+z_index = -60
+[node name="PondEdge_01" type="ColorRect" parent="."]
+position = Vector2(3750, 7800)
+size = Vector2(120, 20)
+color = Color(0.06, 0.14, 0.04, 0.5)
+z_index = -58
+[node name="PondEdge_02" type="ColorRect" parent="."]
+position = Vector2(4350, 7950)
+size = Vector2(100, 25)
+color = Color(0.06, 0.14, 0.04, 0.5)
+z_index = -58
+
+# ═══════════════════════════════════════════════════
+# 花草点缀（小彩色点）
+# ═══════════════════════════════════════════════════
+[node name="Flowers_Area_01" type="ColorRect" parent="."]
+position = Vector2(3000, 3500)
+size = Vector2(600, 400)
+color = Color(0.15, 0.35, 0.10, 0.35)
+z_index = -55
+[node name="Flowers_Area_02" type="ColorRect" parent="."]
+position = Vector2(8000, 4500)
+size = Vector2(400, 300)
+color = Color(0.15, 0.35, 0.10, 0.35)
+z_index = -55
+[node name="Flowers_Area_03" type="ColorRect" parent="."]
+position = Vector2(11000, 3500)
+size = Vector2(500, 400)
+color = Color(0.15, 0.35, 0.10, 0.35)
+z_index = -55
+[node name="Flowers_Area_04" type="ColorRect" parent="."]
+position = Vector2(6000, 10500)
+size = Vector2(400, 300)
+color = Color(0.15, 0.35, 0.10, 0.35)
+z_index = -55
+[node name="Flowers_Area_05" type="ColorRect" parent="."]
+position = Vector2(13000, 10500)
+size = Vector2(500, 400)
+color = Color(0.15, 0.35, 0.10, 0.35)
+z_index = -55
+[node name="Flowers_Area_06" type="ColorRect" parent="."]
+position = Vector2(3500, 12000)
+size = Vector2(400, 300)
+color = Color(0.15, 0.35, 0.10, 0.35)
+z_index = -55
+[node name="Flowers_Area_07" type="ColorRect" parent="."]
+position = Vector2(15500, 4500)
+size = Vector2(500, 400)
+color = Color(0.15, 0.35, 0.10, 0.35)
+z_index = -55
+
+# 亮色小花点缀
+[node name="FlowerDot_01" type="ColorRect" parent="."]
+position = Vector2(3200, 3600)
+size = Vector2(6, 6)
+color = Color(0.4, 0.2, 0.2, 0.6)
+z_index = -54
+[node name="FlowerDot_02" type="ColorRect" parent="."]
+position = Vector2(3300, 3550)
+size = Vector2(6, 6)
+color = Color(0.8, 0.7, 0.2, 0.5)
+z_index = -54
+[node name="FlowerDot_03" type="ColorRect" parent="."]
+position = Vector2(3100, 3700)
+size = Vector2(5, 5)
+color = Color(0.6, 0.3, 0.6, 0.5)
+z_index = -54
+[node name="FlowerDot_04" type="ColorRect" parent="."]
+position = Vector2(8200, 4600)
+size = Vector2(6, 6)
+color = Color(0.8, 0.7, 0.2, 0.5)
+z_index = -54
+[node name="FlowerDot_05" type="ColorRect" parent="."]
+position = Vector2(8100, 4550)
+size = Vector2(5, 5)
+color = Color(0.4, 0.2, 0.2, 0.6)
+z_index = -54
+[node name="FlowerDot_06" type="ColorRect" parent="."]
+position = Vector2(11100, 3600)
+size = Vector2(6, 6)
+color = Color(0.6, 0.3, 0.6, 0.5)
+z_index = -54
+[node name="FlowerDot_07" type="ColorRect" parent="."]
+position = Vector2(11200, 3550)
+size = Vector2(5, 5)
+color = Color(0.8, 0.7, 0.2, 0.5)
+z_index = -54
+[node name="FlowerDot_08" type="ColorRect" parent="."]
+position = Vector2(6100, 10600)
+size = Vector2(6, 6)
+color = Color(0.4, 0.2, 0.2, 0.6)
+z_index = -54
+[node name="FlowerDot_09" type="ColorRect" parent="."]
+position = Vector2(15600, 4600)
+size = Vector2(5, 5)
+color = Color(0.8, 0.7, 0.2, 0.5)
+z_index = -54
+[node name="FlowerDot_10" type="ColorRect" parent="."]
+position = Vector2(15700, 4550)
+size = Vector2(6, 6)
+color = Color(0.6, 0.3, 0.6, 0.5)
+z_index = -54
+
+# ═══════════════════════════════════════════════════
+# 远景树冠层（顶部模糊绿色带）
+# ═══════════════════════════════════════════════════
+[node name="Canopy_N" type="ColorRect" parent="."]
+position = Vector2(0, 0)
+size = Vector2(19200, 80)
+color = Color(0.04, 0.14, 0.03, 0.5)
+z_index = -55
+[node name="Canopy_S" type="ColorRect" parent="."]
+position = Vector2(0, 14320)
+size = Vector2(19200, 80)
+color = Color(0.04, 0.14, 0.03, 0.5)
+z_index = -55
+
+# ═══════════════════════════════════════════════════
+# 雾效
+# ═══════════════════════════════════════════════════
+[node name="Fog_01" type="ColorRect" parent="."]
+position = Vector2(0, 1000)
+size = Vector2(19200, 500)
+color = Color(0.08, 0.08, 0.16, 0.10)
+z_index = -5
+[node name="Fog_02" type="ColorRect" parent="."]
+position = Vector2(0, 7000)
+size = Vector2(19200, 400)
+color = Color(0.08, 0.08, 0.16, 0.07)
+z_index = -5
+[node name="Fog_03" type="ColorRect" parent="."]
+position = Vector2(0, 12500)
+size = Vector2(19200, 500)
+color = Color(0.08, 0.08, 0.16, 0.10)
+z_index = -5
+
+# 月光
+[node name="MoonLight" type="ColorRect" parent="."]
+position = Vector2(14000, 1500)
+size = Vector2(300, 300)
+color = Color(0.12, 0.12, 0.20, 0.15)
+z_index = -5

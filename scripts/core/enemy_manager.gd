@@ -14,7 +14,6 @@ const KNOCKBACK_STRENGTH: float = 300.0
 const CULL_DIST: float = 1000.0
 const MID_DIST: float = 500.0
 const BASE_RADIUS: float = 14.0
-const CROWDED_THRESHOLD: int = 150
 
 var player: Node2D
 var game_state: Node
@@ -184,12 +183,12 @@ func spawn(type_id: int, pos: Vector2,
 	_health[id] = GameState.calc_enemy_hp(t.base_health, diff_factor, curse_level)
 	_max_health[id] = _health[id]
 	_contact_damage[id] = GameState.calc_enemy_damage(t.base_damage, diff_factor, curse_level)
-	_move_speed[id] = GameState.calc_enemy_speed(t.base_speed, diff_factor, curse_level)
-	_xp_value[id] = t.base_xp + int(diff_factor * 3 * t.drop_xp_mult)
+	_move_speed[id] = GameState.calc_enemy_speed(t.base_speed, diff_factor, curse_level) * randf_range(0.975, 1.025)
+	_xp_value[id] = t.base_xp
 
 	# Flags
 	var fl: int = 0
-	if t.is_boss or force_boss: fl |= 1 << Flag.BOSS
+	if force_boss: fl |= 1 << Flag.BOSS
 	if t.instant_kill_resistant: fl |= 1 << Flag.IK_RESIST
 	if t.debuff_resistant: fl |= 1 << Flag.DEBUFF_RESIST
 	if t.has_hp_x_level: fl |= 1 << Flag.HP_X_LEVEL
@@ -206,8 +205,8 @@ func spawn(type_id: int, pos: Vector2,
 
 	_lives_remaining[id] = 3 if t.has_three_lives else 1
 
-	# Boss bonus HP
-	if t.is_boss or force_boss:
+	# Boss bonus HP & count（仅 force_boss 才算真 Boss）
+	if force_boss:
 		_health[id] *= 3.0
 		_max_health[id] = _health[id]
 		_boss_count += 1
@@ -281,7 +280,6 @@ func _process(delta):
 	var speed_mod = game_state.stage_enemy_speed_mod if game_state else 1.0
 	var cull_dist_sq = (CULL_DIST * map_scale) ** 2
 	var mid_dist_sq = (MID_DIST * map_scale) ** 2
-	var crowded = _alive_count > CROWDED_THRESHOLD
 
 	var n = _pos.size()
 	for i in n:
@@ -335,7 +333,7 @@ func _process(delta):
 			_meta[i] &= ~(1 << Meta.CULLED)
 
 		# ── Skip physics optimization ──
-		var skip_physics = dist_sq > mid_dist_sq or (crowded and not is_boss)
+		var skip_physics = dist_sq > mid_dist_sq
 
 		# ── Hit flash ──
 		if _hit_flash[i] > 0.0:
@@ -350,12 +348,6 @@ func _process(delta):
 		# ── Frame staggering: 1/3 per frame ──
 		var my_turn = (i + _frame_n) % 3 == 0
 		var effective_speed = speed_mod
-
-		# ── 近战减速：越靠近 Player 越慢 → 分散到更多格子，提升空间网格性能 ──
-		var crowding_factor = 1.0
-		if dist_sq < 400.0:
-			crowding_factor = 0.1
-		effective_speed *= crowding_factor
 
 		# Stationary or off-turn
 		if speed_mod <= 0.0 or not my_turn:
@@ -633,6 +625,11 @@ func _update_multimesh():
 		if _hit_flash[i] > 0.0:
 			col = Color(3.0, 3.0, 3.0, 1.0)
 
+		# Boss 高亮：金色描边 + 加粗
+		if _flags[i] & (1 << Flag.BOSS):
+			ocol = Color(1.0, 0.85, 0.2)
+			ow = maxf(ow, 4.0)
+
 		var pos = _pos[i]
 		var rot = 0.0
 		if s == 1:  # triangle 指向玩家
@@ -745,8 +742,7 @@ func get_count() -> int:
 	return _alive_count
 
 
-func is_crowded() -> bool:
-	return _alive_count > CROWDED_THRESHOLD
+
 
 
 func get_pos(id: int) -> Vector2:

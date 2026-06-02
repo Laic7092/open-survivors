@@ -255,6 +255,7 @@ static func get_data() -> Dictionary:
 		"hud.victory_stats": "关卡: %s\n时间: %02d:%02d\n击杀: %d\n等级: %d\n金币: %d\n\n奖励: +500 金币！",
 		"hud.distance_unit": "米",
 		"hud.timer_format": "%02d:%02d",
+		"hud.debug_enemies": "敌人: %d",
 
 		# ── Pause Overlay ──
 		"pause.title": "暂停",

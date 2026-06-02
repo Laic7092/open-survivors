@@ -37,26 +37,30 @@ func generate():
 	var hh = game_state.map_height / 2.0
 	var stage_id = game_state._stage_id
 	
-	# 背景
-	_add_background(stage_data.get("bg_color", Color(0.04, 0.04, 0.10)), hw, hh)
+	var map_scene_path = stage_data.get("map_scene", "")
+	if map_scene_path:
+		_load_map_scene(map_scene_path, hw, hh)
+	else:
+		_add_background(stage_data.get("bg_color", Color(0.04, 0.04, 0.10)), hw, hh)
+		_add_stage_decor(stage_id, hw, hh)
 	
-	# 关卡特色装饰
-	_add_stage_decor(stage_id, hw, hh)
-	
-	# 场景道具（树木、岩石等带碰撞的装饰）
 	_generate_props(stage_id, hw, hh)
-	
-	# 边界墙
 	_add_boundary_walls(hw, hh)
-	
-	# 交互式地图元素
 	_add_interactive_elements(stage_data.get("interactables", {}), hw, hh)
-	
-	# 初始拾取物
 	var count = randi_range(3, 6)
 	_scatter_initial_pickups(count, hw, hh)
 	
 	map_ready.emit()
+
+
+func _load_map_scene(path: String, hw: float, hh: float):
+	var scene = load(path)
+	if not scene:
+		push_error("StageGenerator: failed to load map scene: " + path)
+		return
+	var instance = scene.instantiate()
+	instance.position = Vector2(-hw, -hh)
+	main_node.add_child(instance)
 
 
 func _add_background(bg_color: Color, hw: float, hh: float):

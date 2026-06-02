@@ -50,12 +50,14 @@ static func fire(w, weapon_manager, player, get_enemies):
 	var tick_timer = Timer.new()
 	tick_timer.wait_time = 0.1
 	tick_timer.autostart = true
+	var zone_id = zone.get_instance_id()
 	zone.add_child(tick_timer)
 	tick_timer.timeout.connect(func():
-		if not is_instance_valid(zone):
+		var z = instance_from_id(zone_id)
+		if not z:
 			return
 		var enemies = get_enemies.call()
-		var zpos = zone.global_position
+		var zpos = z.global_position
 		var hw = area
 		var hh = height / 2.0
 		for e in enemies:
@@ -68,9 +70,13 @@ static func fire(w, weapon_manager, player, get_enemies):
 	)
 
 	# ── 生命周期清理 ──
+	var timer_id = tick_timer.get_instance_id()
+	var zone_id2 = zone.get_instance_id()
 	player.get_tree().create_timer(dur).timeout.connect(func():
-		if is_instance_valid(tick_timer):
-			tick_timer.queue_free()
-		if is_instance_valid(zone):
-			zone.queue_free()
+		var tt = instance_from_id(timer_id)
+		if tt:
+			tt.queue_free()
+		var z = instance_from_id(zone_id2)
+		if z:
+			z.queue_free()
 	)

@@ -18,6 +18,7 @@ static func get_data() -> Dictionary:
 		"map_height": 4800,
 		"map_scale": 3.0,
 		"theme": "Forest Night Fever",
+		"map_scene": "res://scenes/stages/stage_0.tscn",
 
 		# ── 基础倍率 ──
 		"move_speed_mod": 1.1,
@@ -70,27 +71,27 @@ static func get_data() -> Dictionary:
 			"enemy_minimum": 1.25,
 		},
 
-		# ── 场景道具 ──
+		# ── 场景道具（位置与 tscn 地标对齐） ──
 		"stage_items": [
-			# Skull O'Maniac — 6 tilesets NW
-			{"type": 25, "is_weapon": false, "positions": [Vector2(-6 * TS, -6 * TS)]},
-			# Hollow Heart — 4~5 tilesets N
-			{"type": 6,  "is_weapon": false, "positions": [Vector2(0, -4.5 * TS)]},
-			# Spinach — up to 4 copies
+			# Skull O'Maniac — NW 花丛区 (Flowers_02)
+			{"type": 25, "is_weapon": false, "positions": [Vector2(-11 * TS, -17 * TS)]},
+			# Hollow Heart — 北向小径 (N path)
+			{"type": 6,  "is_weapon": false, "positions": [Vector2(0, -12 * TS)]},
+			# Spinach — 东向小径 + SE 散布 (E path)
 			{"type": 4,  "is_weapon": false, "positions": [
-				{"pos": Vector2(3 * TS, -2 * TS), "chance": 1.0},
-				{"pos": Vector2(5 * TS, -2 * TS), "chance": 0.3},
-				{"pos": Vector2(4 * TS,  2 * TS), "chance": 0.2},
-				{"pos": Vector2(6 * TS,  2 * TS), "chance": 0.1},
+				{"pos": Vector2( 7 * TS, -2 * TS), "chance": 1.0},
+				{"pos": Vector2(14 * TS, -3 * TS), "chance": 0.3},
+				{"pos": Vector2(10 * TS,  4 * TS), "chance": 0.2},
+				{"pos": Vector2(17 * TS,  2 * TS), "chance": 0.1},
 			]},
-			# Pummarola — 5 tilesets S
-			{"type": 9,  "is_weapon": false, "positions": [Vector2(0, 5 * TS)]},
-			# Clover — up to 4 copies
+			# Pummarola — 南向小径 (S path)
+			{"type": 9,  "is_weapon": false, "positions": [Vector2(0, 14 * TS)]},
+			# Clover — 池塘周边 (Pond area)
 			{"type": 21, "is_weapon": false, "positions": [
-				{"pos": Vector2(-4 * TS,  3 * TS), "chance": 1.0},
-				{"pos": Vector2(-2 * TS,  4 * TS), "chance": 0.3},
-				{"pos": Vector2(-4 * TS,  4 * TS), "chance": 0.2},
-				{"pos": Vector2(-5 * TS,  3 * TS), "chance": 0.1},
+				{"pos": Vector2(-35 * TS,  3 * TS), "chance": 1.0},
+				{"pos": Vector2(-31 * TS,  4 * TS), "chance": 0.3},
+				{"pos": Vector2(-38 * TS,  5 * TS), "chance": 0.2},
+				{"pos": Vector2(-36 * TS,  6 * TS), "chance": 0.1},
 			]},
 		],
 

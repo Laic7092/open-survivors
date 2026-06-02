@@ -9,8 +9,7 @@ extends Node
 
 const GameState = preload("res://scripts/core/game_state.gd")
 
-const HARD_CAP_BASE: int = 350     # 紧急天花板基数
-const CAP_BUFFER: int = 50         # 软上限距硬上限缓冲距离
+const MAX_PER_BATCH: int = 20      # 单次 interval 最大补怪数
 var _charm_extra: int = 0          # 由 Charm PowerUp 附加的封顶增量
 # 外部依赖：由 main.gd 注入
 var game_state: GameState
@@ -123,6 +122,7 @@ var _map_ready: bool = false
 # 波次定义（从 stage_data 加载）
 var _wave_defs: Array = []
 var _next_wave_index: int = 0
+var all_waves_triggered: bool = false   # 所有波次是否已触发（用于判通关）
 
 # 当前波次参数（持续补怪模型）
 var _wave_timer: float = 0.0           # 距下次补怪倒计时
@@ -131,7 +131,6 @@ var _wave_minimum: int = 1             # 当前波次最低存活数
 var _wave_interval: float = 1.0        # 当前波次补怪间隔（秒）
 var _wave_boss_id: int = -1            # 当前波次 Boss 类型（-1=无）
 var _wave_boss_spawned: bool = false   # Boss 是否已生成
-var _enforce_cooldown: float = 0.0     # 硬下限补怪冷却（防 spawn-die 循环）
 
 # 地图事件
 var _map_events: Array = []
@@ -201,17 +200,11 @@ func _process_wave_defs(delta: float):
 	# 检查是否该触发下一波（按 game_time 推进）
 	_try_trigger_next_wave()
 
-	# 1) 持续生成：每 interval 秒出一小波
+	# 每 interval 秒补一批
 	_wave_timer -= delta
 	if _wave_timer <= 0.0:
 		_wave_timer = _wave_interval
 		_spawn_continuous_batch()
-
-	# 2) 硬下限检测：场上少于 minimum 时补满（带冷却防 spawn-die 循环）
-	_enforce_cooldown -= delta
-	if _enforce_cooldown <= 0.0:
-		_enforce_cooldown = 2.0
-		_check_minimum_enforcement()
 
 	# 波次内事件
 	_process_wave_events(delta)
@@ -223,6 +216,7 @@ func _try_trigger_next_wave():
 
 	# 所有波次已触发 → 用最后一波的参数继续补怪
 	if _next_wave_index >= _wave_defs.size():
+		all_waves_triggered = true
 		return
 
 	var wd = _wave_defs[_next_wave_index]
@@ -238,7 +232,6 @@ func _try_trigger_next_wave():
 	var charm_val = player.get_charm() if is_instance_valid(player) and player.has_method("get_charm") else 0
 	_charm_extra = charm_val
 	_wave_minimum = wd.get("enemy_minimum", 1) + charm_val
-	_enforce_cooldown = 0.0  # 新波次立即响应
 	_wave_interval = wd.get("interval", 0.5)
 
 	# 解析敌人类型列表
@@ -272,74 +265,23 @@ func _try_trigger_next_wave():
 	wave_started.emit(gs.wave_number)
 
 
-# 持续生成：每 interval 秒出一小波（正常刷怪节奏）
+# 持续生成：每 interval 秒补到目标数量
 func _spawn_continuous_batch():
 	if _wave_enemy_types.is_empty():
 		return
 
-	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
-	var hard_cap = HARD_CAP_BASE + _charm_extra
-	# 紧急天花板：决不允许超过
-	if alive >= hard_cap:
+	var alive = enemy_manager.get_count()
+	var target = _wave_minimum + clampi(_wave_minimum / 8, 3, 30)  # 12.5% buffer, clamp 3~30 → 地板之上有余量
+	var shortfall = target - alive
+	if shortfall <= 0:
 		return
 
-	# 软上限：在硬上限下方留出缓冲带，避免触碰紧急天花板
-	var limit_cap = mini(hard_cap - CAP_BUFFER, int(_wave_minimum * 1.1) + 10)
-	if alive >= limit_cap:
-		return
-
-	# 动态节流：填充率 >30% 启动，二次曲线加速
-	var fill_pct = float(alive) / float(max(_wave_minimum, 1))
-	if fill_pct > 0.3:
-		var t = (fill_pct - 0.3) / 0.7
-		var throttle = int(lerpf(1.0, 8.0, t * t))
-		if Engine.get_physics_frames() % throttle != 0:
-			return
-
-	# 批次大小：填充率 >50% 逐步衰减到 1
-	var batch_size = clampi(floori(_wave_minimum / 20.0), 1, 5)
-	if fill_pct > 0.5:
-		var bs = lerpf(1.0, 0.2, (fill_pct - 0.5) / 0.45)
-		batch_size = maxi(1, int(batch_size * bs))
-	for _i in range(batch_size):
-		var type_id = _wave_enemy_types[randi() % _wave_enemy_types.size()]
-		var eid = spawn_enemy_func.call(type_id)
-		if eid >= 0:
-			enemy_manager.set_meta_flag(eid, "is_wave_enemy", true) if enemy_manager else null
-
-
-# 硬下限检测：场上少于 minimum 时立刻补满
-func _check_minimum_enforcement():
-	if _wave_enemy_types.is_empty() or _wave_minimum <= 0:
-		return
-
-	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
-	# 迟滞目标：在 minimum 上方 5%（10~25）留出缓冲带，避免 299↔300 抽搐
-	var hysteresis = clampi(ceili(_wave_minimum * 0.05), 10, 25)
-	var target = _wave_minimum + hysteresis
-	var needed = target - alive
-	if needed <= 0:
-		return
-
-	if alive >= HARD_CAP_BASE + _charm_extra:
-		return
-
-	var batch = clampi(needed, 1, 10)
+	var batch = min(shortfall, MAX_PER_BATCH)
 	for _i in range(batch):
 		var type_id = _wave_enemy_types[randi() % _wave_enemy_types.size()]
 		var eid = spawn_enemy_func.call(type_id)
 		if eid >= 0:
 			enemy_manager.set_meta_flag(eid, "is_wave_enemy", true) if enemy_manager else null
-
-	# 自适应冷却：离目标越近，冷却越长（减少微调频率）
-	alive = EnemyRegistry.get_count() if EnemyRegistry else 0
-	var still_needed = target - alive
-	if still_needed <= 5:
-		_enforce_cooldown = 4.0
-	elif still_needed <= 20:
-		_enforce_cooldown = 2.5
-	else:
-		_enforce_cooldown = 1.5
 
 
 func _spawn_boss_if_needed():
@@ -381,14 +323,8 @@ func _trigger_map_event(ev: Dictionary):
 	if ev_type.is_empty():
 		return
 
-	# 事件也必须尊重硬上限，避免在已满时继续堆怪
-	var alive = EnemyRegistry.get_count() if EnemyRegistry else 0
-	var available = HARD_CAP_BASE + _charm_extra - alive
-	if available <= 0:
-		return
-
 	var count = ev.get("count", 1)
-	var total = mini(ev.get("total", count), available)
+	var total = ev.get("total", count)
 	# Allow explicit "unit" field to specify enemy, fallback to event type lookup
 	var enemy_name = ev.get("unit", "")
 	if enemy_name.is_empty():
@@ -453,18 +389,28 @@ func _spawn_burst(type_id: int, count: int):
 
 
 func _spawn_wall(type_id: int, count: int):
-	if not is_instance_valid(player) or not camera_ctrl or not camera_ctrl.has_method("get_camera_bounds"):
+	if not is_instance_valid(player) or not camera_ctrl or not camera_ctrl.has_method("get_camera_bounds") or not enemy_manager:
 		_spawn_burst(type_id, count)
 		return
 	var bounds = camera_ctrl.get_camera_bounds()
-	var side = randi() % 2
-	var x = bounds.left - 80.0 if side == 0 else bounds.right + 80.0
-	var capped = mini(count, 30)  # wall 密度上限
-	var spacing = (bounds.bottom - bounds.top) / max(capped, 1)
+	var cx = (bounds.left + bounds.right) * 0.5
+	var cy = (bounds.top + bounds.bottom) * 0.5
+	var hw = (bounds.right - bounds.left) * 0.5
+	var hh = (bounds.bottom - bounds.top) * 0.5
+	var center = Vector2(cx, cy)
+	var radius = Vector2(hw, hh).length() + 80.0
+	var capped = mini(count, 60)
+
+	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
+	var wave_bonus = 1.0 + game_state.wave_number * 0.08
+	var diff = game_state.difficulty * curse_mod * wave_bonus
+
 	for i in range(capped):
-		var eid = spawn_enemy_func.call(type_id)
+		var angle = (i as float) / capped * TAU
+		var pos = center + Vector2(cos(angle), sin(angle)) * radius
+		var eid = enemy_manager.spawn(type_id, pos, player, game_state, camera_ctrl, diff)
 		if eid >= 0:
-			enemy_manager.set_meta_flag(eid, "is_wave_enemy", false) if enemy_manager else null
+			enemy_manager.set_meta_flag(eid, "is_wave_enemy", false)
 
 
 

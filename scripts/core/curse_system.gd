@@ -90,6 +90,4 @@ func _show_announcement(text: String):
 
 
 func _t(key: String) -> String:
-	if I18N and I18N.has_method("t"):
-		return I18N.t(key)
-	return key
+	return I18N.t(key)

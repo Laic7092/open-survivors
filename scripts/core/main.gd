@@ -11,8 +11,6 @@ const CameraController = preload("res://scripts/core/camera_controller.gd")
 const StageGenerator = preload("res://scripts/core/stage_generator.gd")
 const SpawnManager = preload("res://scripts/core/spawn_manager.gd")
 const PickupTimer = preload("res://scripts/core/pickup_timer.gd")
-const LevelUpService = preload("res://scripts/services/level_up_service.gd")
-
 # ── 外部依赖 ──
 # Data defs loaded lazily via DataRegistry (autoload)
 
@@ -126,6 +124,8 @@ func _ready():
 	spawn_manager.enemy_manager = em
 	em.enemy_killed.connect(_on_enemy_killed)
 	EventBus.set_config("enemy_manager", em)
+	em.boss_count_changed.connect(hud.set_boss_count)
+	hud.set_boss_count(em.get_boss_count())
 
 	# ── Core 系统 ──
 	wave_system = WaveSystem.new()
@@ -203,6 +203,7 @@ func _apply_stage_mods():
 	game_state.stage_projectile_speed_mod = proj_speed
 	
 	game_state.stage_xp_mod = sd.get("xp_mod", 1.0)
+	EventBus.set_config("stage_xp_mod", game_state.stage_xp_mod)
 	game_state.stage_luck_mod = sd.get("luck_mod", 0.0)
 	if inverse: game_state.stage_luck_mod += inverse_mods.get("luck", 0.2)
 	
@@ -299,6 +300,19 @@ func _process(delta):
 	
 	# ── 交互提示 ──
 	_update_interaction_prompt(every_n)
+
+	# ── 调试敌人信息 ──
+	if every_n.call(30):
+		var em = get_enemy_manager()
+		if em:
+			var ids = em.query_all_ids()
+			var counts = {}
+			for id in ids:
+				var tid = em.get_type_id(id)
+				var t = DataRegistry.enemies().get_type(tid)
+				var nm = t.name if t else "?"
+				counts[nm] = counts.get(nm, 0) + 1
+			hud.set_debug_enemy_info(counts, ids.size())
 
 
 # ═══════════════════════════════════════════════════════════
@@ -519,6 +533,10 @@ func _on_player_hurt():
 
 
 func _on_player_died():
+	var _has_wave_defs = game_state.stage_data.has("wave_defs") and not game_state.stage_data["wave_defs"].is_empty()
+	if _has_wave_defs and wave_system.all_waves_triggered and not EventBus.get_config("endless_mode", false):
+		_on_stage_complete()
+		return
 	game_state.set_game_over()
 	camera_ctrl.shake(12.0, 0.5)
 	get_tree().paused = true

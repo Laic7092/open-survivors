@@ -15,6 +15,7 @@ const HudCell = preload("res://scripts/ui/hud_cell.gd")
 @onready var _weapon_grid: GridContainer = $WeaponGrid
 @onready var _relic_arrow: Control = $RelicArrow
 @onready var _boss_count_label: Label = $BossCountLabel
+@onready var _debug_enemy_label: Label = $DebugEnemyLabel
 @onready var _overlay_panel: Panel = $OverlayPanel
 @onready var _overlay_title: Label = $OverlayPanel/OverlayTitle
 @onready var _overlay_stats: Label = $OverlayPanel/OverlayStats
@@ -86,7 +87,8 @@ func _ready():
 	_speed_label.position = Vector2(12, 42)
 	_speed_label.text = "x1.0"
 	add_child(_speed_label)
-	
+
+
 	# 在网格中预创建 12 个武器/被动格子
 	for i in range(12):
 		var cell = Control.new()
@@ -99,11 +101,7 @@ func _ready():
 	# 遗物箭头通过 draw 信号绘制
 	_relic_arrow.draw.connect(_draw_relic_arrow_signal)
 
-	# Boss 计数 — 监听 EnemyRegistry 信号
-	if EnemyRegistry:
-		if not EnemyRegistry.boss_count_changed.is_connected(set_boss_count):
-			EnemyRegistry.boss_count_changed.connect(set_boss_count)
-		set_boss_count(EnemyRegistry.get_boss_count())
+
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -168,6 +166,18 @@ func set_boss_count(n: int):
 		_boss_count_label.text = "BOSS x" + str(n)
 	else:
 		_boss_count_label.visible = false
+
+
+func set_debug_enemy_info(counts: Dictionary, total: int):
+	if counts.is_empty():
+		_debug_enemy_label.text = ""
+		return
+	var lines: Array[String] = [I18N.t("hud.debug_enemies") % total]
+	var names = counts.keys()
+	names.sort()
+	for nm in names:
+		lines.append("%s %d" % [nm, counts[nm]])
+	_debug_enemy_label.text = "\n".join(lines)
 
 
 func set_curse_level(n: int):

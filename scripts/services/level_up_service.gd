@@ -1,3 +1,4 @@
+class_name LevelUpService
 extends RefCounted
 # LevelUpService — 等级提升核心逻辑（纯数据，无节点依赖）
 # 集中管理：XP 需求公式、升级选项生成、稀有度权重、Skip/Reroll/Banish

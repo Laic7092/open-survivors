@@ -1,6 +1,8 @@
 extends CharacterBody2D
 class_name Player
 
+const BASE_MOVE_SPEED: float = 100.0
+
 signal leveled_up
 signal died
 signal hurt
@@ -22,7 +24,7 @@ var max_health: float = 100.0       # 最大 HP (Wiki: 100 HP)
 var base_max_health: float = 100.0  # PowerUp/角色调整后的基础最大 HP
 var recovery: float = 0.0           # HP/s 回复 (Wiki: 0 HP/s)
 var armor: float = 0.0             # 减伤 (Wiki: 0)
-var move_speed: float = 100.0      # 移动速度 px/s (Wiki: 100% = 200px/s)
+var move_speed: float = 100.0      # 移动速度 px/s (100% = BASE_MOVE_SPEED px/s)
 var revivals: int = 0              # 复活次数 (Wiki: 0)
 var invincible_duration: float = 1.0  # 受伤无敌时间
 var charm: int = 0                 # 敌人生成数增加
@@ -131,7 +133,7 @@ func _ready():
 			match bonus_type:
 				"might": might += bonus_val
 				"growth": growth_mult += bonus_val
-				"movespeed": move_speed += 200.0 * bonus_val
+				"movespeed": move_speed += BASE_MOVE_SPEED * bonus_val
 				"area": area_mult += bonus_val
 	_apply_powerup_bonuses()
 	health_changed.emit(health, max_health)
@@ -320,7 +322,7 @@ func recalculate_stats():
 	curse = 0.0
 	recovery = 0.0
 	armor = 0.0
-	move_speed = 200.0
+	move_speed = BASE_MOVE_SPEED
 	projectile_bonus = 0
 	revivals = 0
 	magnet_level = 0
@@ -337,7 +339,7 @@ func recalculate_stats():
 		might += char_stats.get("damage_mult", 0.0)
 		cooldown_mult -= char_stats.get("cooldown_reduction", 0.0)
 		area_mult += char_stats.get("area_mult", 0.0)
-		move_speed += 200.0 * char_stats.get("move_speed_pct", 0.0)
+		move_speed += BASE_MOVE_SPEED * char_stats.get("move_speed_pct", 0.0)
 		growth_mult += char_stats.get("growth_pct", 0.0)
 		recovery += char_stats.get("recovery", 0.0)
 		armor += char_stats.get("armor", 0)
@@ -348,9 +350,9 @@ func recalculate_stats():
 		match bonus_type:
 			"might": might += bonus_val
 			"growth": growth_mult += bonus_val
-			"movespeed": move_speed += 200.0 * bonus_val
+			"movespeed": move_speed += BASE_MOVE_SPEED * bonus_val
 			"area": area_mult += bonus_val
-	
+
 	# L2: PowerUp 加成
 	if PowerUpManager:
 		var b = PowerUpManager.get_stat_bonuses()
@@ -358,7 +360,7 @@ func recalculate_stats():
 		recovery += b["recovery"]
 		cooldown_mult -= b["cooldown_reduction"]
 		area_mult += b["area_mult"]
-		move_speed += 200.0 * b["move_speed_pct"]
+		move_speed += BASE_MOVE_SPEED * b["move_speed_pct"]
 		growth_mult += b["growth_pct"]
 		armor += b["armor"]
 		speed_mult += b["projectile_speed_pct"]
@@ -523,8 +525,6 @@ func heal(amount: float):
 
 # ── XP ───────────────────────────────────────────────────────────────
 
-const LevelUpService = preload("res://scripts/services/level_up_service.gd")
-
 
 func add_xp(value: int):
 	if ArcanaManager and ArcanaManager.has_effect("no_xp"):
@@ -538,7 +538,8 @@ func _flush_xp():
 	var gained = _accumulated_xp
 	_accumulated_xp = 0
 	var effective_growth = LevelUpService.effective_growth(growth_mult, level)
-	xp += int(gained * effective_growth)
+	var stage_mod = EventBus.get_config("stage_xp_mod", 1.0)
+	xp += int(gained * effective_growth * stage_mod)
 	xp_to_next = LevelUpService.xp_for_level(level)
 	var leveled = false
 	while xp >= xp_to_next:
@@ -590,8 +591,21 @@ func _attract_gems(delta: float):
 
 # ── Hurt / Health ────────────────────────────────────────────────────
 
+func take_damage_direct(dmg: float):
+	if health <= 0 or EventBus.get_config("god_mode", false):
+		return
+	health -= max(dmg - armor, 1.0)
+	invincible = invincible_duration
+	hurt.emit()
+	if health <= 0:
+		died.emit()
+	else:
+		AudioManager.play_sfx("player_hurt")
+	health_changed.emit(health, max_health)
+
+
 func _check_contact_damage(delta: float):
-	if health <= 0 or invincible > 0:
+	if health <= 0 or invincible > 0 or EventBus.get_config("god_mode", false):
 		return
 	if _enemy_manager == null:
 		_update_enemy_manager_ref()
@@ -657,7 +671,7 @@ func _apply_powerup_stats():
 	recovery += b["recovery"]
 	cooldown_mult -= b["cooldown_reduction"]
 	area_mult += b["area_mult"]
-	move_speed += 200.0 * b["move_speed_pct"]
+	move_speed += BASE_MOVE_SPEED * b["move_speed_pct"]
 	growth_mult += b["growth_pct"]
 	armor += b["armor"]
 	speed_mult += b["projectile_speed_pct"]

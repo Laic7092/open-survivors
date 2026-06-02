@@ -38,7 +38,7 @@ func recalculate(player):
 		var lv = _passives[t]
 		match t:
 			ItemTypes.Type.WINGS:
-				player.move_speed = 200.0 * (1.0 + 0.1 * lv)
+				player.move_speed = Player.BASE_MOVE_SPEED * (1.0 + 0.1 * lv)
 			ItemTypes.Type.SPINACH:
 				player.might += 0.1 * lv
 			ItemTypes.Type.TOME:

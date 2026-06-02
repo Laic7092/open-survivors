@@ -66,12 +66,17 @@ func spawn_enemy_full(type_id: int, force_boss: bool) -> int:
 func _spawn_at_edge(type_id: int, margin: float, wave_bonus: float, force_boss: bool = false) -> int:
 	var curse_mod = 1.0 + (player.get_curse() if is_instance_valid(player) else 0.0)
 	var bounds = camera_ctrl.get_camera_bounds()
-	var pos: Vector2
-	match randi() % 4:
-		0: pos = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.top - margin)
-		1: pos = Vector2(randf_range(bounds.left + margin, bounds.right - margin), bounds.bottom + margin)
-		2: pos = Vector2(bounds.left - margin, randf_range(bounds.top + margin, bounds.bottom - margin))
-		3: pos = Vector2(bounds.right + margin, randf_range(bounds.top + margin, bounds.bottom - margin))
+	var cx = (bounds.left + bounds.right) * 0.5
+	var cy = (bounds.top + bounds.bottom) * 0.5
+	var hw = (bounds.right - bounds.left) * 0.5
+	var hh = (bounds.bottom - bounds.top) * 0.5
+	var center = Vector2(cx, cy)
+	# 位置去同步：offset 与敌人速度成正比，快敌跑得远、慢敌缩得近 → 到达时间自然散开
+	var t = DataRegistry.enemies().get_type(type_id)
+	var spd_offset = (t.base_speed * 3.0) if t else 200.0
+	var radius = Vector2(hw, hh).length() + margin + randf_range(0.0, spd_offset)
+	var angle = randf_range(0.0, TAU)
+	var pos = center + Vector2(cos(angle), sin(angle)) * radius
 	pos = _clamp_to_map(pos, 10.0)
 	var diff = game_state.difficulty * curse_mod * wave_bonus
 	return enemy_manager.spawn(type_id, pos, player, game_state, camera_ctrl, diff, force_boss)

@@ -249,6 +249,7 @@ static func get_data() -> Dictionary:
 		"hud.victory_stats": "Stage: %s\nTime: %02d:%02d\nKills: %d\nLevel: %d\nGold: %d\n\nBonus: +500 Gold!",
 		"hud.distance_unit": "m",
 		"hud.timer_format": "%02d:%02d",
+		"hud.debug_enemies": "Enemies: %d",
 
 		"pause.title": "PAUSED",
 		"pause.resume": "RESUME",

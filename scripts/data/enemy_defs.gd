@@ -1338,7 +1338,7 @@ static func _load_types():
 		# 121 — Flower Wall (Mad Forest event, bestiary 009)
 		EnemyTypeData.new(
 			121, "Flower Wall",
-			30.0, 30.0, 14.0, 1.2, 5,
+			30.0, 12.0, 14.0, 1.2, 5,
 			Color(0.3, 0.6, 0.1), Color(0.4, 0.7, 0.15), 2.0,
 			"hexagon", "chase",
 			false, 0.0, 0.0, 0.0,

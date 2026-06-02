@@ -22,6 +22,7 @@ var _minimap: Control
 var _map_text: Label
 var _grimoire_header: Label
 var _grimoire_container: VBoxContainer
+var _god_btn: Button
 var _resume_btn: Button
 var _quit_btn: Button
 var _stat_labels: Array[Label] = []
@@ -47,6 +48,7 @@ func _ready():
 	_quit_btn.pressed.connect(_on_quit_pressed)
 	# Initial i18n text
 	_title.text = I18N.t("pause.title")
+	_god_btn.text = "无敌"
 	_resume_btn.text = I18N.t("pause.resume")
 	_quit_btn.text = I18N.t("pause.quit")
 
@@ -132,12 +134,22 @@ func _build_ui():
 	bs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_outer.add_child(bs)
 
-	# Buttons: Resume | Quit
+	# Buttons: God Mode | Resume | Quit
 	var btn_row = HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	btn_row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	btn_row.add_theme_constant_override("separation", 12)
 	_outer.add_child(btn_row)
+
+	_god_btn = Button.new()
+	_god_btn.text = ""
+	_god_btn.toggle_mode = true
+	_god_btn.custom_minimum_size = Vector2(120, 40)
+	_god_btn.add_theme_font_size_override("font_size", 16)
+	_god_btn.toggled.connect(func(v):
+		EventBus.set_config("god_mode", v)
+		_god_btn.text = "无敌 ON" if v else "无敌")
+	btn_row.add_child(_god_btn)
 	
 	_resume_btn = Button.new()
 	_resume_btn.text = ""
