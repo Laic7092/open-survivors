@@ -40,7 +40,8 @@ jobs:
         run: |
           mkdir -p ~/.local/share/godot/export_templates/4.6.stable
           wget -q "https://github.com/godotengine/godot-builds/releases/download/4.6-stable/Godot_v4.6-stable_export_templates.tpz"
-          unzip -q Godot_v4.6-stable_export_templates.tpz -d ~/.local/share/godot/export_templates/4.6.stable/
+          unzip -q Godot_v4.6-stable_export_templates.tpz
+          cp templates/*.zip ~/.local/share/godot/export_templates/4.6.stable/
 
       - name: Verify Godot
         run: godot --version
