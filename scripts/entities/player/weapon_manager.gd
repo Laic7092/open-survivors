@@ -20,6 +20,12 @@ var _bible_angle: float = 0.0
 # ── 大蒜：每个敌人独立命中 CD（enemy_id → 剩余 CD 时间） ──
 var _garlic_hit_timers: Dictionary = {}
 
+# ── 投射物池限制追踪 ──
+var _active_projectile_counts: Dictionary = {}  # weapon_type → count
+
+# ── 分开发射序列追踪（避免重叠） ──
+var _stagger_active: Dictionary = {}  # weapon_type → true（序列进行中，阻止新的 fire_weapon）
+
 var _enemy_manager_cache = null
 var _enemy_registry_cache = null
 
@@ -93,6 +99,10 @@ func get_enemy_manager():
 
 func _calc_damage(w: WeaponState) -> float:
 	var dmg = w.damage * _player.might
+	# Per-weapon crit (modified by Luck)
+	if w.chance > 0.0 and randf() < w.chance * _player.luck:
+		dmg *= w.crit_multi
+	# Player global crit (from Clover passive)
 	if _player._crit_chance > 0 and randf() < _player._crit_chance:
 		dmg *= _player._crit_mult
 	return dmg
@@ -413,6 +423,9 @@ func process(delta: float):
 	# whip hit detection: fire() 时已做一次扫描 + 0.075s 延迟扫描,
 	# 不再每帧扫全量敌人 — 原先 whip_hit_window 相关逻辑已移除
 	for w in weapons:
+		# 正在分开发射序列中的武器，跳过本次循环
+		if _stagger_active.has(w.type):
+			continue
 		w.cooldown_timer -= delta
 		if w.cooldown_timer <= 0 and _can_fire(w):
 			w.cooldown_timer = w.cooldown * _player.cooldown_mult
@@ -458,7 +471,7 @@ func _process_garlic(delta: float):
 	var effective_area = w.area * _player.area_mult
 	var ppos = _player.global_position
 	var ids = em.query_circle(ppos, effective_area + 14.0)
-	var hit_delay = w.cooldown * _player.cooldown_mult
+	var hit_delay = (w.hitbox_delay if w.hitbox_delay > 0.0 else w.cooldown) * _player.cooldown_mult
 
 	for eid in ids:
 		var enemy_r = em.get_radius(eid)
@@ -468,7 +481,7 @@ func _process_garlic(delta: float):
 			if remaining <= 0.0:
 				# 首次进入光环 或 个人 CD 已到 → 立即出伤
 				var dmg = _calc_damage(w)
-				em.damage(eid, dmg, Vector2.ZERO)
+				em.damage(eid, dmg, ppos, w.knockback)
 				if w.evolved:
 					_player.health = min(_player.health + 1.0, _player.max_health)
 				_garlic_hit_timers[eid] = hit_delay
@@ -496,10 +509,59 @@ func _update_bird_orbits(delta: float):
 
 func fire_weapon(w: WeaponState):
 	var behavior = _behaviors.get(w.type)
-	if behavior:
-		behavior.fire(w, self, _player, _get_enemies)
-	else:
+	if not behavior:
 		push_warning("WeaponManager: no behavior for type %d" % w.type)
+		return
+
+	# Pool limit check
+	if w.pool_limit > 0:
+		var current = _active_projectile_counts.get(w.type, 0)
+		if current >= w.pool_limit:
+			return
+		_active_projectile_counts[w.type] = current + 1
+		var cleanup_delay = max(w.duration, w.cooldown * _player.cooldown_mult * 2.0) + 0.5
+		var wtype = w.type
+		_player.get_tree().create_timer(cleanup_delay).timeout.connect(
+			func():
+				var cnt = _active_projectile_counts.get(wtype, 1)
+				cnt -= 1
+				if cnt <= 0:
+					_active_projectile_counts.erase(wtype)
+				else:
+					_active_projectile_counts[wtype] = cnt
+		)
+
+	# Total projectile count including Duplicator, PowerUp, and arcana bonuses
+	var total_shots = get_projectile_count(w.type)
+	var interval = w.projectile_interval
+
+	# Projectile interval: stagger sub-shots
+	if interval > 0.0 and total_shots > 1:
+		# 标记序列进行中，阻止 process() 重复触发
+		_stagger_active[w.type] = true
+		var orig_amount = w.amount
+		w.amount = 1
+		# First shot fires immediately (index 0)
+		w.custom_state["stagger_index"] = 0
+		behavior.fire(w, self, _player, _get_enemies)
+		w.amount = orig_amount
+		# Remaining shots fire with delay
+		for i in range(1, total_shots):
+			var delay = interval * i
+			var idx = i
+			_player.get_tree().create_timer(delay).timeout.connect(
+				func():
+					var prev = w.amount
+					w.amount = 1
+					w.custom_state["stagger_index"] = idx
+					behavior.fire(w, self, _player, _get_enemies)
+					w.amount = prev
+					# 最后一发后清除序列标记
+					if idx >= total_shots - 1:
+						_stagger_active.erase(w.type)
+			)
+	else:
+		behavior.fire(w, self, _player, _get_enemies)
 
 
 func get_projectile_count(weapon_type: int) -> int:

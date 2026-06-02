@@ -22,7 +22,7 @@ var max_health: float = 100.0       # 最大 HP (Wiki: 100 HP)
 var base_max_health: float = 100.0  # PowerUp/角色调整后的基础最大 HP
 var recovery: float = 0.0           # HP/s 回复 (Wiki: 0 HP/s)
 var armor: float = 0.0             # 减伤 (Wiki: 0)
-var move_speed: float = 200.0      # 移动速度 px/s (Wiki: 100% = 200px/s)
+var move_speed: float = 100.0      # 移动速度 px/s (Wiki: 100% = 200px/s)
 var revivals: int = 0              # 复活次数 (Wiki: 0)
 var invincible_duration: float = 1.0  # 受伤无敌时间
 var charm: int = 0                 # 敌人生成数增加

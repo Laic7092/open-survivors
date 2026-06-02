@@ -656,7 +656,7 @@ func _get_camera() -> Camera2D:
 #  PUBLIC API — Damage / Effects
 # ═══════════════════════════════════════════════════════════════════
 
-func damage(id: int, amount: float, source_pos: Vector2 = Vector2.ZERO):
+func damage(id: int, amount: float, source_pos: Vector2 = Vector2.ZERO, knockback_mult: float = 1.0):
 	if not _is_valid(id):
 		return
 	_health[id] -= amount
@@ -665,7 +665,7 @@ func damage(id: int, amount: float, source_pos: Vector2 = Vector2.ZERO):
 	# Knockback
 	if source_pos != Vector2.ZERO and _knockback_resist[id] < 1.0:
 		var kb_dir = (_pos[id] - source_pos).normalized()
-		_kb_vel[id] = kb_dir * KNOCKBACK_STRENGTH * (1.0 - _knockback_resist[id])
+		_kb_vel[id] = kb_dir * KNOCKBACK_STRENGTH * (1.0 - _knockback_resist[id]) * knockback_mult
 
 	# Damage text
 	if ObjectPoolManager:

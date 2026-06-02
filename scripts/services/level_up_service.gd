@@ -263,7 +263,15 @@ static func generate_choices(
 
 	var rarity_map = {}
 	for t in all_items:
-		rarity_map[t] = DataRegistry.items().wiki_rarity(t)
+		# Use per-weapon rarity from WeaponState if available
+		if DataRegistry.items().is_weapon(t):
+			var w = weapon_manager.find_weapon(t)
+			if w and w.rarity > 0:
+				rarity_map[t] = w.rarity
+			else:
+				rarity_map[t] = DataRegistry.items().wiki_rarity(t)
+		else:
+			rarity_map[t] = DataRegistry.items().wiki_rarity(t)
 
 	choices.clear()
 

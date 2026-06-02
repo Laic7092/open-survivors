@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-godot  # Run the game (editor window, or F5/F6 in editor)
+godot --help # CLI Commands
 ```
 
 ## Architecture

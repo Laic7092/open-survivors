@@ -14,6 +14,15 @@ var area: float
 var speed: float
 var amount: int = 1
 var pierce: int = 1
+var duration: float = 0.0
+var projectile_interval: float = 0.0
+var hitbox_delay: float = 0.0
+var knockback: float = 1.0
+var pool_limit: int = 0
+var chance: float = 0.0
+var crit_multi: float = 1.0
+var block_by_walls: bool = false
+var rarity: int = 1
 var evolved: bool = false
 
 # ── Limit Break ──
@@ -33,7 +42,7 @@ var custom_state: Dictionary = {}  # e.g. {"whip_swing_dir": 1}
 # "speed" = projectile speed in px/sec (or 0 for static)
 # "amt" = base projectile amount
 static var _BASE = {
-	ItemTypes.Type.WHIP: {"cd": 1.35, "dmg": 50.0, "area": 60.0, "speed": 0.0, "amt": 1},
+	ItemTypes.Type.WHIP: {"cd": 1.35, "dmg": 10.0, "area": 60.0, "speed": 0.0, "amt": 1, "pierce": 0, "proj_interval": 0.1, "knockback": 1.0, "pool_limit": 30, "chance": 20.0, "crit_multi": 2.0, "block_by_walls": false},
 	ItemTypes.Type.MAGIC_WAND: {"cd": 1.2, "dmg": 20.0, "area": 12.0, "speed": 400.0, "amt": 1, "pierce": 1},
 	ItemTypes.Type.GARLIC: {"cd": 1.3, "dmg": 10.0, "area": 70.0, "speed": 0.0, "amt": 1},
 	ItemTypes.Type.KNIFE: {"cd": 1.0, "dmg": 30.0, "area": 10.0, "speed": 600.0, "amt": 1, "pierce": 1},
@@ -42,7 +51,7 @@ static var _BASE = {
 	ItemTypes.Type.CROSS: {"cd": 2.0, "dmg": 60.0, "area": 40.0, "speed": 400.0, "amt": 1},
 	ItemTypes.Type.KING_BIBLE: {"cd": 3.0, "dmg": 15.0, "area": 50.0, "speed": 200.0, "amt": 1},
 	ItemTypes.Type.SANTA_WATER: {"cd": 4.5, "dmg": 20.0, "area": 60.0, "speed": 0.0, "amt": 1},
-	ItemTypes.Type.RUNETRACER: {"cd": 0.8, "dmg": 25.0, "area": 16.0, "speed": 500.0, "amt": 1, "pierce": 999},  # infinite pierce
+	ItemTypes.Type.RUNETRACER: {"cd": 3.0, "dmg": 10.0, "area": 16.0, "speed": 100.0, "amt": 1, "pierce": 999, "duration": 2.25, "proj_interval": 0.2, "hitbox_delay": 0.5, "knockback": 1.0, "pool_limit": 25, "block_by_walls": true},  # infinite pierce
 	ItemTypes.Type.LIGHTNING_RING: {"cd": 1.5, "dmg": 40.0, "area": 40.0, "speed": 0.0, "amt": 2},
 	ItemTypes.Type.PENTAGRAM: {"cd": 90.0, "dmg": 0.0, "area": 400.0, "speed": 0.0, "amt": 1},
 	ItemTypes.Type.PEACHONE: {"cd": 1.0, "dmg": 10.0, "area": 30.0, "speed": 200.0, "amt": 4},
@@ -613,6 +622,15 @@ func _init(t: int):
 	cooldown = b["cd"]; damage = b["dmg"]
 	area = b["area"]; speed = b["speed"]; amount = b.get("amt", 1)
 	pierce = b.get("pierce", 1)
+	duration = b.get("duration", 0.0)
+	projectile_interval = b.get("proj_interval", 0.0)
+	hitbox_delay = b.get("hitbox_delay", 0.0)
+	knockback = b.get("knockback", 1.0)
+	pool_limit = b.get("pool_limit", 0)
+	chance = b.get("chance", 0.0)
+	crit_multi = b.get("crit_multi", 1.0)
+	block_by_walls = b.get("block_by_walls", false)
+	rarity = b.get("rarity", 1)
 	cooldown_timer = 0.0
 
 
@@ -646,9 +664,24 @@ func _apply_level_data(d: Dictionary):
 			"speed_pct":
 				# +X% of base speed
 				speed += _BASE[type]["speed"] * d[key] / 100.0
+			"duration":
+				duration += d[key]
 			"duration_pct":
-				# Per-weapon duration TBD — currently global via player.duration_bonus
-				pass
+				duration += _BASE[type].get("duration", 0.0) * d[key] / 100.0
+			"proj_interval":
+				projectile_interval += d[key]
+			"hitbox_delay":
+				hitbox_delay += d[key]
+			"knockback":
+				knockback *= d[key]
+			"pool_limit":
+				pool_limit += d[key]
+			"chance":
+				chance += d[key]
+			"crit_multi":
+				crit_multi *= d[key]
+			"block_by_walls":
+				block_by_walls = d[key]
 			"cd":
 				# Flat cooldown reduction (seconds)
 				cooldown = max(cooldown - d[key], 0.1)
@@ -712,6 +745,18 @@ func apply_limit_break(opt: Dictionary) -> bool:
 			damage += value
 		"cd_pct":
 			cooldown *= (1.0 - value / 100.0)
+		"duration_pct":
+			duration += _BASE[type].get("duration", 0.0) * value / 100.0
+		"proj_interval_pct":
+			projectile_interval *= (1.0 + value / 100.0)
+		"knockback":
+			knockback *= (1.0 + value / 100.0)
+		"chance":
+			chance += value
+		"crit_multi":
+			crit_multi *= (1.0 + value / 100.0)
+		"pool_limit":
+			pool_limit += value
 		_:
 			push_warning("WeaponState: unknown limit break stat '%s'" % stat)
 	return true

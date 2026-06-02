@@ -59,12 +59,10 @@ func _refresh_bounds():
 	if is_instance_valid(_player) and _player.has_method(&"get_speed_mult"):
 		speed_bonus = _player.speed_mult
 
-	var margin = 60.0 + speed_bonus * 40.0
-
-	_bounce_left = cam_pos.x - vp_size.x / 2.0 - margin
-	_bounce_right = cam_pos.x + vp_size.x / 2.0 + margin
-	_bounce_top = cam_pos.y - vp_size.y / 2.0 - margin
-	_bounce_bottom = cam_pos.y + vp_size.y / 2.0 + margin
+	_bounce_left = cam_pos.x - vp_size.x / 2
+	_bounce_right = cam_pos.x + vp_size.x / 2
+	_bounce_top = cam_pos.y - vp_size.y / 2
+	_bounce_bottom = cam_pos.y + vp_size.y / 2
 
 
 func _tick(proj: Node2D, delta: float):

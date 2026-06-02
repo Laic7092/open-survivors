@@ -21,9 +21,9 @@ var scale: Vector2:
 		return Vector2(s, s)
 
 
-func take_damage(amount: float, source_pos: Vector2 = Vector2.ZERO):
+func take_damage(amount: float, source_pos: Vector2 = Vector2.ZERO, knockback_mult: float = 1.0):
 	if enemy_manager and enemy_manager.is_alive(id):
-		enemy_manager.damage(id, amount, source_pos)
+		enemy_manager.damage(id, amount, source_pos, knockback_mult)
 
 
 func freeze(duration: float):

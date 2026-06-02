@@ -6,7 +6,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	if w.evolved:
 		AudioManager.play_sfx("wpn_nofuture")
 		var wall_len = 300.0 + 60.0 * w.level
-		var wall_dur = 1.5 * player.duration_mult
+		var wall_dur = (w.duration if w.duration > 0.0 else 1.5) * player.duration_mult
 		var dir = player.direction if player.direction.length() > 0 else Vector2.DOWN
 		var perp = Vector2(-dir.y, dir.x)
 		for side in [-1, 1]:
@@ -31,7 +31,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 			player.get_parent().add_child(wall)
 			var _hit = Node2D.new()
 			_hit.set_script(weapon_manager._proj_mover_script)
-			_hit.set_hit_config(weapon_manager.get_enemy_manager(), dmg * 0.3, 10.0, -1)
+			_hit.set_hit_config(weapon_manager.get_enemy_manager(), dmg * 0.3, 10.0, -1, Callable(), w.knockback, w.hitbox_delay)
 			wall.add_child(_hit)
 			var wall_id = wall.get_instance_id()
 			player.get_tree().create_timer(wall_dur).timeout.connect(func():
@@ -44,7 +44,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	# ── 普通形态：弹射投射物 ──
 	AudioManager.play_sfx("wpn_runetracer")
 	var count = weapon_manager.get_projectile_count(w.type)
-	var base_speed = w.speed * player.speed_mult * 1.2
+	var base_speed = w.speed * player.speed_mult * 3
 	var base_dir = player.direction if player.direction.length() > 0 else Vector2.DOWN
 
 	for i in range(count):
@@ -108,8 +108,8 @@ static func fire(w, weapon_manager, player, get_enemies):
 		player.get_parent().add_child(p)
 		var _hit2 = Node2D.new()
 		_hit2.set_script(weapon_manager._proj_mover_script)
-		_hit2.set_movement(Vector2.ZERO, 9999.0)
-		_hit2.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(area * 0.8, 12.0), -1)
+		_hit2.set_movement(Vector2.ZERO, (w.duration if w.duration > 0.0 else 9999.0) * player.duration_mult)
+		_hit2.set_hit_config(weapon_manager.get_enemy_manager(), dmg, max(area * 0.8, 12.0), -1, Callable(), w.knockback, w.hitbox_delay)
 		p.add_child(_hit2)
 
 		# ── 开火闪光 ──
@@ -135,7 +135,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		bouncer.direction_meta = "rune_dir"
 		bouncer.speed_meta = "rune_speed"
 		bouncer.bounce_count_meta = "rune_bounces"
-		bouncer.max_bounces = 6
+		bouncer.max_bounces = 999999  # 仅由 duration 控制销毁，弹跳次数不限
 		bouncer.visuals_node = "Visuals"
 		bouncer.on_bounce = func(pos: Vector2, parent: Node):
 			AudioManager.play_sfx("wpn_bounce")

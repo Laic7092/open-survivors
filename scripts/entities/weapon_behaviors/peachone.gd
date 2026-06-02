@@ -38,7 +38,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		bird.add_child(poll)
 
 		birds.append(bird)
-	var dur = 4.0 * player.duration_mult
+	var dur = (w.duration if w.duration > 0.0 else 4.0) * player.duration_mult
 	player.get_tree().create_timer(dur).timeout.connect(_cleanup.bind(birds))
 
 static func _cleanup(birds):

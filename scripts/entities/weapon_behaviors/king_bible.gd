@@ -5,7 +5,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 		count += 2
 	var orbit_radius = 60.0 + w.area * player.area_mult * 0.8
 	var dmg = weapon_manager._calc_damage(w)
-	var dur = 2.5 * player.duration_mult
+	var dur = (w.duration if w.duration > 0.0 else 2.5) * player.duration_mult
 
 	weapon_manager._bible_projectiles = weapon_manager._bible_projectiles.filter(func(x): return is_instance_valid(x))
 

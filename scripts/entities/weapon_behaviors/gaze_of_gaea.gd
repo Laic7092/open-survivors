@@ -1,7 +1,7 @@
 static func fire(w, weapon_manager, player, get_enemies):
 	var dmg = weapon_manager._calc_damage(w)
 	var area = w.area * player.area_mult
-	var dur = 2.0 * player.duration_mult
+	var dur = (w.duration if w.duration > 0.0 else 2.0) * player.duration_mult
 	var zone = Area2D.new()
 	zone.collision_mask = 4
 	var s = CollisionShape2D.new()

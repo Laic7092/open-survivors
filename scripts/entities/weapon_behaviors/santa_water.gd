@@ -9,7 +9,7 @@ static func fire(w, weapon_manager, player, get_enemies):
 	AudioManager.play_sfx("wpn_water")
 	var dmg = weapon_manager._calc_damage(w)
 	var area = w.area * player.area_mult
-	var dur = 3.0 * player.duration_mult
+	var dur = (w.duration if w.duration > 0.0 else 3.0) * player.duration_mult
 	var start_pos = player.global_position
 	var target_pos = target.global_position
 
