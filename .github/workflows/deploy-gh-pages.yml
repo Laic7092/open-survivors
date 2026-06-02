@@ -51,6 +51,9 @@ jobs:
           mkdir -p export/web
           godot --headless --export-release web 2>&1
 
+      - name: Rename to index.html
+        run: mv export/web/OpenSurvivors.html export/web/index.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
